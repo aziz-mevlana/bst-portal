@@ -22,20 +22,8 @@
             <div class="nav-actions">
                 <!-- Theme Toggle -->
                 <button id="theme-toggle" class="theme-toggle" aria-label="Tema değiştir">
-                    <svg id="sun-icon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <svg id="moon-icon" class="h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
+                    <img id="sun-icon" src="{% static 'images/icons/sun.svg' %}" alt="Açık tema" class="h-5 w-5">
+                    <img id="moon-icon" src="{% static 'images/icons/moon.svg' %}" alt="Koyu tema" class="h-5 w-5 hidden">
                 </button>
 
                 <!-- Auth Actions -->
@@ -43,28 +31,19 @@
                     <div class="profile-dropdown">
                         <button id="profile-button" class="profile-button">
                             <span>{{ user.get_full_name|default:user.username }}</span>
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
+                            <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="h-4 w-4">
                         </button>
 
                         <!-- Profile Dropdown Menu -->
                         <div id="dropdown-menu" class="dropdown-menu hidden">
                             <a href="{% url 'accounts:profile' %}">
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
+                                <img src="{% static 'images/icons/profile.svg' %}" alt="" class="h-4 w-4">
                                 Profil
                             </a>
                             <form method="post" action="{% url 'accounts:logout' %}">
                                 {% csrf_token %}
                                 <button type="submit">
-                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="9 11 12 14 15 11"></polyline>
-                                        <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path>
-                                        <path d="M12 14V2"></path>
-                                    </svg>
+                                    <img src="{% static 'images/icons/logout.svg' %}" alt="" class="h-4 w-4">
                                     Çıkış
                                 </button>
                             </form>
@@ -76,15 +55,8 @@
 
                 <!-- Mobile menu button -->
                 <button id="mobile-menu-button" class="mobile-menu-button" aria-label="Menüyü aç/kapat">
-                    <svg id="menu-icon" class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                    <svg id="close-icon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+                    <img id="menu-icon" src="{% static 'images/icons/menu.svg' %}" alt="Menüyü aç" class="h-6 w-6">
+                    <img id="close-icon" src="{% static 'images/icons/close.svg' %}" alt="Menüyü kapat" class="h-6 w-6 hidden">
                 </button>
             </div>
         </div>
