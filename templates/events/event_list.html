@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Etkinlikler | BST Portal{% endblock %}
+
+{% block content %}
+<h2>Etkinlikler</h2>
+<ul>
+    {% for event in events %}
+        <li>
+            <a href="{% url 'events:event_detail' event.id %}">{{ event.title }}</a> - {{ event.start_date|date:'d.m.Y H:i' }}
+        </li>
+    {% empty %}
+        <li>Henüz etkinlik yok.</li>
+    {% endfor %}
+</ul>
+{% endblock %} 
