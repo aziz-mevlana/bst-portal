@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mezunlar Dizini - BST Portal{% endblock %}
+
+{% block content %}
+<div class="alumni-main-container">
+    <h1 class="text-3xl font-bold mb-2">Mezunlar Dizini</h1>
+    <p class="mb-6 text-gray-600 dark:text-gray-300">Bölümümüz mezunlarıyla bağlantı kurun.</p>
+    <div class="alumni-grid">
+        {% for alumni in alumni_list %}
+        <div class="alumni-card">
+            <div class="alumni-card-header">
+                <img src="{{ alumni.avatar_url }}" alt="{{ alumni.name }}" class="alumni-avatar">
+            </div>
+            <div class="alumni-card-body">
+                <div>
+                    <h3 class="text-lg font-semibold">{{ alumni.name }}</h3>
+                    <div class="alumni-badges">
+                        <span class="alumni-badge">{{ alumni.experience_level }}</span>
+                        <span class="alumni-badge">Class of {{ alumni.graduation_year }}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-300">{{ alumni.position }} @ {{ alumni.company }}</div>
+                </div>
+                <div class="alumni-bio">{{ alumni.bio }}</div>
+                <div class="alumni-socials">
+                    {% if alumni.email %}
+                    <a href="mailto:{{ alumni.email }}" title="E-posta">
+                        <img src="{% static 'images/icons/mail.svg' %}" alt="E-posta" width="16" height="16">
+                    </a>
+                    {% endif %}
+                    {% if alumni.linkedin %}
+                    <a href="{{ alumni.linkedin }}" target="_blank" title="LinkedIn">
+                        <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="16" height="16">
+                    </a>
+                    {% endif %}
+                    {% if alumni.github %}
+                    <a href="{{ alumni.github }}" target="_blank" title="GitHub">
+                        <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" width="16" height="16">
+                    </a>
+                    {% endif %}
+                    {% if alumni.website %}
+                    <a href="{{ alumni.website }}" target="_blank" title="Web">
+                        <img src="{% static 'images/icons/external-link.svg' %}" alt="Web" width="16" height="16">
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center text-gray-500 dark:text-gray-400">Hiç mezun bulunamadı.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 
