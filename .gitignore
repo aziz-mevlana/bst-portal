@@ -72,5 +72,4 @@ yarn-debug.log*
 yarn-error.log*
 
 # Production
-/static/
 /media/ 

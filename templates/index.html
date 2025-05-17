@@ -15,7 +15,7 @@
                     <span class="block text-accent-300">Hoş Geldiniz</span>
                 </h1>
                 <p class="hero-subtitle">
-                    Bilgisayar Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiren bir topluluk platformu.
+                    Bilişim Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiren bir topluluk platformu.
                 </p>
                 <div class="hero-buttons">
                     <a href="{% url 'projects:project_list' %}" class="hero-button hero-button-primary">
@@ -45,10 +45,10 @@
                 {% if events %}
                     <div class="card-grid">
                         {% for event in events %}
-                            <div class="card">
+                            <div class="card event-card">
                                 <div class="card-content">
-                                    <div class="card-icon">
-                                        <img src="{% static 'images/icons/calendar.svg' %}" alt="" class="h-6 w-6">
+                                    <div class="card-icon d-flex align-items-center mb-2">
+                                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded me-2" style="width: 32px; height: 32px;">
                                         <div class="card-date">
                                             {{ event.date|date:"d M" }}
                                         </div>
@@ -59,9 +59,9 @@
                                             <p class="card-description">{{ event.description }}</p>
                                         </div>
                                         <div class="card-meta">
-                                            <span>{{ event.location }}</span>
+                                            <span class="event-location">{{ event.location }}</span>
                                             <span class="card-meta-separator">•</span>
-                                            <span>{{ event.date|date:"H:i" }}</span>
+                                            <span class="event-time">{{ event.date|date:"H:i" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -92,8 +92,8 @@
                         {% for item in news %}
                             <div class="card">
                                 <div class="card-content">
-                                    <div class="card-icon">
-                                        <img src="{% static 'images/icons/globe.svg' %}" alt="" class="h-6 w-6">
+                                    <div class="card-icon d-flex align-items-center mb-2">
+                                        <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded me-2" style="width: 32px; height: 32px;">
                                         <div class="card-date">
                                             {{ item.date|date:"d M" }}
                                         </div>
@@ -108,7 +108,7 @@
                                             {% if item.url %}
                                                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="card-link ml-auto">
                                                     Devamını oku
-                                                    <img src="{% static 'images/icons/external-link.svg' %}" alt="" class="ml-1 h-3 w-3">
+                                                    <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
                                                 </a>
                                             {% endif %}
                                         </div>
