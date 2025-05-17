@@ -30,8 +30,9 @@
                 {% if user.is_authenticated %}
                     <div class="profile-dropdown">
                         <button id="profile-button" class="profile-button">
+                            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/avatar.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="profile-avatar">
                             <span>{{ user.get_full_name|default:user.username }}</span>
-                            <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="h-4 w-4">
+                            <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="chevron-icon">
                         </button>
 
                         <!-- Profile Dropdown Menu -->
