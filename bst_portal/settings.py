@@ -37,11 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Özel uygulamalarımız
-    'accounts.apps.AccountsConfig',
-    'events.apps.EventsConfig',
-    'projects.apps.ProjectsConfig',
-    'alumni.apps.AlumniConfig',
+    'portal',
+    'events',
+    'projects',
+    'alumni',
+    'accounts',
+    'news',
 ]
 
 MIDDLEWARE = [
