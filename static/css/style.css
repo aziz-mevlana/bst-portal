@@ -1233,3 +1233,7 @@ footer {
 .dark .section-link-icon {
     filter: invert(62%) sepia(98%) saturate(748%) hue-rotate(176deg) brightness(95%) contrast(101%);
 }
+
+a, a:visited, a:active {
+    text-decoration: none;
+}

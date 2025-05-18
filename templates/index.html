@@ -101,12 +101,12 @@
                                     <div class="card-body">
                                         <div>
                                             <h3 class="card-title">{{ item.title }}</h3>
-                                            <p class="card-description">{{ item.summary }}</p>
+                                            <p class="card-description">{{ item.content }}</p>
                                         </div>
                                         <div class="card-meta">
                                             <span>{{ item.source }}</span>
-                                            {% if item.url %}
-                                                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="card-link ml-auto">
+                                            {% if item.source_url %}
+                                                <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer" class="card-link ml-auto">
                                                     Devamını oku
                                                     <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
                                                 </a>
