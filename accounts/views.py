@@ -40,6 +40,23 @@ def register_view(request):
 
 @login_required
 def profile_view(request):
+    if request.method == 'POST':
+        user = request.user
+        user.email = request.POST.get('email', user.email)
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.save()
+
+        profile = user.profile
+        profile.bio = request.POST.get('bio', profile.bio)
+        
+        if 'profile_picture' in request.FILES:
+            profile.profile_picture = request.FILES['profile_picture']
+        
+        profile.save()
+        messages.success(request, 'Profiliniz başarıyla güncellendi.')
+        return redirect('accounts:profile')
+    
     return render(request, 'accounts/profile.html')
 
 @login_required

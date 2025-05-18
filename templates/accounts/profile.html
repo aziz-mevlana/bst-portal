@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block title %}Profilim{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-page__header">
+        <h1 class="profile-page__title">Profilim</h1>
+    </div>
+
+    {% if messages %}
+    <div class="profile-page__messages">
+        {% for message in messages %}
+        <div class="profile-page__alert {% if message.tags %}profile-page__alert--{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="profile-page__card">
+        <div class="profile-page__card-header">
+            <div class="profile-page__avatar-container">
+                {% if user.profile.profile_picture %}
+                <img src="{{ user.profile.profile_picture.url }}" alt="Profil Fotoğrafı" class="profile-page__avatar">
+                {% else %}
+                <div class="profile-page__avatar-placeholder">
+                    {{ user.get_full_name|default:user.username|make_list|first|upper }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="profile-page__info">
+                <h2 class="profile-page__name">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="profile-page__username">@{{ user.username }}</p>
+            </div>
+        </div>
+
+        <div class="profile-page__content">
+            <form method="post" enctype="multipart/form-data" class="profile-page__form">
+                {% csrf_token %}
+                
+                <div class="profile-page__form-group">
+                    <label for="id_username" class="profile-page__label">Kullanıcı Adı</label>
+                    <input type="text" name="username" id="id_username" value="{{ user.username }}" class="profile-page__input" readonly>
+                </div>
+
+                <div class="profile-page__form-group">
+                    <label for="id_email" class="profile-page__label">E-posta</label>
+                    <input type="email" name="email" id="id_email" value="{{ user.email }}" class="profile-page__input">
+                </div>
+
+                <div class="profile-page__form-row">
+                    <div class="profile-page__form-group">
+                        <label for="id_first_name" class="profile-page__label">Ad</label>
+                        <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="profile-page__input">
+                    </div>
+
+                    <div class="profile-page__form-group">
+                        <label for="id_last_name" class="profile-page__label">Soyad</label>
+                        <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="profile-page__input">
+                    </div>
+                </div>
+
+                <div class="profile-page__form-group">
+                    <label for="id_profile_picture" class="profile-page__label">Profil Fotoğrafı</label>
+                    <input type="file" name="profile_picture" id="id_profile_picture" class="profile-page__input">
+                    <small class="profile-page__help-text">Önerilen boyut: 400x400 piksel</small>
+                </div>
+
+                <div class="profile-page__form-group">
+                    <label for="id_bio" class="profile-page__label">Hakkımda</label>
+                    <textarea name="bio" id="id_bio" class="profile-page__input profile-page__textarea" rows="4" placeholder="Kendinizden bahsedin...">{{ user.profile.bio }}</textarea>
+                </div>
+
+                <div class="profile-page__form-actions">
+                    <button type="submit" class="profile-page__button">Değişiklikleri Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Profil Sayfası Ana Konteyner */
+.profile-page {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Başlık */
+.profile-page__header {
+    margin-bottom: 2rem;
+}
+
+.profile-page__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.dark .profile-page__title {
+    color: #f3f4f6;
+}
+
+/* Mesajlar */
+.profile-page__messages {
+    margin-bottom: 1.5rem;
+}
+
+.profile-page__alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-page__alert--success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.profile-page__alert--error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.dark .profile-page__alert--success {
+    background-color: #064e3b;
+    color: #a7f3d0;
+}
+
+.dark .profile-page__alert--error {
+    background-color: #7f1d1d;
+    color: #fecaca;
+}
+
+/* Profil Kartı */
+.profile-page__card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.dark .profile-page__card {
+    background: #1f2937;
+}
+
+/* Kart Başlığı */
+.profile-page__card-header {
+    background: linear-gradient(to right, #003366, #004080);
+    padding: 2rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.dark .profile-page__card-header {
+    background: linear-gradient(to right, #1e40af, #2563eb);
+}
+
+/* Avatar */
+.profile-page__avatar-container {
+    position: relative;
+}
+
+.profile-page__avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    object-fit: cover;
+}
+
+.profile-page__avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #60a5fa;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 600;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Profil Bilgileri */
+.profile-page__info {
+    flex: 1;
+}
+
+.profile-page__name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.profile-page__username {
+    font-size: 1rem;
+    opacity: 0.8;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Form İçeriği */
+.profile-page__content {
+    padding: 2rem;
+}
+
+.profile-page__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.profile-page__form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.profile-page__form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.profile-page__label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.dark .profile-page__label {
+    color: #e5e7eb;
+}
+
+.profile-page__input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: white;
+    color: #1f2937;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.dark .profile-page__input {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+.profile-page__input:focus {
+    outline: none;
+    border-color: #003366;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+}
+
+.dark .profile-page__input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.profile-page__input[readonly] {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.dark .profile-page__input[readonly] {
+    background-color: #1f2937;
+}
+
+.profile-page__textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.profile-page__help-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.dark .profile-page__help-text {
+    color: #9ca3af;
+}
+
+/* Form Butonları */
+.profile-page__form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.profile-page__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    background-color: #003366;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-page__button:hover {
+    background-color: #002244;
+    transform: translateY(-1px);
+}
+
+.dark .profile-page__button {
+    background-color: #1d4ed8;
+}
+
+.dark .profile-page__button:hover {
+    background-color: #1e40af;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 640px) {
+    .profile-page__card-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .profile-page__form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .profile-page__content {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %} 

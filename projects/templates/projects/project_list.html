@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Projeler{% endblock %}
+{% block content %}
+<h1>Projeler Listesi</h1>
+{% if projects %}
+    <ul>
+        {% for project in projects %}
+            <li>{{ project.title }}</li>
+            <li>{{ project.description }}</li>
+            <li>{{ project.student }}</li>
+            <li>{{ project.supervisor }}</li>
+            <li>{{ project.project_url }}</li>
+            <li>{{ project.status }}</li>
+            <li>{{ project.start_date }}</li>
+            <li>{{ project.deadline }}</li>
+            
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Henüz proje yok.</p>
+{% endif %}
+{% endblock %} 
