@@ -4,7 +4,7 @@
 {% block title %}Ana Sayfa - BST Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white dark:bg-gray-900">
+<div class="dark:bg-gray-900">
     <!-- Hero Section -->
     <div class="hero-container">
         <section class="hero-section">
@@ -103,13 +103,17 @@
                                             <h3 class="card-title">{{ item.title }}</h3>
                                             <p class="card-description">{{ item.content }}</p>
                                         </div>
-                                        <div class="card-meta">
-                                            <span>{{ item.source }}</span>
+                                        <div class="flex flex-col flex-1 justify-end">
+                                            <div class="card-meta">
+                                                <span>{{ item.source }}</span>
+                                            </div>
                                             {% if item.source_url %}
-                                                <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer" class="card-link ml-auto">
-                                                    Devamını oku
-                                                    <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
-                                                </a>
+                                                <div class="flex justify-end items-end mt-2">
+                                                    <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer" class="card-link">
+                                                        Devamını oku
+                                                        <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
+                                                    </a>
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -132,9 +136,11 @@
     <div class="home-main-container">
         <div class="text-center">
             <h2 class="section-title">Neler Sunuyoruz?</h2>
-            <p class="section-desc">
-                Platformumuz, Bilgisayar Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiriyor.
-            </p>
+            <div style="align-self: center;">
+                <p class="section-desc">
+                    Platformumuz, Bilgisayar Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiriyor.
+                </p>
+            </div>
         </div>
         <div class="features-grid">
             <!-- Feature 1 -->

@@ -808,6 +808,18 @@ main {
     margin-bottom: 1.5rem;
 }
 
+.card{
+    background: #ffffff;
+}
+
+.dark .card{
+    background: #1f2937;
+}
+
+.dark .card-link img{
+    filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+}
+
 .section-title {
     font-size: 1.5rem;
     font-weight: 700;
@@ -858,10 +870,10 @@ main {
     gap: 1rem;
 }
 
-.card, .feature-card, .home-main-container, .bg-white {
+/* .card, .feature-card, .home-main-container, .bg-white {
     background: none !important;
     background-color: unset !important;
-}
+} */
 
 .card {
     overflow: hidden;
@@ -1164,7 +1176,6 @@ main {
     font-size: 1.1rem;
     color: #4b5563;
     margin-bottom: 2.5rem;
-    max-width: 600px;
 }
 
 .dark .home-main-container .section-desc {
