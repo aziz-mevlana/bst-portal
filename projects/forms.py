@@ -34,5 +34,5 @@ class ProjectCommentForm(forms.ModelForm):
         model = ProjectComment
         fields = ['content']
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...'}),
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...', 'class': 'project-comment-input'}),
         } 

@@ -1283,8 +1283,41 @@ footer {
     color: #ffffff;
 }
 
+.project-detail-item{
+    background: #ffffff;
+}
 
+.dark .project-detail-item{
+    background: #1f2937;
+}
 
+.project-detail-url-button{
+    background: rgb(37, 99, 235);
+    color: #ffffff;
+}
+
+.dark .project-detail-url-button{
+    background: rgb(37, 99, 235);
+    color: #ffffff;
+}
+
+.color-page{
+    background: #ffffff;
+}
+
+.dark .color-page{
+    background: #1f2937;
+}
+
+.project-comment-input{
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.dark .project-comment-input{
+    background: #1f2937;
+    border: none;
+}
 
 a, a:visited, a:active {
     text-decoration: none;
