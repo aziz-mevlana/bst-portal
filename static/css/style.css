@@ -1270,6 +1270,21 @@ footer {
     border: none;
 }
 
+.project-list-tag{
+    border: 1px solid #e5e7eb;
+}
+
+.dark .project-list-tag{
+    border: 1px solid #374151;
+}
+
+.dark .project-list-button{
+    background: rgb(37, 99, 235);
+    color: #ffffff;
+}
+
+
+
 
 a, a:visited, a:active {
     text-decoration: none;
