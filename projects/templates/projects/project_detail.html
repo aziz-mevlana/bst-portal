@@ -6,157 +6,126 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <!-- Proje Detayları -->
-        <div class="col-md-8">
-            <div class="card project-detail-card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="card-title text-primary">{{ project.title }}</h2>
-                        <div>
-                            <span class="badge bg-{{ project.status|lower }}">{{ project.get_status_display }}</span>
-                            <span class="badge bg-secondary">{{ project.get_category_display }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <h5 class="text-primary">Proje Açıklaması</h5>
-                        <p class="lead">{{ project.description }}</p>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h5 class="text-primary">Proje Bilgileri</h5>
-                            <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-user text-primary"></i> Öğrenci: {{ project.student.get_full_name }}</li>
-                                <li class="mb-2"><i class="fas fa-user-tie text-primary"></i> Danışman: {{ project.supervisor.get_full_name }}</li>
-                                <li class="mb-2"><i class="fas fa-calendar text-primary"></i> Başlangıç: {{ project.start_date|date:"d.m.Y" }}</li>
-                                <li class="mb-2"><i class="fas fa-calendar-check text-primary"></i> Bitiş: {{ project.deadline|date:"d.m.Y" }}</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5 class="text-primary">Takım Üyeleri</h5>
-                            <ul class="list-unstyled">
-                                {% for member in project.team_members.all %}
-                                <li class="mb-2"><i class="fas fa-users text-primary"></i> {{ member.get_full_name }}</li>
-                                {% empty %}
-                                <li class="text-muted"><i class="fas fa-info-circle"></i> Henüz takım üyesi yok</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-
-                    {% if project.project_url %}
-                    <div class="mb-4">
-                        <h5 class="text-primary">Proje URL</h5>
-                        <a href="{{ project.project_url }}" target="_blank" class="btn btn-outline-primary">
-                            <i class="fas fa-external-link-alt"></i> Projeyi Görüntüle
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% if project.attachments %}
-                    <div class="mb-4">
-                        <h5 class="text-primary">Ekler</h5>
-                        <a href="{{ project.attachments.url }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-download"></i> Dosyayı İndir
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% if user == project.student or user == project.supervisor %}
-                    <div class="mt-4">
-                        <a href="{% url 'projects:project_update' project.id %}" class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Projeyi Düzenle
-                        </a>
-                        <a href="{% url 'projects:add_project_update' project.id %}" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Güncelleme Ekle
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
+<div class="w-full max-w-5xl mx-auto px-4 py-12">
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 lg:p-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Sol Ana İçerik -->
+      <div class="flex flex-col gap-8">
+        <!-- Proje Detay Kartı -->
+        <div>
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <h2 class="text-2xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{{ project.title }}</h2>
+            <div class="flex gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200">{{ project.get_status_display }}</span>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">{{ project.get_category_display }}</span>
             </div>
-
-            <!-- Proje Güncellemeleri -->
-            <div class="card project-detail-card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0 text-primary">Proje Güncellemeleri</h5>
-                </div>
-                <div class="card-body">
-                    {% for update in updates %}
-                    <div class="update-card">
-                        <h6 class="text-primary">{{ update.title }}</h6>
-                        <p class="text-muted">
-                            <small>
-                                <i class="fas fa-user"></i> {{ update.created_by.get_full_name }} |
-                                <i class="fas fa-clock"></i> {{ update.created_at|date:"d.m.Y H:i" }}
-                            </small>
-                        </p>
-                        <p class="mb-0">{{ update.content }}</p>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted"><i class="fas fa-info-circle"></i> Henüz güncelleme yok.</p>
-                    {% endfor %}
-                </div>
+          </div>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-1">Proje Açıklaması</h3>
+            <p class="text-gray-700 dark:text-gray-200">{{ project.description }}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-2">Proje Bilgileri</h4>
+              <ul class="text-gray-600 dark:text-gray-300 space-y-2">
+                <li><span class="font-medium">Öğrenci:</span> {{ project.student.get_full_name }}</li>
+                <li><span class="font-medium">Danışman:</span> {{ project.supervisor.get_full_name }}</li>
+                <li><span class="font-medium">Başlangıç:</span> {{ project.start_date|date:"d.m.Y" }}</li>
+                <li><span class="font-medium">Bitiş:</span> {{ project.deadline|date:"d.m.Y" }}</li>
+              </ul>
             </div>
-
-            <!-- Yorumlar -->
-            <div class="card project-detail-card">
-                <div class="card-header">
-                    <h5 class="mb-0 text-primary">Yorumlar</h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'projects:add_comment' project.id %}" class="mb-4">
-                        {% csrf_token %}
-                        {{ comment_form.as_p }}
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-comment"></i> Yorum Ekle
-                        </button>
-                    </form>
-
-                    {% for comment in comments %}
-                    <div class="comment-card">
-                        <p class="mb-1">{{ comment.content }}</p>
-                        <small class="text-muted">
-                            <i class="fas fa-user"></i> {{ comment.author.get_full_name }} |
-                            <i class="fas fa-clock"></i> {{ comment.created_at|date:"d.m.Y H:i" }}
-                        </small>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted"><i class="fas fa-info-circle"></i> Henüz yorum yok.</p>
-                    {% endfor %}
-                </div>
+            <div>
+              <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-2">Takım Üyeleri</h4>
+              <ul class="text-gray-600 dark:text-gray-300 space-y-2">
+                {% for member in project.team_members.all %}
+                <li>{{ member.get_full_name }}</li>
+                {% empty %}
+                <li class="text-gray-400 dark:text-gray-500 italic">Henüz takım üyesi yok</li>
+                {% endfor %}
+              </ul>
             </div>
+          </div>
+          {% if project.project_url %}
+          <div class="mb-4">
+            <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-2">Proje URL</h4>
+            <a href="{{ project.project_url }}" target="_blank" class="inline-block px-4 py-2 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded-lg font-semibold hover:bg-blue-100 dark:hover:bg-blue-800 transition">Projeyi Görüntüle</a>
+          </div>
+          {% endif %}
+          {% if project.attachments %}
+          <div class="mb-4">
+            <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-2">Ekler</h4>
+            <a href="{{ project.attachments.url }}" class="inline-block px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition">Dosyayı İndir</a>
+          </div>
+          {% endif %}
+          {% if user == project.student or user == project.supervisor %}
+          <div class="flex gap-2 mt-6">
+            <a href="{% url 'projects:project_update' project.id %}" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition">Projeyi Düzenle</a>
+            <a href="{% url 'projects:add_project_update' project.id %}" class="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-800 transition">Güncelleme Ekle</a>
+          </div>
+          {% endif %}
         </div>
-
-        <!-- Yan Panel -->
-        <div class="col-md-4">
-            <div class="card project-detail-card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0 text-primary">Proje Durumu</h5>
-                </div>
-                <div class="card-body">
-                    <div class="progress mb-3">
-                        {% if project.status == 'completed' %}
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%">100%</div>
-                        {% elif project.status == 'in_progress' %}
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: 50%">50%</div>
-                        {% elif project.status == 'planning' %}
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 25%">25%</div>
-                        {% else %}
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 75%">75%</div>
-                        {% endif %}
-                    </div>
-                    <p class="mb-0">
-                        <strong>Durum:</strong> {{ project.get_status_display }}<br>
-                        <strong>Kategori:</strong> {{ project.get_category_display }}<br>
-                        <strong>Oluşturulma:</strong> {{ project.created_at|date:"d.m.Y" }}<br>
-                        <strong>Son Güncelleme:</strong> {{ project.updated_at|date:"d.m.Y" }}
-                    </p>
-                </div>
+        <!-- Proje Güncellemeleri -->
+        <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Proje Güncellemeleri</h3>
+          <div class="space-y-4">
+            {% for update in updates %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-semibold text-blue-700 dark:text-blue-200">{{ update.title }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ update.created_at|date:"d.m.Y H:i" }}</span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ update.created_by.get_full_name }}</div>
+              <div class="text-gray-700 dark:text-gray-200">{{ update.content }}</div>
             </div>
+            {% empty %}
+            <div class="text-gray-400 dark:text-gray-500 italic">Henüz güncelleme yok.</div>
+            {% endfor %}
+          </div>
         </div>
+        <!-- Yorumlar -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Yorumlar</h3>
+          <form method="post" action="{% url 'projects:add_comment' project.id %}" class="mb-6">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button type="submit" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition mt-2">Yorum Ekle</button>
+          </form>
+          <div class="space-y-4">
+            {% for comment in comments %}
+            <div class="bg-white dark:bg-gray-900 rounded-lg p-4">
+              <div class="text-gray-700 dark:text-gray-200 mb-1">{{ comment.content }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ comment.author.get_full_name }} | {{ comment.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
+            {% empty %}
+            <div class="text-gray-400 dark:text-gray-500 italic">Henüz yorum yok.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <!-- Sağ Panel -->
+      <div class="flex flex-col gap-8">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Proje Durumu</h3>
+          <div class="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-4 mb-4">
+            {% if project.status == 'completed' %}
+            <div class="bg-green-500 h-4 rounded-full" style="width: 100%"></div>
+            {% elif project.status == 'in_progress' %}
+            <div class="bg-blue-500 h-4 rounded-full" style="width: 50%"></div>
+            {% elif project.status == 'planning' %}
+            <div class="bg-sky-400 h-4 rounded-full" style="width: 25%"></div>
+            {% else %}
+            <div class="bg-yellow-400 h-4 rounded-full" style="width: 75%"></div>
+            {% endif %}
+          </div>
+          <ul class="text-gray-600 dark:text-gray-300 space-y-1 text-sm">
+            <li><span class="font-medium">Durum:</span> {{ project.get_status_display }}</li>
+            <li><span class="font-medium">Kategori:</span> {{ project.get_category_display }}</li>
+            <li><span class="font-medium">Oluşturulma:</span> {{ project.created_at|date:"d.m.Y" }}</li>
+            <li><span class="font-medium">Son Güncelleme:</span> {{ project.updated_at|date:"d.m.Y" }}</li>
+          </ul>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %} 
