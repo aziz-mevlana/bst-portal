@@ -364,6 +364,9 @@ header.scrolled {
     z-index: 40;
     background-color: white;
     display: none;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .mobile-menu.active {
@@ -1247,6 +1250,26 @@ footer {
 .dark .section-link-icon {
     filter: invert(62%) sepia(98%) saturate(748%) hue-rotate(176deg) brightness(95%) contrast(101%);
 }
+
+.project-list-card{
+    background: #ffffff;
+}
+
+.project-list-input{
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.dark .project-list-card{
+    background: #1f2937;
+    
+}
+
+.dark .project-list-input{
+    background: #1f2937;
+    border: none;
+}
+
 
 a, a:visited, a:active {
     text-decoration: none;

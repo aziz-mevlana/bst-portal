@@ -18,14 +18,14 @@
     </div>
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <input type="text" name="q" class="col-span-1 md:col-span-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100" placeholder="Proje ara..." value="{{ request.GET.q }}">
-        <select name="category" class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
+        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
+        <select name="category" class="project-list-input px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
             <option value="">Kategori Seçin</option>
             {% for value, label in categories %}
             <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <select name="status" class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
+        <select name="status" class="project-list-input px-4 py-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
             <option value="">Durum Seçin</option>
             {% for value, label in statuses %}
             <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
@@ -36,7 +36,7 @@
     <!-- Proje Listesi -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for project in projects %}
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
+        <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200">{{ project.get_status_display }}</span>
