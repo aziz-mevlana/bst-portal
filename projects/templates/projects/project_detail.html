@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/projects.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Proje Detayları -->
+        <div class="col-md-8">
+            <div class="card project-detail-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="card-title text-primary">{{ project.title }}</h2>
+                        <div>
+                            <span class="badge bg-{{ project.status|lower }}">{{ project.get_status_display }}</span>
+                            <span class="badge bg-secondary">{{ project.get_category_display }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary">Proje Açıklaması</h5>
+                        <p class="lead">{{ project.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Proje Bilgileri</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-user text-primary"></i> Öğrenci: {{ project.student.get_full_name }}</li>
+                                <li class="mb-2"><i class="fas fa-user-tie text-primary"></i> Danışman: {{ project.supervisor.get_full_name }}</li>
+                                <li class="mb-2"><i class="fas fa-calendar text-primary"></i> Başlangıç: {{ project.start_date|date:"d.m.Y" }}</li>
+                                <li class="mb-2"><i class="fas fa-calendar-check text-primary"></i> Bitiş: {{ project.deadline|date:"d.m.Y" }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary">Takım Üyeleri</h5>
+                            <ul class="list-unstyled">
+                                {% for member in project.team_members.all %}
+                                <li class="mb-2"><i class="fas fa-users text-primary"></i> {{ member.get_full_name }}</li>
+                                {% empty %}
+                                <li class="text-muted"><i class="fas fa-info-circle"></i> Henüz takım üyesi yok</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if project.project_url %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Proje URL</h5>
+                        <a href="{{ project.project_url }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> Projeyi Görüntüle
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if project.attachments %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">Ekler</h5>
+                        <a href="{{ project.attachments.url }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-download"></i> Dosyayı İndir
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if user == project.student or user == project.supervisor %}
+                    <div class="mt-4">
+                        <a href="{% url 'projects:project_update' project.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Projeyi Düzenle
+                        </a>
+                        <a href="{% url 'projects:add_project_update' project.id %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Güncelleme Ekle
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Proje Güncellemeleri -->
+            <div class="card project-detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0 text-primary">Proje Güncellemeleri</h5>
+                </div>
+                <div class="card-body">
+                    {% for update in updates %}
+                    <div class="update-card">
+                        <h6 class="text-primary">{{ update.title }}</h6>
+                        <p class="text-muted">
+                            <small>
+                                <i class="fas fa-user"></i> {{ update.created_by.get_full_name }} |
+                                <i class="fas fa-clock"></i> {{ update.created_at|date:"d.m.Y H:i" }}
+                            </small>
+                        </p>
+                        <p class="mb-0">{{ update.content }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted"><i class="fas fa-info-circle"></i> Henüz güncelleme yok.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Yorumlar -->
+            <div class="card project-detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0 text-primary">Yorumlar</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'projects:add_comment' project.id %}" class="mb-4">
+                        {% csrf_token %}
+                        {{ comment_form.as_p }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-comment"></i> Yorum Ekle
+                        </button>
+                    </form>
+
+                    {% for comment in comments %}
+                    <div class="comment-card">
+                        <p class="mb-1">{{ comment.content }}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> {{ comment.author.get_full_name }} |
+                            <i class="fas fa-clock"></i> {{ comment.created_at|date:"d.m.Y H:i" }}
+                        </small>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted"><i class="fas fa-info-circle"></i> Henüz yorum yok.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Yan Panel -->
+        <div class="col-md-4">
+            <div class="card project-detail-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0 text-primary">Proje Durumu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        {% if project.status == 'completed' %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%">100%</div>
+                        {% elif project.status == 'in_progress' %}
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 50%">50%</div>
+                        {% elif project.status == 'planning' %}
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 25%">25%</div>
+                        {% else %}
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 75%">75%</div>
+                        {% endif %}
+                    </div>
+                    <p class="mb-0">
+                        <strong>Durum:</strong> {{ project.get_status_display }}<br>
+                        <strong>Kategori:</strong> {{ project.get_category_display }}<br>
+                        <strong>Oluşturulma:</strong> {{ project.created_at|date:"d.m.Y" }}<br>
+                        <strong>Son Güncelleme:</strong> {{ project.updated_at|date:"d.m.Y" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
