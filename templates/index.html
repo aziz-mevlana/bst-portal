@@ -48,9 +48,11 @@
                             <div class="card event-card">
                                 <div class="card-content">
                                     <div class="card-icon d-flex align-items-center mb-2">
-                                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded me-2" style="width: 32px; height: 32px;">
-                                        <div class="card-date">
-                                            {{ event.date|date:"d M" }}
+                                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded" style="width: 32px; height: 32px;">
+                                        <div class="card-date-container">
+                                            <div class="card-date">
+                                                {{ event.start_date|date:"d M" }}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="card-body">
@@ -83,7 +85,7 @@
                     <h2 class="section-title">Son Haberler</h2>
                     <a href="{% url 'news:news_list' %}" class="section-link">
                         Tüm haberleri gör
-                        <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="ml-1 h-4 w-4">
+                        <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="section-link-icon ml-1 h-4 w-4">
                     </a>
                 </div>
 
@@ -93,9 +95,11 @@
                             <div class="card">
                                 <div class="card-content">
                                     <div class="card-icon d-flex align-items-center mb-2">
-                                        <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded me-2" style="width: 32px; height: 32px;">
-                                        <div class="card-date">
-                                            {{ item.date|date:"d M" }}
+                                        <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded" style="width: 32px; height: 32px;">
+                                        <div class="card-date-container">
+                                            <div class="card-date">
+                                                {{ item.created_at|date:"d M" }}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="card-body">

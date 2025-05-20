@@ -12,7 +12,6 @@
             <nav class="nav-links">
                 <ul>
                     <li><a href="{% url 'index' %}" {% if request.path == '/' %}class="active"{% endif %}>Ana Sayfa</a></li>
-                    <li><a href="{% url 'events:event_list' %}" {% if 'events' in request.path %}class="active"{% endif %}>Etkinlikler</a></li>
                     <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                     <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
                 </ul>
