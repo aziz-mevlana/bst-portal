@@ -4,10 +4,10 @@ from django.contrib import messages
 from .models import AlumniProfile, AlumniExperience, Tag
 
 def alumni_list(request):
-    alumni = AlumniProfile.objects.all()
+    alumni_list = AlumniProfile.objects.all()
     tags = Tag.objects.all()
     return render(request, 'alumni/alumni_list.html', {
-        'alumni': alumni,
+        'alumni_list': alumni_list,
         'tags': tags
     })
 

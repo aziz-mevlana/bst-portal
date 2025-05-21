@@ -4,47 +4,46 @@
 {% block title %}Mezunlar Dizini - BST Portal{% endblock %}
 
 {% block content %}
-<div class="alumni-main-container">
-    <h1 class="text-3xl font-bold mb-2">Mezunlar Dizini</h1>
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-2 dark:text-blue-300">Mezunlar Dizini</h1>
     <p class="mb-6 text-gray-600 dark:text-gray-300">Bölümümüz mezunlarıyla bağlantı kurun.</p>
-    <div class="alumni-grid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for alumni in alumni_list %}
-        <div class="alumni-card">
-            <div class="alumni-card-header">
-                <img src="{{ alumni.avatar_url }}" alt="{{ alumni.name }}" class="alumni-avatar">
-            </div>
-            <div class="alumni-card-body">
+        <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
+            <div class="flex items-center gap-4 mb-4">
+                {% if alumni.user.profile.profile_picture %}
+                <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-16 h-16 object-cover border-2 border-blue-100 dark:border-blue-900 alumni-list-profile-picture">
+                {% else %}
+                <div class="w-16 h-16 rounded-full bg-blue-200 dark:bg-blue-900 flex items-center justify-center text-2xl font-bold text-blue-700 dark:text-blue-200">
+                    {{ alumni.user.username|slice:':1'|upper }}
+                </div>
+                {% endif %}
                 <div>
-                    <h3 class="text-lg font-semibold">{{ alumni.name }}</h3>
-                    <div class="alumni-badges">
-                        <span class="alumni-badge">{{ alumni.experience_level }}</span>
-                        <span class="alumni-badge">Class of {{ alumni.graduation_year }}</span>
+                    <h3 class="text-xl font-bold dark:text-gray-100 mb-1">{{ alumni.user.username }}</h3>
+                    <div class="flex flex-wrap gap-2 mb-1">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 project-list-tag">{{ alumni.experience_level }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 project-list-tag">{{ alumni.graduation_year }}</span>
+                        {% if alumni.is_available_for_mentoring %}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200">Mentor</span>
+                        {% endif %}
+                        {% for tag in alumni.tags.all %}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200">{{ tag.name }}</span>
+                        {% endfor %}
                     </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-300">{{ alumni.position }} @ {{ alumni.company }}</div>
+                    <div class="text-sm">{{ alumni.current_position }} @ {{ alumni.company }}</div>
                 </div>
-                <div class="alumni-bio">{{ alumni.bio }}</div>
-                <div class="alumni-socials">
-                    {% if alumni.email %}
-                    <a href="mailto:{{ alumni.email }}" title="E-posta">
-                        <img src="{% static 'images/icons/mail.svg' %}" alt="E-posta" width="16" height="16">
-                    </a>
-                    {% endif %}
-                    {% if alumni.linkedin %}
-                    <a href="{{ alumni.linkedin }}" target="_blank" title="LinkedIn">
-                        <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="16" height="16">
-                    </a>
-                    {% endif %}
-                    {% if alumni.github %}
-                    <a href="{{ alumni.github }}" target="_blank" title="GitHub">
-                        <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" width="16" height="16">
-                    </a>
-                    {% endif %}
-                    {% if alumni.website %}
-                    <a href="{{ alumni.website }}" target="_blank" title="Web">
-                        <img src="{% static 'images/icons/external-link.svg' %}" alt="Web" width="16" height="16">
-                    </a>
-                    {% endif %}
-                </div>
+            </div>
+            <div class="mb-4 dark:text-gray-300 line-clamp-3">{{ alumni.bio }}</div>
+            <div class="flex items-center gap-3 mt-auto alumni-list-social-media-icons">
+                {% if alumni.linkedin_url %}
+                <a href="{{ alumni.linkedin_url }}" target="_blank" title="LinkedIn" class="hover:scale-110 transition"><img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="20" height="20"></a>
+                {% endif %}
+                {% if alumni.github_url %}
+                <a href="{{ alumni.github_url }}" target="_blank" title="GitHub" class="hover:scale-110 transition"><img src="{% static 'images/icons/github.svg' %}" alt="GitHub" width="20" height="20"></a>
+                {% endif %}
+                {% if alumni.personal_website %}
+                <a href="{{ alumni.personal_website }}" target="_blank" title="Web" class="hover:scale-110 transition"><img src="{% static 'images/icons/external-link.svg' %}" alt="Web" width="20" height="20"></a>
+                {% endif %}
             </div>
         </div>
         {% empty %}

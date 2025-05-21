@@ -1319,6 +1319,25 @@ footer {
     border: none;
 }
 
+.alumni-list-profile-picture{
+    border: 1px solid #e5e7eb;
+    border-radius: 25%;
+}
+
+.dark .alumni-list-profile-picture{
+    border: 1px solid #374151;
+    border-radius: 25%;
+}
+
+.alumni-list-social-media-icons{
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dark .alumni-list-social-media-icons{
+    filter: invert(100%);
+}
+
 a, a:visited, a:active {
     text-decoration: none;
 }
