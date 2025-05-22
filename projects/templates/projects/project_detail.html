@@ -64,24 +64,6 @@
           </div>
           {% endif %}
         </div>
-        <!-- Proje Güncellemeleri -->
-        <div class="project-detail-item rounded-lg p-6 shadow-lg">
-          <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Proje Güncellemeleri</h3>
-          <div class="space-y-4">
-            {% for update in updates %}
-            <div class="dark:bg-gray-800 rounded-lg p-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-semibold text-blue-700 dark:text-blue-200">{{ update.title }}</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ update.created_at|date:"d.m.Y H:i" }}</span>
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ update.created_by.get_full_name }}</div>
-              <div class="text-gray-700 dark:text-gray-200">{{ update.content }}</div>
-            </div>
-            {% empty %}
-            <div class=" italic">Henüz güncelleme yok.</div>
-            {% endfor %}
-          </div>
-        </div>
         <!-- Yorumlar -->
         <div class="project-detail-item rounded-lg p-6 shadow-lg">
           <h3 class="text-lg font-semibold text-blue-600 mb-4">Yorumlar</h3>
@@ -123,6 +105,24 @@
             <li><span class="font-medium">Oluşturulma:</span> {{ project.created_at|date:"d.m.Y" }}</li>
             <li><span class="font-medium">Son Güncelleme:</span> {{ project.updated_at|date:"d.m.Y" }}</li>
           </ul>
+        </div>
+        <!-- Proje Güncellemeleri -->
+        <div class="project-detail-item rounded-lg p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">Proje Güncellemeleri</h3>
+          <div class="space-y-4">
+            {% for update in updates %}
+            <div class="dark:bg-gray-800 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-semibold text-blue-700 dark:text-blue-200">{{ update.title }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ update.created_at|date:"d.m.Y H:i" }}</span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ update.created_by.get_full_name }}</div>
+              <div class="text-gray-700 dark:text-gray-200">{{ update.content }}</div>
+            </div>
+            {% empty %}
+            <div class=" italic">Henüz güncelleme yok.</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>

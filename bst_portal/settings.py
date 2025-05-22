@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'alumni',
     'accounts',
     'news',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
