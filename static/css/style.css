@@ -208,6 +208,10 @@ header.scrolled {
     position: relative;
 }
 
+.page-container {
+    min-width: 800px;
+}
+
 .profile-button {
     display: flex;
     align-items: center;
@@ -1337,6 +1341,19 @@ footer {
 .dark .alumni-list-social-media-icons{
     filter: invert(100%);
 }
+
+.project-form-input{
+    background: #f7f7f7;
+    border: 1px solid #e5e7eb;
+}
+
+.dark .project-form-input{
+    background: #181e29;
+    color: #ffffff;
+    border: 1px solid #000000;
+}
+
+
 
 a, a:visited, a:active {
     text-decoration: none;

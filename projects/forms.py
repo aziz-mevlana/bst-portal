@@ -11,9 +11,17 @@ class ProjectForm(forms.ModelForm):
             'is_public', 'team_members', 'attachments'
         ]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
-            'deadline': forms.DateInput(attrs={'type': 'date'}),
+            'title': forms.TextInput(attrs={'class': 'project-form-input'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input'}),
+            'supervisor': forms.Select(attrs={'class': 'project-form-input'}),
+            'project_url': forms.TextInput(attrs={'class': 'project-form-input'}),
+            'status': forms.Select(attrs={'class': 'project-form-input'}),
+            'category': forms.Select(attrs={'class': 'project-form-input'}),
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'project-form-input'}),
+            'deadline': forms.DateInput(attrs={'type': 'date', 'class': 'project-form-input'}),
+            'is_public': forms.CheckboxInput(attrs={'class': 'project-form-input'}),
+            'team_members': forms.SelectMultiple(attrs={'class': 'project-form-input'}),
+            'attachments': forms.FileInput(attrs={'class': 'project-form-input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -26,7 +34,7 @@ class ProjectUpdateForm(forms.ModelForm):
         model = ProjectUpdate
         fields = ['title', 'content']
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 4}),
+            'content': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input'}),
         }
 
 class ProjectCommentForm(forms.ModelForm):
@@ -34,5 +42,5 @@ class ProjectCommentForm(forms.ModelForm):
         model = ProjectComment
         fields = ['content']
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...', 'class': 'project-comment-input'}),
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...', 'class': 'project-form-input'}),
         } 

@@ -9,7 +9,7 @@
     <p class="mb-6 text-gray-600">Bölümümüz mezunlarıyla bağlantı kurun.</p>
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
+        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
         <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
             <option value="">Deneyim Seviyesi</option>
             {% for value, label in alumni_list.model.EXPERIENCE_LEVEL_CHOICES %}
@@ -70,7 +70,7 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center text-gray-500">Hiç mezun bulunamadı.</div>
+        <div class="col-span-full text-center text-gray-500 ">Hiç mezun bulunamadı.</div>
         {% endfor %}
     </div>
 </div>
