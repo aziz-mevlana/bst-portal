@@ -1165,6 +1165,7 @@ main {
 
 .dark .home-main-container {
     background: #181e29;
+    box-shadow: none;
 }
 
 /* Neler Sunuyoruz başlığı ve açıklama */

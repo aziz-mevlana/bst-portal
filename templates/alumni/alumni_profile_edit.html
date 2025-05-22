@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Mezun Kartını Güncelle{% endblock %}
+
+{% block content %}
+<div class="profile-page page-container">
+    <div class="profile-page__header">
+        <h1 class="profile-page__title">Mezun Kartını Güncelle</h1>
+    </div>
+    <div class="profile-page__card">
+        <div class="profile-page__content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="profile-page__form-group">
+                    <label for="graduation_year" class="profile-page__label">Mezuniyet Yılı</label>
+                    <input type="number" name="graduation_year" id="graduation_year" value="{{ profile.graduation_year }}" class="profile-page__input" required>
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="current_position" class="profile-page__label">Pozisyon</label>
+                    <input type="text" name="current_position" id="current_position" value="{{ profile.current_position }}" class="profile-page__input" required>
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="company" class="profile-page__label">Şirket</label>
+                    <input type="text" name="company" id="company" value="{{ profile.company }}" class="profile-page__input" required>
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="experience_level" class="profile-page__label">Deneyim Seviyesi</label>
+                    <select name="experience_level" id="experience_level" class="profile-page__input">
+                        <option value="junior" {% if profile.experience_level == 'junior' %}selected{% endif %}>Junior (0-2 yıl)</option>
+                        <option value="mid" {% if profile.experience_level == 'mid' %}selected{% endif %}>Mid-Level (2-5 yıl)</option>
+                        <option value="senior" {% if profile.experience_level == 'senior' %}selected{% endif %}>Senior (5+ yıl)</option>
+                    </select>
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="bio" class="profile-page__label">Açıklama</label>
+                    <textarea name="bio" id="bio" class="profile-page__input profile-page__textarea" rows="4">{{ profile.bio }}</textarea>
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="linkedin_url" class="profile-page__label">LinkedIn</label>
+                    <input type="url" name="linkedin_url" id="linkedin_url" value="{{ profile.linkedin_url }}" class="profile-page__input">
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="github_url" class="profile-page__label">GitHub</label>
+                    <input type="url" name="github_url" id="github_url" value="{{ profile.github_url }}" class="profile-page__input">
+                </div>
+                <div class="profile-page__form-group">
+                    <label for="personal_website" class="profile-page__label">Kişisel Web</label>
+                    <input type="url" name="personal_website" id="personal_website" value="{{ profile.personal_website }}" class="profile-page__input">
+                </div>
+                <div class="profile-page__form-group">
+                    <label class="profile-page__label">Mentorluk Durumu</label>
+                    <input type="checkbox" name="is_available_for_mentoring" id="is_available_for_mentoring" {% if profile.is_available_for_mentoring %}checked{% endif %}> Mentorluk yapmak istiyorum
+                </div>
+                <div class="profile-page__form-group">
+                    <label class="profile-page__label">Etiketler</label>
+                    {% for tag in tags %}
+                        <label><input type="checkbox" name="tags" value="{{ tag.id }}" {% if tag in profile.tags.all %}checked{% endif %}> {{ tag.name }}</label>
+                    {% endfor %}
+                </div>
+                <div class="profile-page__form-actions">
+                    <button type="submit" class="profile-page__button">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

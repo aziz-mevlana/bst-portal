@@ -35,7 +35,7 @@
             <!-- Events -->
             <div>
                 <div class="section-header">
-                    <h2 class="section-title">Yaklaşan Etkinlikler</h2>
+                    <h2 class="section-title">Etkinlikler</h2>
                     <a href="{% url 'events:event_list' %}" class="section-link">
                         Tüm etkinlikleri gör
                         <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="ml-1 h-4 w-4 section-link-icon">
@@ -63,7 +63,7 @@
                                         <div class="card-meta">
                                             <span class="event-location">{{ event.location }}</span>
                                             <span class="card-meta-separator">•</span>
-                                            <span class="event-time">{{ event.date|date:"H:i" }}</span>
+                                            <span class="event-time">{{ event.start_xdate|date:"H:i" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -82,7 +82,7 @@
             <!-- News -->
             <div>
                 <div class="section-header">
-                    <h2 class="section-title">Son Haberler</h2>
+                    <h2 class="section-title">Haberler</h2>
                     <a href="{% url 'news:news_list' %}" class="section-link">
                         Tüm haberleri gör
                         <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="section-link-icon ml-1 h-4 w-4">
@@ -109,7 +109,7 @@
                                         </div>
                                         <div class="flex flex-col flex-1 justify-end">
                                             <div class="card-meta">
-                                                <span>{{ item.source }}</span>
+                                                <span>{{ item.source_url }}</span>
                                             </div>
                                             {% if item.source_url %}
                                                 <div class="flex justify-end items-end mt-2">

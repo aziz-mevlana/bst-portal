@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Mezun Kartım{% endblock %}
+
+{% block content %}
+<div class="profile-page page-container">
+    <div class="profile-page__header">
+        <h1 class="profile-page__title">Mezun Kartım</h1>
+    </div>
+    <div class="profile-page__card">
+        <div class="profile-page__card-header">
+            <div class="profile-page__info">
+                <h2 class="profile-page__name">{{ profile.user.get_full_name }}</h2>
+                <p class="profile-page__username">@{{ profile.user.username }}</p>
+                <p class="profile-page__label">Mezuniyet Yılı: {{ profile.graduation_year }}</p>
+                <p class="profile-page__label">Pozisyon: {{ profile.current_position }}</p>
+                <p class="profile-page__label">Şirket: {{ profile.company }}</p>
+                <p class="profile-page__label">Deneyim Seviyesi: {{ profile.get_experience_level_display }}</p>
+                <p class="profile-page__label">Açıklama: {{ profile.bio }}</p>
+                <p class="profile-page__label">LinkedIn: <a href="{{ profile.linkedin_url }}" target="_blank">{{ profile.linkedin_url }}</a></p>
+                <p class="profile-page__label">GitHub: <a href="{{ profile.github_url }}" target="_blank">{{ profile.github_url }}</a></p>
+                <p class="profile-page__label">Kişisel Web: <a href="{{ profile.personal_website }}" target="_blank">{{ profile.personal_website }}</a></p>
+                <p class="profile-page__label">Mentorluk Durumu: {{ profile.is_available_for_mentoring|yesno:"Açık,Kapalı" }}</p>
+                <p class="profile-page__label">Etiketler: {% for tag in profile.tags.all %}<span class="tag">{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            </div>
+        </div>
+        <div class="profile-page__content">
+            <a href="{% url 'alumni:alumni_profile_edit' %}" class="profile-page__button">Mezun Kartını Güncelle</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 
