@@ -5,58 +5,58 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-2 dark:text-blue-300">Mezunlar Dizini</h1>
-    <p class="mb-6 text-gray-600 dark:text-gray-300">Bölümümüz mezunlarıyla bağlantı kurun.</p>
+    <h1 class="text-3xl font-bold mb-2">Mezunlar Dizini</h1>
+    <p class="mb-6 text-gray-600">Bölümümüz mezunlarıyla bağlantı kurun.</p>
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-2 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
-        <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
+        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
+        <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
             <option value="">Deneyim Seviyesi</option>
             {% for value, label in alumni_list.model.EXPERIENCE_LEVEL_CHOICES %}
             <option value="{{ value }}" {% if selected_experience_level == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <select name="graduation_year" class="project-list-input px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
+        <select name="graduation_year" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
             <option value="">Mezuniyet Yılı</option>
             {% for year in graduation_years %}
             <option value="{{ year }}" {% if selected_graduation_year|add:"" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
             {% endfor %}
         </select>
-        <select name="tag" class="project-list-input px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white dark:bg-gray-900 dark:text-gray-100">
+        <select name="tag" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
             <option value="">Etiket Seçin</option>
             {% for tag in tags %}
             <option value="{{ tag.id }}" {% if selected_tag|add:"" == tag.id|stringformat:"s" %}selected{% endif %}>{{ tag.name }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 transition">Filtrele</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
     </form>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for alumni in alumni_list %}
         <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
             <div class="flex items-center gap-4 mb-4">
                 {% if alumni.user.profile.profile_picture %}
-                <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-16 h-16 object-cover border-2 border-blue-100 dark:border-blue-900 alumni-list-profile-picture">
+                <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-16 h-16 object-cover border-2 border-blue-100 alumni-list-profile-picture">
                 {% else %}
-                <div class="w-16 h-16 rounded-full bg-blue-200 dark:bg-blue-900 flex items-center justify-center text-2xl font-bold text-blue-700 dark:text-blue-200">
+                <div class="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-2xl font-bold text-blue-700">
                     {{ alumni.user.username|slice:':1'|upper }}
                 </div>
                 {% endif %}
                 <div>
-                    <h3 class="text-xl font-bold dark:text-gray-100 mb-1">{{ alumni.user.username }}</h3>
+                    <h3 class="text-xl font-bold mb-1">{{ alumni.user.username }}</h3>
                     <div class="flex flex-wrap gap-2 mb-1">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 project-list-tag">{{ alumni.experience_level }}</span>
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 project-list-tag">{{ alumni.graduation_year }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 project-list-tag">{{ alumni.experience_level }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 project-list-tag">{{ alumni.graduation_year }}</span>
                         {% if alumni.is_available_for_mentoring %}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200">Mentor</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Mentor</span>
                         {% endif %}
                         {% for tag in alumni.tags.all %}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200">{{ tag.name }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">{{ tag.name }}</span>
                         {% endfor %}
                     </div>
                     <div class="text-sm">{{ alumni.current_position }} @ {{ alumni.company }}</div>
                 </div>
             </div>
-            <div class="mb-4 dark:text-gray-300 line-clamp-3">{{ alumni.bio }}</div>
+            <div class="mb-4 line-clamp-3">{{ alumni.bio }}</div>
             <div class="flex items-center gap-3 mt-auto alumni-list-social-media-icons">
                 {% if alumni.linkedin_url %}
                 <a href="{{ alumni.linkedin_url }}" target="_blank" title="LinkedIn" class="hover:scale-110 transition"><img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="20" height="20"></a>
@@ -70,7 +70,7 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center text-gray-500 dark:text-gray-400">Hiç mezun bulunamadı.</div>
+        <div class="col-span-full text-center text-gray-500">Hiç mezun bulunamadı.</div>
         {% endfor %}
     </div>
 </div>
