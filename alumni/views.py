@@ -43,7 +43,6 @@ def alumni_list(request):
         'query': query,
     })
 
-@login_required
 def alumni_detail(request, alumni_id):
     alumni = get_object_or_404(AlumniProfile, id=alumni_id)
     experiences = alumni.experiences.all()

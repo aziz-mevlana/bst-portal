@@ -1,27 +1,27 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Mezun Profilini Düzenle{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-8 alumni-detail-page-container">
     <div class="max-w-4xl mx-auto">
         <!-- Başlık -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Mezun Profilini Düzenle</h1>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">Profil bilgilerinizi güncelleyerek diğer mezunlarla bağlantı kurabilirsiniz.</p>
+            <h1 class="text-3xl font-bold">Mezun Profilini Düzenle</h1>
+            <p class="mt-2">Profil bilgilerinizi güncelleyerek öğrencilerle bağlantı kurabilirsiniz.</p>
         </div>
 
         <form method="post" class="space-y-6">
             {% csrf_token %}
             
             <!-- Temel Bilgiler -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Temel Bilgiler</h2>
+            <div class="color-page rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold  mb-6">Temel Bilgiler</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Mezuniyet Yılı -->
                     <div>
-                        <label for="graduation_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="graduation_year" class="block text-sm font-medium  mb-2">
                             Mezuniyet Yılı <span class="text-red-500">*</span>
                         </label>
                         <input type="number" 
@@ -30,18 +30,18 @@
                                value="{{ profile.graduation_year }}" 
                                min="1950" 
                                max="2030"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
 
                     <!-- Deneyim Seviyesi -->
                     <div>
-                        <label for="experience_level" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="experience_level" class="block text-sm font-medium  mb-2">
                             Deneyim Seviyesi <span class="text-red-500">*</span>
                         </label>
                         <select name="experience_level" 
                                 id="experience_level" 
-                                class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                             <option value="junior" {% if profile.experience_level == 'junior' %}selected{% endif %}>Junior (0-2 yıl)</option>
                             <option value="mid" {% if profile.experience_level == 'mid' %}selected{% endif %}>Mid-Level (2-5 yıl)</option>
                             <option value="senior" {% if profile.experience_level == 'senior' %}selected{% endif %}>Senior (5+ yıl)</option>
@@ -50,7 +50,7 @@
 
                     <!-- Pozisyon -->
                     <div>
-                        <label for="current_position" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="current_position" class="block text-sm font-medium  mb-2">
                             Mevcut Pozisyon <span class="text-red-500">*</span>
                         </label>
                         <input type="text" 
@@ -58,13 +58,13 @@
                                id="current_position" 
                                value="{{ profile.current_position }}" 
                                placeholder="Örn: Software Developer"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
 
                     <!-- Şirket -->
                     <div>
-                        <label for="company" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="company" class="block text-sm font-medium  mb-2">
                             Şirket <span class="text-red-500">*</span>
                         </label>
                         <input type="text" 
@@ -72,37 +72,35 @@
                                id="company" 
                                value="{{ profile.company }}" 
                                placeholder="Örn: ABC Teknoloji"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
                 </div>
 
                 <!-- Hakkında -->
                 <div class="mt-6">
-                    <label for="bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label for="bio" class="block text-sm font-medium  mb-2">
                         Hakkınızda
                     </label>
                     <textarea name="bio" 
                               id="bio" 
                               rows="4" 
                               placeholder="Kendinizden, deneyimlerinizden ve hedeflerinizden bahsedin..."
-                              class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">{{ profile.bio }}</textarea>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Maksimum 500 karakter</p>
+                              class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">{{ profile.bio }}</textarea>
+                    <p class="mt-2 text-sm ">Maksimum 500 karakter</p>
                 </div>
             </div>
 
             <!-- Sosyal Medya Linkleri -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Sosyal Medya Linkleri</h2>
+            <div class="color-page rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold  mb-6">Sosyal Medya Linkleri</h2>
                 
                 <div class="space-y-4">
                     <!-- LinkedIn -->
                     <div>
-                        <label for="linkedin_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="linkedin_url" class="block text-sm font-medium  mb-2">
                             <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                                </svg>
+                                <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                                 LinkedIn
                             </div>
                         </label>
@@ -111,16 +109,14 @@
                                id="linkedin_url" 
                                value="{{ profile.linkedin_url }}" 
                                placeholder="https://linkedin.com/in/kullaniciadi"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
 
                     <!-- GitHub -->
                     <div>
-                        <label for="github_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="github_url" class="block text-sm font-medium  mb-2">
                             <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                                </svg>
+                                <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                                 GitHub
                             </div>
                         </label>
@@ -129,16 +125,14 @@
                                id="github_url" 
                                value="{{ profile.github_url }}" 
                                placeholder="https://github.com/kullaniciadi"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
 
                     <!-- Kişisel Web Sitesi -->
                     <div>
-                        <label for="personal_website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label for="personal_website" class="block text-sm font-medium  mb-2">
                             <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                                </svg>
+                                <img src="{% static 'images/icons/profile.svg' %}" alt="Kişisel Web Sitesi" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                                 Kişisel Web Sitesi
                             </div>
                         </label>
@@ -147,14 +141,14 @@
                                id="personal_website" 
                                value="{{ profile.personal_website }}" 
                                placeholder="https://orneksite.com"
-                               class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
                 </div>
             </div>
 
             <!-- Yetenekler ve Mentorluk -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Yetenekler ve Mentorluk</h2>
+            <div class="color-page dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold  dark:text-white mb-6">Yetenekler ve Mentorluk</h2>
                 
                 <!-- Mentorluk -->
                 <div class="mb-6">
@@ -163,17 +157,17 @@
                                name="is_available_for_mentoring" 
                                id="is_available_for_mentoring" 
                                {% if profile.is_available_for_mentoring %}checked{% endif %}
-                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700">
-                        <span class="ml-3 text-gray-700 dark:text-gray-300">
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-3  ">
                             <span class="font-medium">Mentorluk yapmak istiyorum</span>
-                            <span class="block text-sm text-gray-500 dark:text-gray-400">Diğer mezunlara kariyer yolculuklarında yardımcı olabilirsiniz</span>
+                            <span class="block text-sm  ">Öğrencilere kariyer yolculuklarında yardımcı olabilirsiniz</span>
                         </span>
                     </label>
                 </div>
 
                 <!-- Etiketler -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    <label class="block text-sm font-medium  mb-3">
                         Yetenekleriniz
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -183,8 +177,8 @@
                                    name="tags" 
                                    value="{{ tag.id }}" 
                                    {% if tag in profile.tags.all %}checked{% endif %}
-                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm ">{{ tag.name }}</span>
                         </label>
                         {% endfor %}
                     </div>
@@ -194,7 +188,7 @@
             <!-- Form Aksiyonları -->
             <div class="flex flex-col sm:flex-row gap-4 justify-end">
                 <a href="{% url 'alumni:alumni_profile' %}" 
-                   class="inline-flex justify-center items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                   class="inline-flex justify-center items-center px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium  color-page hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     İptal
                 </a>
                 <button type="submit" 
@@ -214,7 +208,7 @@
 document.getElementById('bio').addEventListener('input', function() {
     const maxLength = 500;
     const currentLength = this.value.length;
-    const counter = document.querySelector('.text-gray-500');
+    const counter = document.querySelector('.');
     counter.textContent = `${currentLength}/500 karakter`;
     
     if (currentLength > maxLength) {
