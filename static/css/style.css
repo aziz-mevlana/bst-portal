@@ -207,9 +207,10 @@ header.scrolled {
 .profile-dropdown {
     position: relative;
 }
-
-.page-container {
-    min-width: 800px;
+@media (min-width: 1024px) {
+    .page-container {
+        min-width: 800px;
+    }
 }
 
 .profile-button {
@@ -1325,12 +1326,12 @@ footer {
 }
 
 .alumni-list-profile-picture{
-    border: 1px solid #e5e7eb;
+    border: 2px solid #23355a;
     border-radius: 25%;
 }
 
 .dark .alumni-list-profile-picture{
-    border: 1px solid #374151;
+    border: 2px solid #9cbbec;
     border-radius: 25%;
 }
 
@@ -1354,6 +1355,23 @@ footer {
     border: 1px solid #000000;
 }
 
+@media (min-width: 1024px) {
+    .alumni-detail-page-container{
+        min-width: 800px;
+    }
+}
+
+.alumni-experience-card{
+    border: 1px solid #e5e7eb;
+    color: #000000;
+    background: #f7f7f7;
+}
+
+.dark .alumni-experience-card{
+    border: 1px solid #374151;
+    color: #ffffff;
+    background: #181e29;
+}
 
 
 a, a:visited, a:active {
