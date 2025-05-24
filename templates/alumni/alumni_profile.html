@@ -23,7 +23,7 @@
                 <!-- Profil Resmi -->
                  {% if user.profile.profile_picture %}
                  <div class="flex-shrink-0">
-                    <img src="{{ user.profile.profile_picture.url }}" alt="Profil Resmi" class="w-32 h-32 alumni-list-profile-picture">
+                    <img src="{{ user.profile.profile_picture.url }}" alt="Profil Resmi" class="w-33 h-33 alumni-list-profile-picture">
                  </div>
                  {% else %}
                 <div class="flex-shrink-0">
@@ -49,7 +49,7 @@
 
                     <!-- Badges -->
                     <div class="flex flex-wrap gap-2 justify-center md:justify-start mb-4">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-blue">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
@@ -57,11 +57,11 @@
                             </svg>
                             {{ profile.graduation_year }} Mezunu
                         </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-green">
                             {{ profile.get_experience_level_display }}
                         </span>
                         {% if profile.is_available_for_mentoring %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-purple">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
@@ -106,7 +106,7 @@
             <h3 class="text-xl font-semibold  mb-4">Yeteneklerim</h3>
             <div class="flex flex-wrap gap-2">
                 {% for tag in profile.tags.all %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-gray">
                     {{ tag.name }}
                 </span>
                 {% endfor %}
@@ -133,7 +133,7 @@
                                 {{ experience.position }}
                             </h4>
                             {% if experience.is_current %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium alumni-tag-green">
                                 Devam Ediyor
                             </span>
                             {% endif %}

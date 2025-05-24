@@ -169,6 +169,18 @@ header.scrolled {
 .hidden {
     display: none !important;
 }
+.h-33{
+    height: 13rem;
+}
+.w-33{
+    width: 13rem;
+}
+.w-6rem{
+    width: 6rem;
+}
+.h-6rem{
+    height: 6rem;
+}
 
 /* Auth Button */
 .auth-button {
@@ -1376,4 +1388,65 @@ footer {
 
 a, a:visited, a:active {
     text-decoration: none;
+}
+
+/* Alumni List Tag Styles */
+.alumni-tag-blue {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.dark .alumni-tag-blue {
+    background-color: #1e3a8a;
+    color: #dbeafe;
+    border: 1px solid #3b82f6;
+}
+
+.alumni-tag-gray {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.dark .alumni-tag-gray {
+    background-color: #374151;
+    color: #f3f4f6;
+    border: 1px solid #6b7280;
+}
+
+.alumni-tag-green {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.dark .alumni-tag-green {
+    background-color: #064e3b;
+    color: #d1fae5;
+    border: 1px solid #10b981;
+}
+
+.alumni-tag-yellow {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.dark .alumni-tag-yellow {
+    background-color: #78350f;
+    color: #fef3c7;
+    border: 1px solid #f59e0b;
+}
+
+.alumni-tag-purple {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border: 1px solid #c4b5fd;
+}
+
+.dark .alumni-tag-purple {
+    background-color: #4c1d95;
+    color: #ede9fe;
+    border: 1px solid #8b5cf6;
 }

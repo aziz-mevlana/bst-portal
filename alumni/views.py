@@ -43,9 +43,11 @@ def alumni_list(request):
         'query': query,
     })
 
-def alumni_detail(request, alumni_id):
-    alumni = get_object_or_404(AlumniProfile, id=alumni_id)
+def alumni_detail(request, username):
+    alumni = get_object_or_404(AlumniProfile, user__username=username)
     experiences = alumni.experiences.all()
+    if alumni.user.username == request.user.username:
+        return redirect('alumni:alumni_profile')
     return render(request, 'alumni/alumni_detail.html', {
         'alumni': alumni,
         'experiences': experiences
