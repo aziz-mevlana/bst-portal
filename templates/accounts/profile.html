@@ -2,8 +2,12 @@
 
 {% block title %}Profilim{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+{% endblock %}
+
 {% block content %}
-<div class="profile-page    page-container">
+<div class="profile-page page-container">
     <div class="profile-page__header">
         <h1 class="profile-page__title">Profilim</h1>
     </div>
@@ -36,7 +40,7 @@
         </div>
 
         <div class="profile-page__content">
-            <form method="post" enctype="multipart/form-data" class="profile-page__form">
+            <form method="post" enctype="multipart/form-data" class="profile-page__form" id="profileForm">
                 {% csrf_token %}
                 
                 <div class="profile-page__form-group">
@@ -63,8 +67,19 @@
 
                 <div class="profile-page__form-group">
                     <label for="id_profile_picture" class="profile-page__label">Profil Fotoğrafı</label>
-                    <input type="file" name="profile_picture" id="id_profile_picture" class="profile-page__input">
+                    <input type="file" name="profile_picture_file" id="id_profile_picture" class="profile-page__input" accept="image/*">
+                    <input type="hidden" name="profile_picture" id="croppedImageData">
                     <small class="profile-page__help-text">Önerilen boyut: 400x400 piksel</small>
+                    
+                    <!-- Kırpılmış resim önizlemesi -->
+                    <div id="croppedPreview" class="profile-page__cropped-preview" style="display: none;">
+                        <img id="croppedImage" alt="Kırpılmış resim">
+                        <button type="button" class="profile-page__remove-btn" onclick="removeCroppedImage()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="profile-page__form-group">
@@ -76,6 +91,27 @@
                     <button type="submit" class="profile-page__button">Değişiklikleri Kaydet</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Fotoğraf Kırpma Modal -->
+<div id="cropperModal" class="cropper-modal opacity-9" style="display: none;">
+    <div class="cropper-modal__content">
+        <div class="cropper-modal__header">
+            <h3 class="cropper-modal__title">Profil Fotoğrafını Kırp</h3>
+            <button type="button" class="cropper-modal__close" onclick="closeCropperModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="cropper-modal__body">
+            <img id="cropperImage" alt="Kırpılacak resim">
+        </div>
+        <div class="cropper-modal__footer">
+            <button type="button" class="cropper-modal__btn cropper-modal__btn--cancel" onclick="closeCropperModal()">İptal</button>
+            <button type="button" class="cropper-modal__btn cropper-modal__btn--primary" onclick="cropImage()">Kırp ve Kaydet</button>
         </div>
     </div>
 </div>
@@ -341,5 +377,392 @@
         padding: 1.5rem;
     }
 }
+
+/* Kırpılmış Resim Önizlemesi */
+.profile-page__cropped-preview {
+    margin-top: 1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.profile-page__cropped-preview img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5e7eb;
+}
+
+.dark .profile-page__cropped-preview img {
+    border-color: #4b5563;
+}
+
+.profile-page__remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.profile-page__remove-btn:hover {
+    background-color: #dc2626;
+    transform: scale(1.1);
+}
+
+.dark .profile-page__remove-btn {
+    border-color: #1f2937;
+}
+
+/* Cropper Modal Stilleri */
+.cropper-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+}
+
+.opacity-9 {
+    opacity: 0.9;
+}
+
+.cropper-modal__content {
+    background: white;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    z-index: 10000;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .cropper-modal__content {
+    background: #1f2937;
+}
+
+.cropper-modal__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+}
+
+.dark .cropper-modal__header {
+    border-bottom-color: #374151;
+    background: #1f2937;
+}
+
+.cropper-modal__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+}
+
+.dark .cropper-modal__title {
+    color: #f3f4f6;
+}
+
+.cropper-modal__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: #6b7280;
+    transition: color 0.2s;
+    position: relative;
+    z-index: 10001;
+}
+
+.cropper-modal__close:hover {
+    color: #1f2937;
+}
+
+.dark .cropper-modal__close {
+    color: #9ca3af;
+}
+
+.dark .cropper-modal__close:hover {
+    color: #f3f4f6;
+}
+
+.cropper-modal__body {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    max-height: 500px;
+    overflow: hidden;
+    background: #f9fafb;
+}
+
+.dark .cropper-modal__body {
+    background: #111827;
+}
+
+.cropper-modal__body img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+
+.cropper-modal__footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    background: white;
+}
+
+.dark .cropper-modal__footer {
+    border-top-color: #374151;
+    background: #1f2937;
+}
+
+.cropper-modal__btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    position: relative;
+    z-index: 10001;
+    pointer-events: auto;
+}
+
+.cropper-modal__btn--cancel {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.cropper-modal__btn--cancel:hover {
+    background-color: #d1d5db;
+}
+
+.dark .cropper-modal__btn--cancel {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+.dark .cropper-modal__btn--cancel:hover {
+    background-color: #4b5563;
+}
+
+.cropper-modal__btn--primary {
+    background-color: #003366;
+    color: white;
+}
+
+.cropper-modal__btn--primary:hover {
+    background-color: #002244;
+}
+
+.dark .cropper-modal__btn--primary {
+    background-color: #1e40af;
+}
+
+.dark .cropper-modal__btn--primary:hover {
+    background-color: #1d4ed8;
+}
+
+/* Cropper.js özelleştirmeleri */
+.cropper-container {
+    max-height: 400px !important;
+    background-color: transparent !important;
+}
+
+.cropper-view-box,
+.cropper-face {
+    border-radius: 50%;
+}
+
+/* Cropper.js z-index düzeltmeleri */
+.cropper-container {
+    z-index: 10002 !important;
+}
+
+.cropper-modal .cropper-container .cropper-modal,
+.cropper-modal .cropper-container .cropper-bg {
+    background-color: transparent !important;
+}
+
+/* Mobil için */
+@media (max-width: 640px) {
+    .cropper-modal__content {
+        margin: 1rem;
+        max-height: 80vh;
+    }
+    
+    .cropper-modal__body {
+        min-height: 300px;
+        max-height: 400px;
+    }
+}
+
+/* Form inputu düzeltme */
+input[type="file"]#id_profile_picture {
+    cursor: pointer;
+}
+
+/* Modal açıkken body scroll'u engelle */
+body.modal-open {
+    overflow: hidden;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+let cropper;
+const cropperModal = document.getElementById('cropperModal');
+const cropperImage = document.getElementById('cropperImage');
+const fileInput = document.getElementById('id_profile_picture');
+const croppedImageData = document.getElementById('croppedImageData');
+const croppedPreview = document.getElementById('croppedPreview');
+const croppedImage = document.getElementById('croppedImage');
+
+// Dosya seçildiğinde
+fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Modal'ı göster
+            cropperModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Sayfa kaydırmasını engelle
+            
+            // Resmi yükle
+            cropperImage.src = e.target.result;
+            
+            // Biraz bekle ve sonra cropper'ı başlat
+            setTimeout(function() {
+                // Önceki cropper'ı temizle
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                // Yeni cropper oluştur
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                    background: false,
+                    modal: true,
+                    zoomable: true,
+                    scalable: true,
+                    minCropBoxWidth: 100,
+                    minCropBoxHeight: 100,
+                });
+            }, 100);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Resmi kırp
+function cropImage() {
+    if (cropper) {
+        const canvas = cropper.getCroppedCanvas({
+            width: 400,
+            height: 400,
+            imageSmoothingQuality: 'high',
+        });
+        
+        if (canvas) {
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Base64 veriyi sakla
+                        croppedImageData.value = e.target.result;
+                        
+                        // Önizlemeyi göster
+                        croppedImage.src = e.target.result;
+                        croppedPreview.style.display = 'block';
+                        
+                        // Modal'ı kapat
+                        closeCropperModal();
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }, 'image/jpeg', 0.9);
+        }
+    }
+}
+
+// Modal'ı kapat
+function closeCropperModal() {
+    cropperModal.style.display = 'none';
+    document.body.style.overflow = ''; // Sayfa kaydırmasını geri aç
+    
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    
+    // File input'u temizle
+    fileInput.value = '';
+}
+
+// Kırpılmış resmi kaldır
+function removeCroppedImage() {
+    croppedImageData.value = '';
+    croppedPreview.style.display = 'none';
+    fileInput.value = '';
+}
+
+// ESC tuşu ile modal'ı kapat
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && cropperModal.style.display === 'flex') {
+        closeCropperModal();
+    }
+});
+
+// Modal dışına tıklanınca kapat
+cropperModal.addEventListener('click', function(e) {
+    if (e.target === cropperModal) {
+        closeCropperModal();
+    }
+});
+
+// Modal içindeki tıklamaların dışarı yayılmasını engelle
+document.querySelector('.cropper-modal__content').addEventListener('click', function(e) {
+    e.stopPropagation();
+});
+</script>
 {% endblock %} 

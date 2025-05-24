@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from .models import UserProfile
+import base64
+from django.core.files.base import ContentFile
 
 def login_view(request):
     if request.method == 'POST':
@@ -50,7 +52,26 @@ def profile_view(request):
         profile = user.profile
         profile.bio = request.POST.get('bio', profile.bio)
         
-        if 'profile_picture' in request.FILES:
+        # Base64 resim verisini işle
+        cropped_image_data = request.POST.get('profile_picture')
+        if cropped_image_data and cropped_image_data.startswith('data:image'):
+            # data:image/jpeg;base64, kısmını ayır
+            format, imgstr = cropped_image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            
+            # Base64'ü decode et ve dosya oluştur
+            data = ContentFile(base64.b64decode(imgstr))
+            file_name = f'profile_{user.id}.{ext}'
+            
+            # Eski profil resmini sil
+            if profile.profile_picture:
+                profile.profile_picture.delete(save=False)
+            
+            # Yeni resmi kaydet
+            profile.profile_picture.save(file_name, data, save=False)
+        
+        # Normal dosya yükleme (fallback)
+        elif 'profile_picture' in request.FILES:
             profile.profile_picture = request.FILES['profile_picture']
         
         profile.save()

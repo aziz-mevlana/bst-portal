@@ -1,16 +1,38 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Giriş Yap | BST Portal{% endblock %}
 
 {% block content %}
-<h2>Giriş Yap</h2>
-<form method="post">
-    {% csrf_token %}
-    <label for="username">Kullanıcı Adı:</label>
-    <input type="text" name="username" id="username" required><br>
-    <label for="password">Şifre:</label>
-    <input type="password" name="password" id="password" required><br>
-    <button type="submit">Giriş Yap</button>
-</form>
-<p>Hesabınız yok mu? <a href="{% url 'accounts:register' %}">Kayıt Ol</a></p>
-{% endblock %} 
+<div class="flex items-center justify-center min-h-[70vh] page-container">
+    <div class="w-full max-w-md p-8 color-page rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-2 text-center">Giriş Yap</h2>
+        <p class="mb-6 text-center">BST Portal'a hoş geldiniz. Lütfen giriş yapın.</p>
+        
+        {% if form.errors %}
+            <div class="mb-4 p-3 bg-red-100 rounded">
+                Kullanıcı adı veya şifre hatalı.
+            </div>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div>
+                <label for="username" class="block text-sm font-medium mb-1">Kullanıcı Adı</label>
+                <input type="text" name="username" id="username" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium mb-1">Şifre</label>
+                <input type="password" name="password" id="password" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <button type="submit" class="w-full mt-2 py-2 px-4 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Giriş Yap
+            </button>
+        </form>
+
+        <p class="mt-4 text-center text-sm">
+            Hesabınız yok mu?
+            <a href="{% url 'accounts:register' %}" class="text-blue-600 font-medium hover:underline">Kayıt Ol</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

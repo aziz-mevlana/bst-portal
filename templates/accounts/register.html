@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kayıt Ol | BST Portal{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[70vh] page-container">
+    <div class="w-full max-w-md p-8 color-page rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-2 text-center">Kayıt Ol</h2>
+        <p class="mb-6 text-center">BST Portal'a katılmak için bilgilerinizi girin.</p>
+        
+        {% if form.errors %}
+            <div class="mb-4 p-3 alumni-experience-card rounded">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        {{ error }}<br>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_username" class="block text-sm font-medium mb-1">Kullanıcı Adı</label>
+                <input type="text" name="username" id="id_username" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
+            </div>
+            <div>
+                <label for="id_email" class="block text-sm font-medium mb-1">E-posta</label>
+                <input type="email" name="email" id="id_email" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+                <label for="id_password1" class="block text-sm font-medium mb-1">Şifre</label>
+                <input type="password" name="password1" id="id_password1" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+                <label for="id_password2" class="block text-sm font-medium mb-1">Şifre (Tekrar)</label>
+                <input type="password" name="password2" id="id_password2" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <button type="submit" class="w-full mt-2 py-2 px-4 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Kayıt Ol
+            </button>
+        </form>
+
+        <p class="mt-4 text-center text-sm">
+            Zaten hesabınız var mı?
+            <a href="{% url 'accounts:login' %}" class="text-blue-600 font-medium hover:underline">Giriş Yap</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
