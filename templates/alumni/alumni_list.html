@@ -6,7 +6,7 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-2">Mezunlar Dizini</h1>
-    <p class="mb-6 text-gray-600">Bölümümüz mezunlarıyla bağlantı kurun.</p>
+    <p class="mb-6">Bölümümüz mezunlarıyla bağlantı kurun.</p>
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <input type="text" name="q" class="project-list-input col-span-1 md:col-span-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
@@ -38,9 +38,7 @@
                     {% if alumni.user.profile.profile_picture %}
                     <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover border-2 border-blue-100 alumni-list-profile-picture">
                     {% else %}
-                    <div class="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-2xl font-bold text-blue-700">
-                        {{ alumni.user.username|slice:':1'|upper }}
-                    </div>
+                        <img src="{% static 'images/icons/profile.svg' %}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover border-2 border-blue-100 alumni-list-profile-picture icon-thema">
                     {% endif %}
                     <div>
                         <h3 class="text-xl font-bold mb-1">{{ alumni.user.username }}</h3>
@@ -72,8 +70,10 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center text-gray-500 ">Hiç mezun bulunamadı.</div>
+        <div class="col-span-full text-center ">Hiç mezun bulunamadı.</div>
         {% endfor %}
     </div>
 </div>
+
+
 {% endblock %} 

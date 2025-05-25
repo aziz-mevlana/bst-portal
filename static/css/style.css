@@ -179,6 +179,16 @@ header.scrolled {
     justify-content: space-between;
 }
 
+.icon-thema{
+    background-color: #f3f4f6;
+    border: 1px solid #374151;
+}
+
+.dark .icon-thema{
+    background-color: #181e29;
+    border: 1px solid #374151;
+}
+
 /* Logo Styles */
 .nav-logo {
     display: flex;
@@ -1473,7 +1483,6 @@ footer {
 }
 
 .dark .alumni-list-profile-picture{
-    border: 2px solid #9cbbec;
     border-radius: 25%;
 }
 
@@ -1628,4 +1637,41 @@ a, a:visited, a:active {
     background-color: #0c4a6e;
     color: #e0f2fe;
     border: 1px solid #0ea5e9;
+}
+
+.made-by{
+    font-weight: bold;
+    color: gray;
+}
+
+.made-by:hover{
+    color: #2c3ab1;
+}
+
+.dark .made-by:hover{
+    color: #3746c5;
+}
+
+/* Cropper modal overlay */
+#cropperModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Cropper container */
+.cropper-modal__content {
+    max-width: 90%;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    pointer-events: auto;
 }

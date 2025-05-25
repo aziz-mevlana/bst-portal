@@ -27,9 +27,7 @@
                  </div>
                  {% else %}
                 <div class="flex-shrink-0">
-                    <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold">
-                        {{ profile.user.first_name.0 }}{{ profile.user.last_name.0 }}
-                    </div>
+                    <img src="{% static 'images/icons/profile.svg' %}" alt="Profil Resmi" class="w-33 h-33 alumni-list-profile-picture icon-thema">
                 </div>
                 {% endif %}
 
@@ -73,17 +71,17 @@
                     <!-- Sosyal Medya Linkleri -->
                     <div class="flex flex-wrap gap-3 justify-center md:justify-start">
                         {% if profile.linkedin_url %}
-                        <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                        <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
                         {% if profile.github_url %}
-                        <a href="{{ profile.github_url }}" target="_blank" class="inline-flex items-center  hover:">
+                        <a href="{{ profile.github_url }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
                         {% if profile.personal_website %}
-                        <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+                        <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/profile.svg' %}" alt="Kişisel Web Sitesi" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
@@ -106,7 +104,7 @@
             <h3 class="text-xl font-semibold  mb-4">Yeteneklerim</h3>
             <div class="flex flex-wrap gap-2">
                 {% for tag in profile.tags.all %}
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-gray">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium alumni-tag-blue">
                     {{ tag.name }}
                 </span>
                 {% endfor %}
@@ -125,8 +123,9 @@
                 {% for experience in experiences %}
                 <div class="relative pl-8 pb-6 {% if not forloop.last %}border-l-2 border-gray-200 {% endif %}">
                     <!-- Timeline dot -->
+                    {% if experience.is_current %}
                     <div class="absolute left-0 top-0 -ml-2 w-4 h-4 rounded-full bg-blue-600 animate-pulse"></div>
-                    
+                    {% endif %}
                     <div class="bg-gray-50 rounded-lg p-4 alumni-experience-card">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
                             <h4 class="text-lg font-semibold ">

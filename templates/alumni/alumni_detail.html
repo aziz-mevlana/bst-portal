@@ -3,7 +3,7 @@
 {% block title %}{{ alumni.user.get_full_name }} - Mezun Detayı{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 alumni-detail-page-container    ">
+<div class="container mx-auto px-4 py-8 alumni-detail-page-container">
     <div class="max-w-4xl mx-auto">
         <!-- Profil Kartı -->
         <div class="color-page rounded-lg shadow-lg p-6 mb-6">
@@ -15,9 +15,7 @@
                     </div>
                  {% else %}
                     <div class="flex-shrink-0">
-                        <div class="w-33 h-33 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-3xl font-bold">
-                            {{ alumni.user.first_name.0 }}{{ alumni.user.last_name.0 }}
-                        </div>
+                        <img src="{% static 'images/icons/profile.svg' %}" alt="Profil Resmi" class="w-33 h-33 alumni-list-profile-picture icon-thema">
                     </div>
                  {% endif %}
 
@@ -59,17 +57,17 @@
                     <!-- Sosyal Medya Linkleri -->
                     <div class="flex flex-wrap gap-3 justify-center md:justify-start">
                         {% if alumni.linkedin_url %}
-                        <a href="{{ alumni.linkedin_url }}" target="_blank" class="inline-flex items-center">
+                        <a href="{{ alumni.linkedin_url }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
                         {% if alumni.github_url %}
-                        <a href="{{ alumni.github_url }}" target="_blank" class="inline-flex items-center">
+                        <a href="{{ alumni.github_url }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
                         {% if alumni.personal_website %}
-                        <a href="{{ alumni.personal_website }}" target="_blank" class="inline-flex items-center">
+                        <a href="{{ alumni.personal_website }}" target="_blank" class="inline-flex items-center hover:scale-110 transition">
                             <img src="{% static 'images/icons/profile.svg' %}" alt="Kişisel Web Sitesi" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
                         </a>
                         {% endif %}
@@ -108,7 +106,9 @@
                 {% for experience in experiences %}
                 <div class="relative pl-8 pb-6 {% if not forloop.last %}border-l-2 border-gray-200{% endif %}">
                     <!-- Timeline dot -->
+                    {% if experience.is_current %}
                     <div class="absolute left-0 top-0 -ml-2 w-4 h-4 rounded-full bg-blue-600 animate-pulse"></div>
+                    {% endif %}
                     
                     <div class="alumni-experience-card rounded-lg p-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">

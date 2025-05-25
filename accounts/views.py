@@ -55,27 +55,40 @@ def profile_view(request):
         # Base64 resim verisini işle
         cropped_image_data = request.POST.get('profile_picture')
         if cropped_image_data and cropped_image_data.startswith('data:image'):
-            # data:image/jpeg;base64, kısmını ayır
-            format, imgstr = cropped_image_data.split(';base64,')
-            ext = format.split('/')[-1]
-            
-            # Base64'ü decode et ve dosya oluştur
-            data = ContentFile(base64.b64decode(imgstr))
-            file_name = f'profile_{user.id}.{ext}'
-            
-            # Eski profil resmini sil
-            if profile.profile_picture:
-                profile.profile_picture.delete(save=False)
-            
-            # Yeni resmi kaydet
-            profile.profile_picture.save(file_name, data, save=False)
+            try:
+                # Formatı doğru şekilde ayır
+                format, imgstr = cropped_image_data.split(';base64,')
+                ext = format.split('/')[-1]
+                
+                # Desteklenen format kontrolü
+                if ext not in ['jpeg', 'png', 'gif']:
+                    ext = 'jpeg'  # Varsayılan format
+                
+                # Base64'ü decode et ve dosya oluştur
+                data = ContentFile(base64.b64decode(imgstr))
+                file_name = f'profile_{user.id}.{ext}'
+                
+                # Eski profil resmini sil
+                if profile.profile_picture:
+                    profile.profile_picture.delete(save=False)
+                
+                # Yeni resmi kaydet
+                profile.profile_picture.save(file_name, data, save=True)
+                messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
+                
+            except Exception as e:
+                messages.error(request, f'Profil fotoğrafı güncellenirken hata oluştu: {str(e)}')
         
         # Normal dosya yükleme (fallback)
-        elif 'profile_picture' in request.FILES:
-            profile.profile_picture = request.FILES['profile_picture']
+        elif 'profile_picture_file' in request.FILES:
+            try:
+                profile.profile_picture = request.FILES['profile_picture_file']
+                profile.save()
+                messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
+            except Exception as e:
+                messages.error(request, f'Dosya yüklenirken hata oluştu: {str(e)}')
         
         profile.save()
-        messages.success(request, 'Profiliniz başarıyla güncellendi.')
         return redirect('accounts:profile')
     
     return render(request, 'accounts/profile.html')
