@@ -14,16 +14,6 @@
         <h1 class="profile-page__title">Profilim</h1>
     </div>
 
-    {% if messages %}
-    <div class="profile-page__messages">
-        {% for message in messages %}
-        <div class="profile-page__alert {% if message.tags %}profile-page__alert--{{ message.tags }}{% endif %}">
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <div class="profile-page__card">
         <div class="profile-page__card-header">
             <div class="profile-page__avatar-container">

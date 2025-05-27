@@ -34,7 +34,7 @@ def register_view(request):
             user = form.save()
             login(request, user)
             messages.success(request, 'Hesabınız başarıyla oluşturuldu.')
-            return redirect('accounts:profile_edit')
+            return redirect('accounts:profile')
     else:
         form = UserCreationForm()
     
