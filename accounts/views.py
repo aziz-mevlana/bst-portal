@@ -16,7 +16,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, 'Başarıyla giriş yaptınız.')
-            return redirect('events:event_list')
+            return redirect('portal:index')
         else:
             messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
     
