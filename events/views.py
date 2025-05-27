@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Event
@@ -18,13 +18,23 @@ def event_detail(request, event_id):
 @login_required
 def create_event(request):
     if request.method == 'POST':
-        # Event oluşturma işlemleri burada yapılacak
-        pass
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        event_type = request.POST.get('event_type')
+        location = request.POST.get('location')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        image = request.FILES.get('image')
+        event = Event.objects.create(
+            title=title,
+            description=description,
+            event_type=event_type,
+            location=location,
+            start_date=start_date,
+            end_date=end_date,
+            image=image,
+            created_by=request.user
+        )
+        messages.success(request, 'Etkinlik başarıyla oluşturuldu.')
+        return redirect('events:event_detail', event_id=event.id)
     return render(request, 'events/create_event.html')
-
-@login_required
-def create_news(request):
-    if request.method == 'POST':
-        # Haber oluşturma işlemleri burada yapılacak
-        pass
-    return render(request, 'events/create_news.html')

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Etkinlik Oluştur | BST Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 page-container color-page rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-8 text-center">Yeni Etkinlik Oluştur</h2>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label class="block mb-2 font-semibold" for="title">Başlık</label>
+            <input type="text" id="title" name="title" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+        </div>
+        <div>
+            <label class="block mb-2 font-semibold" for="description">Açıklama</label>
+            <textarea id="description" name="description" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="4" required></textarea>
+        </div>
+        <div class="flex flex-col md:flex-row md:gap-4">
+            <div class="flex-1 mb-4 md:mb-0">
+                <label class="block mb-2 font-semibold" for="event_type">Etkinlik Türü</label>
+                <select id="event_type" name="event_type" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+                    <option value="seminar">Seminer</option>
+                    <option value="workshop">Atölye</option>
+                    <option value="conference">Konferans</option>
+                    <option value="social">Sosyal Etkinlik</option>
+                    <option value="other">Diğer</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block mb-2 font-semibold" for="location">Konum</label>
+                <input type="text" id="location" name="location" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+            </div>
+        </div>
+        <div class="flex flex-col md:flex-row md:gap-4">
+            <div class="flex-1 mb-4 md:mb-0">
+                <label class="block mb-2 font-semibold" for="start_date">Başlangıç Tarihi</label>
+                <input type="datetime-local" id="start_date" name="start_date" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+            </div>
+            <div class="flex-1">
+                <label class="block mb-2 font-semibold" for="end_date">Bitiş Tarihi</label>
+                <input type="datetime-local" id="end_date" name="end_date" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+            </div>
+        </div>
+        <div>
+            <label class="block mb-2 font-semibold" for="image">Görsel</label>
+            <input type="file" id="image" name="image" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+        </div>
+        <div class="flex justify-end">
+            <button type="submit" class="px-8 py-2 project-list-button hover:bg-blue-100 rounded font-semibold transition">Oluştur</button>
+        </div>
+    </form>
+</div>
+{% endblock %} 

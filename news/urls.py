@@ -6,4 +6,5 @@ app_name = 'news'
 urlpatterns = [
     path('', views.news_list, name='news_list'),
     path('<int:pk>/', views.news_detail, name='news_detail'),
+    path('yeni/', views.create_news, name='create_news'),
 ] 

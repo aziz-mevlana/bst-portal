@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Haber Oluştur | BST Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 page-container color-page rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-8 text-center">Yeni Haber Oluştur</h2>
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label class="block mb-2 font-semibold" for="title">Başlık</label>
+            <input type="text" id="title" name="title" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+        </div>
+        <div>
+            <label class="block mb-2 font-semibold" for="summary">Özet</label>
+            <textarea id="summary" name="summary" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="2" required></textarea>
+        </div>
+        <div>
+            <label class="block mb-2 font-semibold" for="content">İçerik</label>
+            <textarea id="content" name="content" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="6" required></textarea>
+        </div>
+        <div class="flex flex-col md:flex-row md:gap-4">
+            <div class="flex-1 mb-4 md:mb-0">
+                <label class="block mb-2 font-semibold" for="news_type">Haber Tipi</label>
+                <input type="text" id="news_type" name="news_type" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+            </div>
+            <div class="flex-1">
+                <label class="block mb-2 font-semibold" for="news_category">Haber Kategorisi</label>
+                <input type="text" id="news_category" name="news_category" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+            </div>
+        </div>
+        <div class="flex flex-col md:flex-row md:gap-4">
+            <div class="flex-1 mb-4 md:mb-0">
+                <label class="block mb-2 font-semibold" for="source">Kaynak</label>
+                <input type="text" id="source" name="source" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+            </div>
+            <div class="flex-1">
+                <label class="block mb-2 font-semibold" for="url">Haber Linki</label>
+                <input type="url" id="url" name="url" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+            </div>
+        </div>
+        <div>
+            <label class="block mb-2 font-semibold" for="image">Görsel</label>
+            <input type="file" id="image" name="image" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+        </div>
+        <div class="flex justify-end">
+            <button type="submit" class="px-8 py-2 project-list-button hover:bg-blue-100 rounded font-semibold transition">Oluştur</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

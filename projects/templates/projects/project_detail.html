@@ -59,8 +59,8 @@
           {% endif %}
           {% if user == project.student or user == project.supervisor %}
           <div class="flex gap-2 mt-6">
-            <a href="{% url 'projects:project_update' project.id %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Projeyi Düzenle</a>
-            <a href="{% url 'projects:add_project_update' project.id %}" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Güncelleme Ekle</a>
+            <a href="{% url 'projects:project_update' project.id %}" class="px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 project-list-button transition">Projeyi Düzenle</a>
+            <a href="{% url 'projects:add_project_update' project.id %}" class="px-4 py-2 bg-green-600 text-white hover:text-green-600 rounded-lg font-semibold hover:bg-green-100 transition">Güncelleme Ekle</a>
           </div>
           {% endif %}
         </div>
@@ -70,7 +70,7 @@
           <form method="post" action="{% url 'projects:add_comment' project.id %}" class="p-6 mb-6">
             {% csrf_token %}
             {{ comment_form.as_p }}
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition mt-2">Yorum Ekle</button>
+            <button type="submit" class="px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 project-list-button transition mt-2">Yorum Ekle</button>
           </form>
           <div class="space-y-4">
             {% for comment in comments %}

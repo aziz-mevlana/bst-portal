@@ -486,6 +486,7 @@ header.scrolled {
     border-color: #374151;
 }
 
+
 /* Mobile Menu Button */
 .mobile-menu-button {
     display: block;
@@ -1439,9 +1440,23 @@ footer {
     border: 1px solid #374151;
 }
 
+.project-list-button{
+    background: rgb(37, 99, 235);
+    color: #ffffff;
+}
+
+.project-list-button:hover{
+    background: rgb(37, 99, 235);
+    color: #281a74;
+}
+
 .dark .project-list-button{
     background: rgb(37, 99, 235);
     color: #ffffff;
+}
+
+.dark .project-list-button:hover{
+    color: rgb(37, 99, 235);
 }
 
 .project-detail-item{

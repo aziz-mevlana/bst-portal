@@ -1,183 +1,176 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Ana Sayfa - BST Portal{% endblock %}
+{% block title %}
+  Ana Sayfa - BST Portal
+{% endblock %}
 
 {% block content %}
-<div>
+  <div>
     <!-- Hero Section -->
     <div class="hero-container">
-        <section class="hero-section">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    <span class="block">BST Portal'a</span>
-                    <span class="block text-accent-300">Hoş Geldiniz</span>
-                </h1>
-                <p class="hero-subtitle">
-                    Bilişim Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiren bir topluluk platformu.
-                </p>
-                <div class="hero-buttons">
-                    <a href="{% url 'projects:project_list' %}" class="hero-button hero-button-primary">
-                        Projeleri Keşfet
-                    </a>
-                    <a href="{% url 'alumni:alumni_list' %}" class="hero-button hero-button-secondary">
-                        Mezunlarla Bağlantı Kur
-                    </a>
-                </div>
-            </div>
-        </section>
+      <section class="hero-section">
+        <div class="hero-overlay">
+          <!-- Yazılım temalı ikonlar -->
+          <div style="display: flex; justify-content: center; gap: 16px; margin-top: 150px;">
+            <img src="{% static 'images/icons/code.svg' %}" alt="Kod" style="width: 250px; height: 250px;" />
+            <img src="{% static 'images/icons/terminal.svg' %}" alt="Terminal" style="width: 250px; height: 250px;" />
+            <img src="{% static 'images/icons/cloud.svg' %}" alt="Bulut" style="width: 250px; height: 250px;" />
+            <img src="{% static 'images/icons/laptop.svg' %}" alt="Laptop" style="width: 250px; height: 250px;" />
+          </div>
+        </div>
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <span class="block">BST Portal'a</span>
+            <span class="block text-accent-300">Hoş Geldiniz</span>
+          </h1>
+          <p class="hero-subtitle">Bilişim Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiren bir topluluk platformu.</p>
+          <div class="hero-buttons">
+            <a href="{% url 'projects:project_list' %}" class="hero-button hero-button-primary">Projeleri Keşfet</a>
+            <a href="{% url 'alumni:alumni_list' %}" class="hero-button hero-button-secondary">Mezunlarla Bağlantı Kur</a>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- Events & News Section -->
     <section class="content-section">
-        <div class="section-grid">
-            <!-- Events -->
-            <div>
-                <div class="section-header">
-                    <h2 class="section-title">Etkinlikler</h2>
-                    <a href="{% url 'events:event_list' %}" class="section-link">
-                        Tüm etkinlikleri gör
-                        <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="ml-1 h-4 w-4 section-link-icon">
-                    </a>
-                </div>
+      <div class="section-grid">
+        <!-- Events -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">Etkinlikler</h2>
+            <a href="{% url 'events:event_list' %}" class="section-link">
+              Tüm etkinlikleri gör
+              <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="ml-1 h-4 w-4 section-link-icon" />
+            </a>
+          </div>
 
-                {% if events %}
-                    <div class="card-grid">
-                        {% for event in events %}
-                            <div class="card event-card">
-                                <div class="card-content">
-                                    <div class="card-icon d-flex align-items-center mb-2">
-                                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded" style="width: 32px; height: 32px;">
-                                        <div class="card-date-container">
-                                            <div class="card-date">
-                                                {{ event.start_date|date:"d M" }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div>
-                                            <h3 class="card-title">{{ event.title }}</h3>
-                                            <p class="card-description">{{ event.description }}</p>
-                                        </div>
-                                        <div class="card-meta">
-                                            <span class="event-location">{{ event.location }}</span>
-                                            <span class="card-meta-separator">•</span>
-                                            <span class="event-time">{{ event.start_date|date:"H:i" }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
+          {% if events %}
+            <div class="card-grid">
+              {% for event in events %}
+                <a href="{% url 'events:event_detail' event.id %}">
+                  <div class="card event-card">
+                    <div class="card-content md:w-full">
+                      <div class="card-icon d-flex align-items-center mb-2">
+                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded" style="width: 32px; height: 32px;" />
+                        <div class="card-date-container">
+                          <div class="card-date">{{ event.start_date|date:'d M' }}</div>
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        <div>
+                          <h3 class="card-title">{{ event.title }}</h3>
+                          <p class="card-description">{{ event.description }}</p>
+                        </div>
+                        <div class="card-meta">
+                          <span class="event-location">{{ event.location }}</span>
+                          <span class="card-meta-separator">•</span>
+                          <span class="event-time">{{ event.start_date|date:'H:i' }}</span>
+                        </div>
+                      </div>
                     </div>
-                {% else %}
-                    <div class="card-grid">
-                        {% for _ in "123" %}
-                            <div class="loading-skeleton"></div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+                  </div>
+                </a>
+              {% endfor %}
             </div>
-
-            <!-- News -->
-            <div>
-                <div class="section-header">
-                    <h2 class="section-title">Haberler</h2>
-                    <a href="{% url 'news:news_list' %}" class="section-link">
-                        Tüm haberleri gör
-                        <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="section-link-icon ml-1 h-4 w-4">
-                    </a>
-                </div>
-
-                {% if news %}
-                    <div class="card-grid">
-                        {% for item in news %}
-                            <div class="card">
-                                <div class="card-content md:w-full">
-                                    <div class="card-icon d-flex align-items-center mb-2">
-                                        <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded" style="width: 32px; height: 32px;">
-                                        <div class="card-date-container">
-                                            <div class="card-date">
-                                                {{ item.date|date:"d M" }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div>
-                                            <h3 class="card-title">{{ item.title }}</h3>
-                                            <p class="card-description">{{ item.content }}</p>
-                                        </div>
-                                        <div class="flex flex-col flex-1 justify-end">
-                                            <div class="card-meta">
-                                                <span>{{ item.source }}</span>
-                                            </div>
-                                            {% if item.url %}
-                                                <div class="flex justify-end items-end mt-2">
-                                                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="card-link">
-                                                        Devamını oku
-                                                        <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
-                                                    </a>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="card-grid">
-                        {% for _ in "123" %}
-                            <div class="loading-skeleton"></div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+          {% else %}
+            <div class="card-grid">
+              {% for _ in 123 %}
+                <div class="loading-skeleton"></div>
+              {% endfor %}
             </div>
+          {% endif %}
         </div>
+
+        <!-- News -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">Haberler</h2>
+            <a href="{% url 'news:news_list' %}" class="section-link">
+              Tüm haberleri gör
+              <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="section-link-icon ml-1 h-4 w-4" />
+            </a>
+          </div>
+
+          {% if news %}
+            <div class="card-grid">
+              {% for item in news %}
+                <a href="{% url 'news:news_detail' item.id %}">
+                  <div class="card news-card">
+                    <div class="card-content md:w-full">
+                      <div class="card-icon d-flex align-items-center mb-2">
+                        <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded" style="width: 32px; height: 32px;" />
+                        <div class="card-date-container">
+                          <div class="card-date">{{ item.date|date:'d M' }}</div>
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        <div>
+                          <h3 class="card-title">{{ item.title }}</h3>
+                          <p class="card-description">{{ item.content }}</p>
+                        </div>
+                        <div class="flex flex-col flex-1 justify-end">
+                          <div class="card-meta">
+                            <span>{{ item.source }}</span>
+                          </div>
+                          
+                            <div class="flex justify-end items-end mt-2 card-link">
+                                Devamını oku
+                                <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="h-3 w-3" />
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </a> 
+            </div>
+          {% else %}
+            <div class="card-grid">
+              {% for _ in 123 %}
+                <div class="loading-skeleton"></div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </section>
 
     <!-- Features Section -->
     <div class="home-main-container">
-        <div class="text-center">
-            <h2 class="section-title">Neler Sunuyoruz?</h2>
-            <div style="align-self: center;">
-                <p class="section-desc">
-                    Platformumuz, Bilgisayar Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiriyor.
-                </p>
-            </div>
+      <div class="text-center">
+        <h2 class="section-title">Neler Sunuyoruz?</h2>
+        <div style="align-self: center;">
+          <p class="section-desc">Platformumuz, Bilgisayar Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiriyor.</p>
         </div>
-        <div class="features-grid">
-            <!-- Feature 1 -->
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <img src="{% static 'images/icons/document.svg' %}" alt="" class="h-6 w-6">
-                </div>
-                <h3 class="feature-title">Proje Vitrini</h3>
-                <p class="feature-description">
-                    Projelerinizi yükleyin ve sergileyin. Öğretim üyeleri ve arkadaşlarınızdan geri bildirim alarak çalışmalarınızı geliştirin.
-                </p>
-            </div>
-            <!-- Feature 2 -->
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <img src="{% static 'images/icons/users.svg' %}" alt="" class="h-6 w-6">
-                </div>
-                <h3 class="feature-title">Mezun Ağı</h3>
-                <p class="feature-description">
-                    Sizden önce mezun olanlarla bağlantı kurun. Deneyimlerinden öğrenin ve profesyonel ilişkiler geliştirin.
-                </p>
-            </div>
-            <!-- Feature 3 -->
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <img src="{% static 'images/icons/newspaper.svg' %}" alt="" class="h-6 w-6">
-                </div>
-                <h3 class="feature-title">Teknoloji Haberleri</h3>
-                <p class="feature-description">
-                    BST öğrencileri için özel olarak seçilmiş teknoloji dünyasındaki son gelişmeler ve haberlerle güncel kalın.
-                </p>
-            </div>
+      </div>
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <img src="{% static 'images/icons/document.svg' %}" alt="" class="h-6 w-6" />
+          </div>
+          <h3 class="feature-title">Proje Vitrini</h3>
+          <p class="feature-description">Projelerinizi yükleyin ve sergileyin. Öğretim üyeleri ve arkadaşlarınızdan geri bildirim alarak çalışmalarınızı geliştirin.</p>
         </div>
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <img src="{% static 'images/icons/users.svg' %}" alt="" class="h-6 w-6" />
+          </div>
+          <h3 class="feature-title">Mezun Ağı</h3>
+          <p class="feature-description">Sizden önce mezun olanlarla bağlantı kurun. Deneyimlerinden öğrenin ve profesyonel ilişkiler geliştirin.</p>
+        </div>
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <img src="{% static 'images/icons/newspaper.svg' %}" alt="" class="h-6 w-6" />
+          </div>
+          <h3 class="feature-title">Teknoloji Haberleri</h3>
+          <p class="feature-description">BST öğrencileri için özel olarak seçilmiş teknoloji dünyasındaki son gelişmeler ve haberlerle güncel kalın.</p>
+        </div>
+      </div>
     </div>
-</div>
-{% endblock %} 
+  </div>
+{% endblock %}

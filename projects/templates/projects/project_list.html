@@ -9,7 +9,7 @@
 <div class="max-w-7xl mx-auto px-4 py-8 page-container-large">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <h2 class="text-3xl font-bold">Projeler</h2>
-        <a href="{% url 'projects:project_create' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+        <a href="{% url 'projects:project_create' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg shadow hover:bg-blue-100 project-list-button transition">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
@@ -31,7 +31,7 @@
             <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
+        <button type="submit" class="px-4 py-2 rounded-lg shadow hover:bg-blue-100 project-list-button transition">Filtrele</button>
     </form>
     <!-- Proje Listesi -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -18,19 +18,19 @@
             {% endif %}
         </div>
         <h1 class="text-3xl font-bold mb-4">{{ news.title }}</h1>
-        <div class="flex items-center gap-4 text-sm text-gray-600 mb-4 card-link ">
+        <div class="flex items-center gap-4 text-sm text-gray-600 mb-4 ">
             <span class="flex items-center gap-1">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1 card-link">
                     <img src="{% static 'images/icons/calendar.svg' %}" alt="Tarih" class="w-4 h-4">
                     {{ news.date|date:"d.m.Y H:i" }}
                 </div>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/profile.svg' %}" alt="Yazar" class="w-4 h-4">
                 {{ news.created_by.get_full_name|default:news.created_by.username }}
             </span>
             {% if news.source %}
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/globe.svg' %}" alt="Kaynak" class="w-4 h-4">
                 {{ news.source }}
             </span>
