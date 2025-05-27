@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ news.title }} | BST Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 page-container-large">
+    <!-- Haber Başlığı ve Meta Bilgileri -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
+                {{ news.news_type|default:"Genel" }}
+            </span>
+            {% if news.news_category %}
+            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-gray">
+                {{ news.news_category }}
+            </span>
+            {% endif %}
+        </div>
+        <h1 class="text-3xl font-bold mb-4">{{ news.title }}</h1>
+        <div class="flex items-center gap-4 text-sm text-gray-600 mb-4 card-link ">
+            <span class="flex items-center gap-1">
+                <div class="flex items-center gap-1">
+                    <img src="{% static 'images/icons/calendar.svg' %}" alt="Tarih" class="w-4 h-4">
+                    {{ news.date|date:"d.m.Y H:i" }}
+                </div>
+            </span>
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/profile.svg' %}" alt="Yazar" class="w-4 h-4">
+                {{ news.created_by.get_full_name|default:news.created_by.username }}
+            </span>
+            {% if news.source %}
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/globe.svg' %}" alt="Kaynak" class="w-4 h-4">
+                {{ news.source }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Haber Görseli -->
+    {% if news.image %}
+    <div class="mb-8">
+        <img src="{{ news.image.url }}" alt="{{ news.title }}" class="w-full h-auto rounded-lg shadow-lg">
+    </div>
+    {% endif %}
+
+    <!-- Haber Özeti -->
+    {% if news.summary %}
+    <div class="mb-8 p-4 rounded-lg color-page">
+        <p class="text-lg ">{{ news.summary }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Haber İçeriği -->
+    <div class="prose max-w-none mb-8">
+        {{ news.content|linebreaks }}
+    </div>
+
+    <!-- Kaynak Linki -->
+    {% if news.url %}
+    <div class="mt-8 pt-4 border-t">
+        <a href="{{ news.url }}" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transitionmt-auto inline-block px-4 py-2 bg-blue-50  text-blue-700  rounded-lg font-semibold hover:bg-blue-100 transition text-center project-list-button">
+            <img src="{% static 'images/icons/external-link.svg' %}" alt="Kaynak" class="w-4 h-4">
+            Kaynak Habere Git
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

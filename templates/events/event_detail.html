@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.title }} | BST Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 page-container-large">
+    <!-- Etkinlik Başlığı ve Meta Bilgileri -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
+                {{ event.get_event_type_display }}
+            </span>
+            {% if event.is_active %}
+            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-green">
+                Aktif
+            </span>
+            {% endif %}
+        </div>
+        <h1 class="text-3xl font-bold mb-4">{{ event.title }}</h1>
+        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4 card-link">
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/calendar.svg' %}" alt="Başlangıç" class="w-4 h-4">
+                {{ event.start_date|date:"d.m.Y H:i" }}
+            </span>
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/calendar.svg' %}" alt="Bitiş" class="w-4 h-4">
+                {{ event.end_date|date:"d.m.Y H:i" }}
+            </span>
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/location.svg' %}" alt="Konum" class="w-4 h-4">
+                {{ event.location }}
+            </span>
+            <span class="flex items-center gap-1">
+                <img src="{% static 'images/icons/profile.svg' %}" alt="Organizatör" class="w-4 h-4">
+                {{ event.created_by.get_full_name|default:event.created_by.username }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Etkinlik Görseli -->
+    {% if event.image %}
+    <div class="mb-8">
+        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-auto rounded-lg shadow-lg">
+    </div>
+    {% endif %}
+
+    <!-- Etkinlik Açıklaması -->
+    <div class="prose max-w-none mb-8">
+        {{ event.description|linebreaks }}
+    </div>
+
+    <!-- Etkinlik Durumu -->
+    <div class="mt-8 p-4 color-page rounded-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold mb-2">Etkinlik Durumu</h3>
+                <p class="">
+                    {% if event.start_date > now %}
+                        Etkinlik {{ event.start_date|timeuntil }} sonra başlayacak
+                    {% elif event.end_date > now %}
+                        Etkinlik devam ediyor
+                    {% else %}
+                        Etkinlik sona erdi
+                    {% endif %}
+                </p>
+            </div>
+            {% if event.is_active and event.start_date > now %}
+            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                Katıl
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Son Güncelleme -->
+    <div class="mt-8 pt-4 border-t text-sm text-gray-500">
+        Son güncelleme: {{ event.updated_at|date:"d.m.Y H:i" }}
+    </div>
+</div>
+{% endblock %}
