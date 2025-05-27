@@ -63,7 +63,7 @@
                                         <div class="card-meta">
                                             <span class="event-location">{{ event.location }}</span>
                                             <span class="card-meta-separator">•</span>
-                                            <span class="event-time">{{ event.start_xdate|date:"H:i" }}</span>
+                                            <span class="event-time">{{ event.start_date|date:"H:i" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -98,7 +98,7 @@
                                         <img src="{% static 'images/icons/globe.svg' %}" alt="globe" class="img-fluid rounded" style="width: 32px; height: 32px;">
                                         <div class="card-date-container">
                                             <div class="card-date">
-                                                {{ item.created_at|date:"d M" }}
+                                                {{ item.date|date:"d M" }}
                                             </div>
                                         </div>
                                     </div>
@@ -109,11 +109,11 @@
                                         </div>
                                         <div class="flex flex-col flex-1 justify-end">
                                             <div class="card-meta">
-                                                <span>{{ item.source_url }}</span>
+                                                <span>{{ item.source }}</span>
                                             </div>
-                                            {% if item.source_url %}
+                                            {% if item.url %}
                                                 <div class="flex justify-end items-end mt-2">
-                                                    <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer" class="card-link">
+                                                    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="card-link">
                                                         Devamını oku
                                                         <img src="{% static 'images/icons/external-link.svg' %}" alt="external-link" class="ml-1 h-3 w-3">
                                                     </a>

@@ -25,7 +25,7 @@ class UserProfile(models.Model):
     department = models.CharField(max_length=100, blank=True, null=True, default='Bilişim Sistemleri ve Teknolojileri')
     graduation_year = models.IntegerField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True, default='default.png')
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

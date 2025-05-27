@@ -359,11 +359,14 @@ header.scrolled {
 .profile-dropdown {
     position: relative;
 }
-@media (min-width: 1024px) {
-    .page-container {
-        min-width: 800px;
+    @media (min-width: 1024px) {
+        .page-container {
+            min-width: 800px;
+        }
+        .page-container-large {
+            min-width: 1000px;
+        }
     }
-}
 
 .profile-button {
     display: flex;

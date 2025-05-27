@@ -1,16 +1,15 @@
-from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.shortcuts import render, get_object_or_404
 from .models import News
 
-# Create your views here.
+def index(request):
+    news = News.objects.all()[:3]
+    return render(request, 'index.html', {'news': news})
 
-class NewsListView(ListView):
-    model = News
-    template_name = 'news/news_list.html'
-    context_object_name = 'news'
-    paginate_by = 10
+def news_list(request):
+    news = News.objects.all()
+    return render(request, 'news/news_list.html', {'news': news})
 
-class NewsDetailView(DetailView):
-    model = News
-    template_name = 'news/news_detail.html'
-    context_object_name = 'news'
+def news_detail(request, pk):
+    news = get_object_or_404(News, pk=pk)
+    return render(request, 'news/news_detail.html', {'news': news})
+
