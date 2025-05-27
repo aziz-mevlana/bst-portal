@@ -5,7 +5,7 @@ from .models import AlumniProfile, AlumniExperience, Tag
 from django.db import models
 
 def alumni_list(request):
-    alumni_list = AlumniProfile.objects.all()
+    alumni_list = AlumniProfile.objects.filter(is_show_in_alumni_list=True)
     tags = Tag.objects.all()
 
     # Arama ve filtreleme parametreleri
@@ -84,6 +84,7 @@ def alumni_profile_edit(request):
         profile.github_url = request.POST.get('github_url')
         profile.personal_website = request.POST.get('personal_website')
         profile.is_available_for_mentoring = request.POST.get('is_available_for_mentoring') == 'on'
+        profile.is_show_in_alumni_list = request.POST.get('is_show_in_alumni_list') == 'on'
         
         # Etiketleri güncelle
         tag_ids = request.POST.getlist('tags')

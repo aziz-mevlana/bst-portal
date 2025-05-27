@@ -29,6 +29,7 @@ class AlumniProfile(models.Model):
     is_available_for_mentoring = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_show_in_alumni_list = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-graduation_year']

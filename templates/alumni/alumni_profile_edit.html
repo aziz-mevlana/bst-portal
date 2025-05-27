@@ -150,7 +150,7 @@
             <div class="color-page dark:bg-gray-800 rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold  dark:text-white mb-6">Yetenekler ve Mentorluk</h2>
                 
-                <!-- Mentorluk -->
+                <!-- Mentorluk ve Görünüm -->
                 <div class="mb-6">
                     <label class="flex items-center">
                         <input type="checkbox" 
@@ -161,6 +161,15 @@
                         <span class="ml-3  ">
                             <span class="font-medium">Mentorluk yapmak istiyorum</span>
                             <span class="block text-sm  ">Öğrencilere kariyer yolculuklarında yardımcı olabilirsiniz</span>
+                        </span>
+                        <input type="checkbox" 
+                               name="is_show_in_alumni_list" 
+                               id="is_show_in_alumni_list" 
+                               {% if profile.is_show_in_alumni_list %}checked{% endif %}
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-3  ">
+                            <span class="font-medium">Profilimi görünüm listesinde göster</span>
+                            <span class="block text-sm  ">Öğrencilerinizin profil listesinde görünür</span>
                         </span>
                     </label>
                 </div>

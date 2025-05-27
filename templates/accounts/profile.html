@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Profilim{% endblock %}
 
 {% block extra_css %}
@@ -28,9 +28,7 @@
                 {% if user.profile.profile_picture %}
                 <img src="{{ user.profile.profile_picture.url }}" alt="Profil Fotoğrafı" class="profile-page__avatar">
                 {% else %}
-                <div class="profile-page__avatar-placeholder">
-                    {{ user.get_full_name|default:user.username|make_list|first|upper }}
-                </div>
+                <img src="{% static "images/icons/profile.svg" %}" alt="Profil Fotoğrafı" class="profile-page__avatar">
                 {% endif %}
             </div>
             <div class="profile-page__info">
@@ -120,7 +118,7 @@
 /* Profil Sayfası Ana Konteyner */
 .profile-page {
     max-width: 800px;
-    margin: 2rem auto;
+    margin: 1rem auto;
     padding: 0 1rem;
 }
 
@@ -365,16 +363,161 @@
     .profile-page__card-header {
         flex-direction: column;
         text-align: center;
-        padding: 1.5rem;
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .profile-page__avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-page__name {
+        font-size: 1.25rem;
+    }
+
+    .profile-page__username {
+        font-size: 0.875rem;
+    }
+
+    .profile-page__content {
+        padding: 1.25rem;
+    }
+
+    .profile-page__form {
+        gap: 1rem;
     }
 
     .profile-page__form-row {
         grid-template-columns: 1fr;
-        gap: 0;
+        gap: 1rem;
+    }
+
+    .profile-page__input {
+        padding: 0.625rem;
+        font-size: 0.875rem;
+    }
+
+    .profile-page__textarea {
+        min-height: 80px;
+    }
+
+    .profile-page__button {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .profile-page__cropped-preview {
+        margin-top: 0.75rem;
+    }
+
+    .profile-page__cropped-preview img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .cropper-modal__content {
+        margin: 0.5rem;
+        max-height: 85vh;
+    }
+
+    .cropper-modal__header {
+        padding: 1rem;
+    }
+
+    .cropper-modal__title {
+        font-size: 1.125rem;
+    }
+
+    .cropper-modal__body {
+        min-height: 250px;
+        max-height: 350px;
+        padding: 1rem;
+    }
+
+    .cropper-modal__footer {
+        padding: 1rem;
+        flex-direction: column;
+    }
+
+    .cropper-modal__btn {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .profile-page__form-group {
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-page__help-text {
+        font-size: 0.75rem;
+    }
+
+    .profile-page__alert {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Tablet için düzenlemeler */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .profile-page {
+        margin: 1.5rem auto;
+    }
+
+    .profile-page__card-header {
+        padding: 1.5rem;
     }
 
     .profile-page__content {
         padding: 1.5rem;
+    }
+
+    .profile-page__form-row {
+        gap: 1.5rem;
+    }
+}
+
+/* Form inputu düzeltme - mobil için */
+@media (max-width: 640px) {
+    input[type="file"]#id_profile_picture {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+
+    /* File input için özel stil */
+    input[type="file"]#id_profile_picture::-webkit-file-upload-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+    }
+}
+
+/* Modal açıkken body scroll'u engelle - mobil için */
+@media (max-width: 640px) {
+    body.modal-open {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* Cropper.js mobil düzenlemeleri */
+@media (max-width: 640px) {
+    .cropper-container {
+        max-height: 300px !important;
+    }
+
+    .cropper-view-box,
+    .cropper-face {
+        border-radius: 50%;
+    }
+
+    .cropper-modal .cropper-container .cropper-modal,
+    .cropper-modal .cropper-container .cropper-bg {
+        background-color: transparent !important;
     }
 }
 

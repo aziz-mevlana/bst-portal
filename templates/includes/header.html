@@ -17,8 +17,8 @@
                 </ul>
             </nav>
 
-            <!-- Right side actions -->
-            <div class="nav-actions">
+            <!-- Right side actions - Desktop -->
+            <div class="nav-actions desktop-only">
                 <!-- Theme Toggle -->
                 <button id="theme-toggle" class="theme-toggle" aria-label="Tema değiştir">
                     <img id="sun-icon" src="{% static 'images/icons/sun.svg' %}" alt="Açık tema" class="h-5 w-5">
@@ -58,13 +58,13 @@
                 {% else %}
                     <a href="{% url 'accounts:login' %}" class="auth-button">Giriş Yap</a>
                 {% endif %}
-
-                <!-- Mobile menu button -->
-                <button id="mobile-menu-button" class="mobile-menu-button" aria-label="Menüyü aç/kapat">
-                    <img id="menu-icon" src="{% static 'images/icons/menu.svg' %}" alt="Menüyü aç" class="h-6 w-6">
-                    <img id="close-icon" src="{% static 'images/icons/close.svg' %}" alt="Menüyü kapat" class="h-6 w-6 hidden">
-                </button>
             </div>
+
+            <!-- Mobile menu button -->
+            <button id="mobile-menu-button" class="mobile-menu-button" aria-label="Menüyü aç/kapat">
+                <img id="menu-icon" src="{% static 'images/icons/menu.svg' %}" alt="Menüyü aç" class="h-6 w-6">
+                <img id="close-icon" src="{% static 'images/icons/close.svg' %}" alt="Menüyü kapat" class="h-6 w-6 hidden">
+            </button>
         </div>
     </div>
 
@@ -76,6 +76,38 @@
                 <li><a href="{% url 'events:event_list' %}" {% if 'events' in request.path %}class="active"{% endif %}>Etkinlikler</a></li>
                 <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                 <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
+                
+                <!-- Mobile Theme Toggle -->
+                <li class="mobile-theme-toggle">
+                    <button id="mobile-theme-toggle" class="mobile-theme-button" aria-label="Tema değiştir">
+                        <img id="mobile-sun-icon" src="{% static 'images/icons/sun.svg' %}" alt="Açık tema" class="h-5 w-5">
+                        <span>Tema Değiştir</span>
+                    </button>
+                </li>
+
+                <!-- Mobile Auth Actions -->
+                {% if user.is_authenticated %}
+                    <li class="mobile-profile-section">
+                        <div class="mobile-profile-header">
+                            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="mobile-profile-avatar">
+                            <span>{{ user.username }}</span>
+                        </div>
+                        <ul class="mobile-profile-menu">
+                            <li><a href="{% url 'accounts:profile' %}">Profil</a></li>
+                            {% if user.alumni_profile %}
+                                <li><a href="{% url 'alumni:alumni_profile' %}">Mezun Profilim</a></li>
+                            {% endif %}
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" class="mobile-logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit">Çıkış</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li><a href="{% url 'accounts:login' %}" class="mobile-auth-button">Giriş Yap</a></li>
+                {% endif %}
             </ul>
         </nav>
     </div>

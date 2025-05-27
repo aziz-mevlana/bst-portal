@@ -1641,7 +1641,11 @@ a, a:visited, a:active {
 
 .made-by{
     font-weight: bold;
-    color: gray;
+    color: #4b5563;
+}
+
+.dark .made-by{
+    color: #9ca3af;
 }
 
 .made-by:hover{
@@ -1649,7 +1653,7 @@ a, a:visited, a:active {
 }
 
 .dark .made-by:hover{
-    color: #3746c5;
+    color: #97a0f7;
 }
 
 /* Cropper modal overlay */
@@ -1675,3 +1679,141 @@ a, a:visited, a:active {
     overflow: hidden;
     pointer-events: auto;
 }
+
+/* Desktop-only sınıfı */
+@media (max-width: 767px) {
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+/* Mobil tema değiştirme butonu */
+.mobile-theme-toggle {
+    margin: 1rem 0;
+    padding: 0.5rem 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .mobile-theme-toggle {
+    border-color: #374151;
+}
+
+.mobile-theme-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: #374151;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dark .mobile-theme-button {
+    color: #d1d5db;
+}
+
+.mobile-theme-button:hover {
+    background-color: #f3f4f6;
+}
+
+.dark .mobile-theme-button:hover {
+    background-color: #374151;
+}
+
+/* Mobil profil bölümü */
+.mobile-profile-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.dark .mobile-profile-section {
+    border-color: #374151;
+}
+
+.mobile-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.mobile-profile-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.mobile-profile-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-profile-menu li a,
+.mobile-profile-menu li button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    color: #374151;
+    font-size: 1rem;
+    text-decoration: none;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dark .mobile-profile-menu li a,
+.dark .mobile-profile-menu li button {
+    color: #d1d5db;
+}
+
+.mobile-profile-menu li a:hover,
+.mobile-profile-menu li button:hover {
+    background-color: #f3f4f6;
+}
+
+.dark .mobile-profile-menu li a:hover,
+.dark .mobile-profile-menu li button:hover {
+    background-color: #374151;
+}
+
+.mobile-logout-form {
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-auth-button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background-color: #003366;
+    color: white;
+    text-align: center;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.dark .mobile-auth-button {
+    background-color: #1d4ed8;
+}
+
+.mobile-auth-button:hover {
+    background-color: #002244;
+}
+
+.dark .mobile-auth-button:hover {
+    background-color: #1e40af;
+}
+
