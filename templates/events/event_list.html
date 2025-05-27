@@ -31,7 +31,7 @@
                     {{ event.start_date|date:"d.m.Y H:i" }}
                 </span>
                 <span class="flex items-center gap-1">
-                    <img src="{{ event.created_by.profile.profile_picture.url }}" alt="Oluşturan" class="w-4 h-4 rounded-full">
+                    <img src="{% if event.created_by.profile.profile_picture %}{{ event.created_by.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Oluşturan" class="w-4 h-4 rounded-full">
                     {{ event.created_by.get_full_name }}
                 </span>
             </div>

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Haberler | BST Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <h2 class="text-3xl font-bold">Haberler</h2>
+        <!-- İsterseniz yeni haber ekleme butonu ekleyebilirsiniz -->
+        {# <a href="" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Yeni Haber
+        </a> #}
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for news in news_list %}
+        <div class="rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full bg-white">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                        {{ news.created_at|date:"d.m.Y" }}
+                    </span>
+                    {% if news.source_url %}
+                    <a href="{{ news.source_url }}" target="_blank" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition">
+                        Kaynak
+                    </a>
+                    {% endif %}
+                </div>
+                <h3 class="text-xl font-bold mb-2">{{ news.title }}</h3>
+                <p class="mb-4 line-clamp-3">{{ news.content|truncatewords:25 }}</p>
+            </div>
+            <div class="flex items-center justify-between text-sm mb-4">
+                <span class="flex items-center gap-1">
+                    <img src="{% static 'images/icons/profile.svg' %}" alt="Ekleyen" class="w-4 h-4 rounded-full">
+                    {{ news.author.get_full_name|default:news.author.username }}
+                </span>
+            </div>
+            {% if news.source_url %}
+            <a href="{{ news.source_url }}" target="_blank" class="mt-auto inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold hover:bg-blue-100 transition text-center w-full">Devamını Oku</a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-span-full">
+            <div class="bg-blue-50 text-blue-700 rounded-lg p-6 text-center font-semibold">Henüz haber bulunmuyor.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

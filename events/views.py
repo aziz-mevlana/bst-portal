@@ -22,7 +22,7 @@ def news_list(request):
 
 def news_detail(request, news_id):
     news = get_object_or_404(News, id=news_id, is_published=True)
-    return render(request, 'events/news_detail.html', {'news': news})
+    return render(request, 'news/news_detail.html', {'news': news})
 
 @login_required
 def create_event(request):
