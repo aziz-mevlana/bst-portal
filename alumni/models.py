@@ -1,9 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import datetime
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -11,13 +11,13 @@ class Tag(models.Model):
 
 class AlumniProfile(models.Model):
     EXPERIENCE_LEVEL_CHOICES = [
-        ('junior', 'Junior (0-2 yıl)'),
-        ('mid', 'Mid-Level (2-5 yıl)'),
-        ('senior', 'Senior (5+ yıl)'),
+        ('junior', 'Junior'),
+        ('mid', 'Mid-Level'),
+        ('senior', 'Senior'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='alumni_profile')
-    graduation_year = models.IntegerField()
+    graduation_year = models.IntegerField(default=datetime.now().year, blank=True, null=True)
     current_position = models.CharField(max_length=200)
     company = models.CharField(max_length=200)
     experience_level = models.CharField(max_length=10, choices=EXPERIENCE_LEVEL_CHOICES)
@@ -33,7 +33,7 @@ class AlumniProfile(models.Model):
 
     class Meta:
         ordering = ['-graduation_year']
-
+        
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.graduation_year}"
 

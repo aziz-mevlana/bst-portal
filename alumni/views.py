@@ -4,6 +4,7 @@ from django.contrib import messages
 from .models import AlumniProfile, AlumniExperience, Tag
 from django.db import models
 
+@login_required
 def alumni_list(request):
     alumni_list = AlumniProfile.objects.filter(is_show_in_alumni_list=True)
     tags = Tag.objects.all()

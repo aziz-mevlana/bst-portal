@@ -8,6 +8,7 @@ class UserProfile(models.Model):
         ('student', 'Öğrenci'),
         ('teacher', 'Öğretim Üyesi'),
         ('alumni', 'Mezun'),
+        ('staff_student', 'Görevli Öğrenci')
     ]
     
     CLASS_CHOICES = [
@@ -15,18 +16,17 @@ class UserProfile(models.Model):
         ('2', '2. Sınıf'),
         ('3', '3. Sınıf'),
         ('4', '4. Sınıf'),
-        ('Alt', 'Altdan Devam Ediyor'),
+        ('alt', 'Altdan Devam Ediyor'),
+        ('bitir', 'Bitirdi')
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='student')
+    user_type = models.CharField(max_length=15, choices=USER_TYPE_CHOICES, default='student')
     student_number = models.CharField(max_length=20, blank=True, null=True)
-    class_level = models.CharField(max_length=10, choices=CLASS_CHOICES, default='1')
+    class_level = models.CharField(max_length=20, choices=CLASS_CHOICES, default='1')
     department = models.CharField(max_length=100, blank=True, null=True, default='Bilişim Sistemleri ve Teknolojileri')
-    graduation_year = models.IntegerField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
-    bio = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

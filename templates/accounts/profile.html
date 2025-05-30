@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+
 {% endblock %}
 
 {% block content %}
@@ -35,29 +37,29 @@
                 
                 <div class="profile-page__form-group">
                     <label for="id_username" class="profile-page__label">Kullanıcı Adı</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" class="profile-page__input" readonly>
+                    <input type="text" name="username" id="id_username" value="{{ user.username }}" class="profile-page__input project-form-input" readonly disabled>
                 </div>
 
                 <div class="profile-page__form-group">
                     <label for="id_email" class="profile-page__label">E-posta</label>
-                    <input type="email" name="email" id="id_email" value="{{ user.email }}" class="profile-page__input">
+                    <input type="email" name="email" id="id_email" value="{{ user.email }}" class="profile-page__input project-form-input" readonly disabled>
                 </div>
 
                 <div class="profile-page__form-row">
                     <div class="profile-page__form-group">
                         <label for="id_first_name" class="profile-page__label">Ad</label>
-                        <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="profile-page__input">
+                        <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="profile-page__input project-form-input">
                     </div>
 
                     <div class="profile-page__form-group">
                         <label for="id_last_name" class="profile-page__label">Soyad</label>
-                        <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="profile-page__input">
+                        <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="profile-page__input project-form-input">
                     </div>
                 </div>
 
                 <div class="profile-page__form-group">
                     <label for="id_profile_picture" class="profile-page__label">Profil Fotoğrafı</label>
-                    <input type="file" name="profile_picture_file" id="id_profile_picture" class="profile-page__input" accept="image/*">
+                    <input type="file" name="profile_picture_file" id="id_profile_picture" class="profile-page__input project-form-input" accept="image/*">
                     <input type="hidden" name="profile_picture" id="croppedImageData">
                     <small class="profile-page__help-text">Önerilen boyut: 400x400 piksel</small>
                     
@@ -74,7 +76,7 @@
 
                 <div class="profile-page__form-group">
                     <label for="id_bio" class="profile-page__label">Hakkımda</label>
-                    <textarea name="bio" id="id_bio" class="profile-page__input profile-page__textarea" rows="4" placeholder="Kendinizden bahsedin...">{{ user.profile.bio }}</textarea>
+                    <textarea name="bio" id="id_bio" class="profile-page__input profile-page__textarea project-form-input" rows="4" placeholder="Kendinizden bahsedin...">{{ user.profile.bio }}</textarea>
                 </div>
 
                 <div class="profile-page__form-actions">

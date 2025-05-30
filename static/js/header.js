@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Theme Toggle
     const themeToggle = document.getElementById('theme-toggle');
+    const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
     const sunIcon = document.getElementById('sun-icon');
     const moonIcon = document.getElementById('moon-icon');
     const html = document.documentElement;
@@ -19,6 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
         moonIcon.classList.toggle('hidden');
         localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
     });
+
+    mobileThemeToggle.addEventListener('click', () => {
+        html.classList.toggle('dark');
+        sunIcon.classList.toggle('hidden');
+        moonIcon.classList.toggle('hidden');
+        localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+
 
     // Profile Dropdown
     const profileButton = document.getElementById('profile-button');

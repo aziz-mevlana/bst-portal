@@ -9,11 +9,18 @@ def news_list(request):
     return render(request, 'news/news_list.html', {'news': news})
 
 def news_detail(request, pk):
-    news = get_object_or_404(News, pk=pk)
-    return render(request, 'news/news_detail.html', {'news': news})
+    try:
+        news = News.objects.get(pk=pk)
+        return render(request, 'news/news_detail.html', {'news': news})
+    except News.DoesNotExist:
+        messages.error(request, 'Haber bulunamadı.')
+        return redirect('news:news_list')
 
 @login_required
 def create_news(request):
+    if request.user.profile.user_type != 'staff_student' and request.user.profile.user_type != 'teacher':
+        return redirect('news:news_list')
+    
     if request.method == 'POST':
         title = request.POST.get('title')
         summary = request.POST.get('summary')

@@ -3,20 +3,23 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Event
 
-def index(request):
-    events = Event.objects.filter(is_active=True)[:3]
-    return render(request, 'index.html', {'events': events})
-
 def event_list(request):
     events = Event.objects.filter(is_active=True)
     return render(request, 'events/event_list.html', {'events': events})
 
 def event_detail(request, event_id):
-    event = get_object_or_404(Event, id=event_id, is_active=True)
-    return render(request, 'events/event_detail.html', {'event': event})
+    try:
+        event = Event.objects.get(id=event_id, is_active=True)
+        return render(request, 'events/event_detail.html', {'event': event})
+    except Event.DoesNotExist:
+        messages.error(request, 'Etkinlik bulunamadı.')
+        return redirect('events:event_list')
 
 @login_required
 def create_event(request):
+    if request.user.profile.user_type != 'staff_student' and request.user.profile.user_type != 'teacher':
+        return redirect('events:event_list')
+    
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description')
