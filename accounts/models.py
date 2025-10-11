@@ -22,6 +22,9 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     user_type = models.CharField(max_length=15, choices=USER_TYPE_CHOICES, default='student')
+    username = models.CharField(max_length=150, unique=True, blank=True, null=True)
+    first_name = models.CharField(max_length=30, blank=True, null=True)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
     student_number = models.CharField(max_length=20, blank=True, null=True)
     class_level = models.CharField(max_length=20, choices=CLASS_CHOICES, default='1')
     department = models.CharField(max_length=100, blank=True, null=True, default='Bilişim Sistemleri ve Teknolojileri')

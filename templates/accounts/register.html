@@ -22,20 +22,28 @@
         <form method="post" class="flex flex-col gap-4">
             {% csrf_token %}
             <div>
-                <label for="id_username" class="block text-sm font-medium mb-1">Kullanıcı Adı</label>
-                <input type="text" name="username" id="id_username" placeholder="örnek:@admin_username" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
+                <label for="id_first_name" class="block text-sm font-medium mb-1">İsim</label>
+                <input type="text" name="first_name" id="id_first_name" placeholder="" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
+            </div>
+            <div>
+                <label for="id_last_name" class="block text-sm font-medium mb-1">Soyisim</label>
+                <input type="text" name="last_name" id="id_last_name" placeholder="" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
+            </div>
+            <div>
+                <label for="id_student_number" class="block text-sm font-medium mb-1">Öğrenci Numarası</label>
+                <input type="text" name="student_number" id="id_student_number" placeholder="9 Haneli" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required autofocus>
             </div>
             <div>
                 <label for="id_email" class="block text-sm font-medium mb-1">E-posta</label>
                 <input type="email" name="email" id="id_email" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
             </div>
             <div>
-                <label for="id_password1" class="block text-sm font-medium mb-1">Şifre</label>
-                <input type="password" name="password1" id="id_password1" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                <label for="id_password_1" class="block text-sm font-medium mb-1">Şifre</label>
+                <input type="password" name="password_1" id="id_password_1" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
             </div>
             <div>
-                <label for="id_password2" class="block text-sm font-medium mb-1">Şifre (Tekrar)</label>
-                <input type="password" name="password2" id="id_password2" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                <label for="id_password_2" class="block text-sm font-medium mb-1">Şifre (Tekrar)</label>
+                <input type="password" name="password_2" id="id_password_2" class="project-form-input w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
             </div>
             <button type="submit" class="w-full mt-2 py-2 px-4 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 Kayıt Ol

@@ -7,6 +7,9 @@
     <title>{% block title %}BST Portal{% endblock %}</title>
     <script src="{% static 'js/tailwind.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -26,6 +29,8 @@
     </main>
 
     {% include 'includes/footer.html' %}
+    <!-- Swiper.js JS -->
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

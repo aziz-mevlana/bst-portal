@@ -30,7 +30,7 @@
                     <div class="profile-dropdown">
                         <button id="profile-button" class="profile-button">
                             <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="profile-avatar">
-                            <span>{{ user.username }}</span>
+                            <span>{{ user.first_name }} {{ user.last_name }}</span>
                             <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="chevron-icon">
                         </button>
 
@@ -92,7 +92,7 @@
                     <li class="mobile-profile-section">
                         <div class="mobile-profile-header">
                             <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="mobile-profile-avatar">
-                            <span>{{ user.username }}</span>
+                            <span>{{ user.name }}</span>
                         </div>
                         <ul class="mobile-profile-menu">
                             <li><a href="{% url 'accounts:profile' %}">Profil</a></li>

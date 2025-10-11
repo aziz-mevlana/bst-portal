@@ -8,33 +8,37 @@
 {% block content %}
   <div>
     <!-- Hero Section -->
-    <div class="hero-container">
-      <section class="hero-section">
-        <div class="hero-overlay">
-          <!-- Yazılım temalı ikonlar -->
-          <div style="display: flex; justify-content: center; gap: 16px; margin-top: 150px;">
-            <img src="{% static 'images/icons/code.svg' %}" alt="Kod" style="width: 250px; height: 250px;" />
-            <img src="{% static 'images/icons/terminal.svg' %}" alt="Terminal" style="width: 250px; height: 250px;" />
-            <img src="{% static 'images/icons/cloud.svg' %}" alt="Bulut" style="width: 250px; height: 250px;" />
-            <img src="{% static 'images/icons/laptop.svg' %}" alt="Laptop" style="width: 250px; height: 250px;" />
+    <div class="hero-container" style="margin-bottom: 2rem;">
+      <!-- Swiper Carousel -->
+      <div class="swiper hero-carousel">
+        <div class="swiper-wrapper">
+          {% for item in news %}
+          <div class="swiper-slide">
+            <a href="{% url 'news:news_detail' item.id %}">
+              {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="slide-image">
+              {% else %}
+                <img src="{% static 'images/placeholder.jpg' %}" alt="Placeholder" class="slide-image">
+              {% endif %}
+              <div class="slide-overlay"></div>
+              <div class="slide-content">
+                <h2 class="slide-title">{{ item.title }}</h2>
+                <p class="slide-description">{{ item.content|truncatewords:20 }}</p>
+              </div>
+            </a>
           </div>
+          {% endfor %}
         </div>
-        <div class="hero-content">
-          <h1 class="hero-title">
-            <span class="block">BST Portal'a</span>
-            <span class="block text-accent-300">Hoş Geldiniz</span>
-          </h1>
-          <p class="hero-subtitle">Bilişim Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiren bir topluluk platformu.</p>
-          <div class="hero-buttons">
-            <a href="{% url 'projects:project_list' %}" class="hero-button hero-button-primary">Projeleri Keşfet</a>
-            <a href="{% url 'alumni:alumni_list' %}" class="hero-button hero-button-secondary">Mezunlarla Bağlantı Kur</a>
-          </div>
-        </div>
-      </section>
+        <!-- Add Pagination -->
+        <div class="swiper-pagination"></div>
+        <!-- Add Navigation -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+      </div>
     </div>
 
     <!-- Events & News Section -->
-    <section class="content-section">
+    <section class="content-section" style="padding-top: 0;">
       <div class="section-grid">
         <!-- Events -->
         <div>
@@ -173,4 +177,30 @@
       </div>
     </div>
   </div>
+
+  {% block extra_js %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const swiper = new Swiper('.hero-carousel', {
+        // Otomatik geçiş ve döngü
+        rewind: true, // Sona gelince başa, baştayken sona döner. Loop'a göre daha stabil.
+        
+        autoplay: {
+          delay: 5000, // 5 saniyede bir sonraki habere geçer
+          disableOnInteraction: false, // Kullanıcı etkileşiminden sonra da devam et
+        },
+        // Geçiş efekti
+        effect: 'fade',
+        fadeEffect: {
+          crossFade: true
+        },
+        // İleri/Geri butonları
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+      });
+    });
+  </script>
+  {% endblock %}
 {% endblock %}

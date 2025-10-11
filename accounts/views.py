@@ -4,14 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
 from .models import UserProfile
+from django.contrib.auth.models import User
 import base64
 from django.core.files.base import ContentFile
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, password=password)
         
         if user is not None:
             login(request, user)
@@ -29,16 +30,46 @@ def logout_view(request):
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Hesabınız başarıyla oluşturuldu.')
-            return redirect('accounts:profile')
-    else:
-        form = UserCreationForm()
-    
-    return render(request, 'accounts/register.html', {'form': form})
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        student_number = request.POST.get('student_number')
+        password_1 = request.POST.get('password_1')
+        password_2 = request.POST.get('password_2')
+        if UserProfile.objects.filter(student_number=student_number).exists():
+            messages.error(request, 'Bu öğrenci numarası zaten kayıtlı.')
+            return redirect('accounts:register')
+        if password_1 != password_2:
+            messages.error(request, 'Şifreler eşleşmiyor.')
+            return redirect('accounts:register')
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Bu email zaten kayıtlı.')
+            return redirect('accounts:register')
+        cleaned_first_name = first_name.strip().lower().replace(' ', '.')
+        cleaned_last_name = last_name.strip().lower().replace(' ', '.')
+        part_student_number = student_number[1:3]
+        base_username = f"@{cleaned_first_name}{cleaned_last_name}{part_student_number}"
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{student_number[-2:]}{counter}"
+            counter += 1
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password_1,
+            first_name=first_name,
+            last_name=last_name
+        )
+        # Profil zaten var mı kontrol et
+        if not UserProfile.objects.filter(user=user).exists():
+            UserProfile.objects.create(
+                user=user,
+                student_number=student_number
+            )
+        messages.success(request, 'Kayıt başarılı. Giriş yapabilirsiniz.')
+        return redirect('accounts:login')
+    return render(request, 'accounts/register.html')
 
 @login_required
 def profile_view(request):
