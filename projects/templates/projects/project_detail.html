@@ -16,8 +16,7 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <h2 class="text-2xl md:text-3xl font-bold text-blue-700 ">{{ project.title }}</h2>
             <div class="flex gap-2">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-blue">{{ project.get_status_display }}</span>
-              <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-gray">{{ project.get_category_display }}</span>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-blue">{{ project.status|capfirst }}</span>
             </div>
           </div>
           <div class="mb-6">
@@ -28,15 +27,16 @@
             <div>
               <h4 class="text-blue-600 font-semibold mb-2">Proje Bilgileri</h4>
               <ul class="dark:text-gray-300 space-y-2">
-                <li><span class="font-medium">Öğrenci:</span> {{ project.student.get_full_name }}</li>
-                <li><span class="font-medium">Danışman:</span> {{ project.supervisor.get_full_name }}</li>
-                <li><span class="font-medium">Başlangıç:</span> {{ project.start_date|date:"d.m.Y" }}</li>
-                <li><span class="font-medium">Bitiş:</span> {{ project.deadline|date:"d.m.Y" }}</li>
+                  <li><span class="font-medium">Oluşturan:</span> {{ project.created_by.get_full_name }}</li>
+                  <li><span class="font-medium">Danışman:</span> {% if project.advisor %}{{ project.advisor.get_full_name }}{% else %}Yok{% endif %}</li>
+                  <li><span class="font-medium">Proje Linki:</span> {% if project.project_link %}<a href="{{ project.project_link }}" class="text-blue-600">{{ project.project_link }}</a>{% else %}Yok{% endif %}</li>
+                  <li><span class="font-medium">Durum:</span> {{ project.status|capfirst }}</li>
+                  <li><span class="font-medium">Eklenme:</span> {{ project.created_at|date:"d.m.Y" }}</li>
               </ul>
               <div>
                 <h4 class="text-blue-600 font-semibold my-2">Takım Üyeleri</h4>
                 <ul class="space-y-2">
-                  {% for member in project.team_members.all %}
+                  {% for member in project.team.all %}
                   <li>{{ member.get_full_name }}</li>
                   {% empty %}
                   <li class="italic">Henüz takım üyesi yok</li>
@@ -45,19 +45,13 @@
               </div>
             </div>
           </div>
-          {% if project.project_url %}
+          {% if project.project_link %}
           <div class="mb-4">
-            <h4 class="text-blue-600 font-semibold mb-2">Proje URL</h4>
-            <a href="{{ project.project_url }}" target="_blank" class="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold hover:bg-blue-100 transition">Projeyi Görüntüle</a>
+            <h4 class="text-blue-600 font-semibold mb-2">Proje Linki</h4>
+            <a href="{{ project.project_link }}" target="_blank" class="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold hover:bg-blue-100 transition">Projeyi Görüntüle</a>
           </div>
           {% endif %}
-          {% if project.attachments %}
-          <div class="mb-4">
-            <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-2">Ekler</h4>
-            <a href="{{ project.attachments.url }}" class="project-detail-url-button inline-block px-4 py-2 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition">Dosyayı İndir</a>
-          </div>
-          {% endif %}
-          {% if user == project.student or user == project.supervisor %}
+          {% if user == project.created_by or user == project.advisor %}
           <div class="flex gap-2 mt-6">
             <a href="{% url 'projects:project_update' project.id %}" class="px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 project-list-button transition">Projeyi Düzenle</a>
             <a href="{% url 'projects:add_project_update' project.id %}" class="px-4 py-2 bg-green-600 text-white hover:text-green-600 rounded-lg font-semibold hover:bg-green-100 transition">Güncelleme Ekle</a>
@@ -100,10 +94,10 @@
             {% endif %}
           </div>
           <ul class="space-y-1 text-sm">
-            <li><span class="font-medium">Durum:</span> {{ project.get_status_display }}</li>
-            <li><span class="font-medium">Kategori:</span> {{ project.get_category_display }}</li>
-            <li><span class="font-medium">Oluşturulma:</span> {{ project.created_at|date:"d.m.Y" }}</li>
-            <li><span class="font-medium">Son Güncelleme:</span> {{ project.updated_at|date:"d.m.Y" }}</li>
+            <li><span class="font-medium">Durum:</span> {{ project.status|capfirst }}</li>
+              <li><span class="font-medium">Oluşturulma:</span> {{ project.created_at|date:"d.m.Y" }}</li>
+              <li><span class="font-medium">Son Güncelleme:</span> {{ project.updated_at|date:"d.m.Y" }}</li>
+              <li><span class="font-medium">Yorumlar:</span> {{ project.comments.count }}</li>
           </ul>
         </div>
         <!-- Proje Güncellemeleri -->
@@ -113,11 +107,11 @@
             {% for update in updates %}
             <div class="rounded-lg p-4">
               <div class="flex items-center justify-between mb-1">
-                <span class="font-semibold text-blue-700">{{ update.title }}</span>
-                <span class="text-xs text-gray-500">{{ update.created_at|date:"d.m.Y H:i" }}</span>
+                <span class="font-semibold text-blue-700">{% if update.which_respons %}{{ update.which_respons }}{% else %}Güncelleme{% endif %}</span>
+                <span class="text-xs text-gray-500">{{ update.updated_at|date:"d.m.Y H:i" }}</span>
               </div>
-              <div class="text-xs text-gray-500 mb-2">{{ update.created_by.get_full_name }}</div>
-              <div class="text-gray-700">{{ update.content }}</div>
+              <div class="text-xs text-gray-500 mb-2">Durum: {% if update.project_status %}{{ update.project_status }}{% else %}—{% endif %}</div>
+              <div class="text-gray-700">{{ update.note }}</div>
             </div>
             {% empty %}
             <div class=" italic">Henüz güncelleme yok.</div>

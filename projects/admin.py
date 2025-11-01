@@ -1,18 +1,28 @@
 from django.contrib import admin
-from .models import Project, ProjectUpdate, ProjectComment
+from .models import Respons, ResponsUpdate, Comment
+from .models import Request
 
-@admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'student', 'supervisor', 'status', 'start_date', 'deadline')
-    search_fields = ('title', 'student__username', 'supervisor__username')
+
+@admin.register(Request)
+class RequestAdmin(admin.ModelAdmin):
+    list_display = ('title', 'teacher', 'created_at')
+    search_fields = ('title', 'teacher__username')
+
+
+@admin.register(Respons)
+class ResponsAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_by', 'advisor', 'status', 'created_at')
+    search_fields = ('title', 'created_by__username', 'advisor__username')
     list_filter = ('status',)
 
-@admin.register(ProjectUpdate)
-class ProjectUpdateAdmin(admin.ModelAdmin):
-    list_display = ('project', 'title', 'created_by', 'created_at')
-    search_fields = ('title', 'content')
 
-@admin.register(ProjectComment)
-class ProjectCommentAdmin(admin.ModelAdmin):
-    list_display = ('project', 'author', 'created_at')
+@admin.register(ResponsUpdate)
+class ResponsUpdateAdmin(admin.ModelAdmin):
+    list_display = ('respons', 'which_respons', 'updated_at')
+    search_fields = ('which_respons', 'note')
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('respons', 'author', 'created_at')
     search_fields = ('content',)

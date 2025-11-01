@@ -18,18 +18,8 @@
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <input type="text" name="q" class="project-list-input col-span-1 md:col-span-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
-        <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
-            <option value="">Kategori Seçin</option>
-            {% for value, label in categories %}
-            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <select name="status" class="project-list-input px-4 py-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
-            <option value="">Durum Seçin</option>
-            {% for value, label in statuses %}
-            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
+        <div class="hidden md:block"></div>
+        <div class="hidden md:block"></div>
         <button type="submit" class="px-4 py-2 rounded-lg shadow hover:bg-blue-100 project-list-button transition">Filtrele</button>
     </form>
     <!-- Proje Listesi -->
@@ -37,16 +27,12 @@
         {% for project in projects %}
         <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
             <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-blue">{{ project.get_status_display }}</span>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-gray">{{ project.get_category_display }}</span>
-                </div>
                 <h3 class="text-xl font-bold mb-2">{{ project.title }}</h3>
                 <p class="mb-4 line-clamp-3">{{ project.description|truncatewords:30 }}</p>
             </div>
             <div class="flex items-center justify-between text-sm mb-4">
-                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ project.student.get_full_name }}</span>
-                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" /></svg>{{ project.start_date|date:"d.m.Y" }}</span>
+                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ project.created_by.get_full_name }}</span>
+                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" /></svg>{{ project.created_at|date:"d.m.Y" }}</span>
             </div>
             <a href="{% url 'projects:project_detail' project.id %}" class="mt-auto inline-block px-4 py-2 bg-blue-50  text-blue-700  rounded-lg font-semibold hover:bg-blue-100 transition text-center w-full project-list-button">Detayları Gör</a>
         </div>

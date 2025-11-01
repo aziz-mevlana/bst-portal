@@ -13,6 +13,7 @@ class News(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Oluşturan")
     news_type = models.CharField(max_length=100, verbose_name="Haber Tipi", null=True, blank=True)
     news_category = models.CharField(max_length=100, verbose_name="Haber Kategorisi", null=True, blank=True)
+    is_homepage = models.BooleanField(default=False, verbose_name="Anasayfa")
 
     def __str__(self):
         return self.title

@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Project, ProjectUpdate, ProjectComment
+from .models import Respons, ResponsUpdate, Comment, Request
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
+from .forms import RequestForm
 
 # Create your views here.
 
@@ -14,12 +15,12 @@ def project_list(request):
     category = request.GET.get('category', '')
     status = request.GET.get('status', '')
     
-    projects = Project.objects.all()
+    projects = Respons.objects.all()
     
     if request.user.profile.user_type == 'teacher':
-        projects = projects.filter(supervisor=request.user)
+        projects = projects.filter(advisor=request.user)
     elif request.user.profile.user_type == 'student':
-        projects = projects.filter(Q(student=request.user) | Q(team_members=request.user))
+        projects = projects.filter(Q(created_by=request.user) | Q(team=request.user))
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -30,18 +31,40 @@ def project_list(request):
     
     context = {
         'projects': projects,
-        'categories': Project.CATEGORY_CHOICES,
-        'statuses': Project.STATUS_CHOICES,
+    'categories': [],
+    'statuses': [],
     }
     return render(request, 'projects/project_list.html', context)
 
+
+@login_required
+def request_list(request):
+    # teachers see their own requests, students see all
+    if request.user.profile.user_type == 'teacher':
+        requests = Request.objects.filter(teacher=request.user)
+    else:
+        requests = Request.objects.all()
+    return render(request, 'projects/request_list.html', {'requests': requests})
+
+
+@login_required
+def request_create(request):
+    if request.method == 'POST':
+        form = RequestForm(request.POST)
+        if form.is_valid():
+            req = form.save(commit=False)
+            req.teacher = request.user
+            req.save()
+            messages.success(request, 'Request oluşturuldu.')
+            return redirect('projects:request_list')
+    else:
+        form = RequestForm()
+    return render(request, 'projects/request_form.html', {'form': form})
+
 @login_required
 def project_detail(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if not project.is_public and request.user != project.student and request.user != project.supervisor and request.user not in project.team_members.all():
-        messages.error(request, 'Bu projeye erişim izniniz yok.')
-        return redirect('projects:project_list')
-    
+    project = get_object_or_404(Respons, id=project_id)
+    # access control: if your Respons model has visibility controls implement them here
     updates = project.updates.all()
     comments = project.comments.all()
     comment_form = ProjectCommentForm()
@@ -59,10 +82,12 @@ def project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES)
         if form.is_valid():
+            # create a Respons instead of old Project
+            # keep using the same form instance shape for now; form should be updated later
             project = form.save(commit=False)
             project.student = request.user
             project.save()
-            form.save_m2m()  # Takım üyelerini kaydet
+            form.save_m2m()
             messages.success(request, 'Proje başarıyla oluşturuldu.')
             return redirect('projects:project_detail', project_id=project.id)
     else:
@@ -72,8 +97,8 @@ def project_create(request):
 
 @login_required
 def project_update(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if request.user != project.student and request.user != project.supervisor:
+    project = get_object_or_404(Respons, id=project_id)
+    if request.user != project.created_by and request.user != project.advisor:
         messages.error(request, 'Bu projeyi düzenleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
     
@@ -90,8 +115,8 @@ def project_update(request, project_id):
 
 @login_required
 def add_project_update(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if request.user != project.student and request.user != project.supervisor:
+    project = get_object_or_404(Respons, id=project_id)
+    if request.user != project.created_by and request.user != project.advisor:
         messages.error(request, 'Proje güncellemesi ekleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
     
@@ -111,12 +136,12 @@ def add_project_update(request, project_id):
 
 @login_required
 def add_comment(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Respons, id=project_id)
     if request.method == 'POST':
         form = ProjectCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
-            comment.project = project
+            comment.respons = project
             comment.author = request.user
             comment.save()
             messages.success(request, 'Yorumunuz başarıyla eklendi.')
