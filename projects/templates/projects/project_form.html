@@ -36,11 +36,45 @@
       <div class="md:col-span-2 flex gap-2 mt-8">
         <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          Cevap Ekle
+          Projeyi Oluştur
         </button>
-        <a href="{% url 'projects:project_list' %}" class="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition">İptal</a>
       </div>
     </form>
   </div>
 </div>
-{% endblock %} 
+  <script>
+    // request_teacher_map is provided by the view as JSON mapping of request id -> teacher id
+    const requestTeacherMap = {{ request_teacher_map|default:'{}'|safe }};
+
+    function findFieldByName(name) {
+      return document.querySelector('[name="' + name + '"]');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const requestField = findFieldByName('request');
+      const advisorField = findFieldByName('advisor');
+
+      if (!requestField || !advisorField) return;
+
+      function applyAdvisorForRequest(requestId) {
+        const teacherId = requestTeacherMap[requestId] ?? null;
+        if (teacherId) {
+          advisorField.value = String(teacherId);
+          advisorField.disabled = true;
+          advisorField.classList.add('opacity-60', 'pointer-events-none');
+        } else {
+          advisorField.disabled = false;
+          advisorField.classList.remove('opacity-60', 'pointer-events-none');
+        }
+      }
+
+      // initial apply
+      applyAdvisorForRequest(requestField.value || '');
+
+      requestField.addEventListener('change', function (e) {
+        applyAdvisorForRequest(e.target.value);
+      });
+    });
+  </script>
+
+  {% endblock %}

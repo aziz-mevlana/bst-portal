@@ -6,6 +6,7 @@ from django.db.models import Q
 from .models import Respons, ResponsUpdate, Comment, Request
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
+import json
 
 # Create your views here.
 
@@ -30,7 +31,7 @@ def project_list(request):
         projects = projects.filter(status=status)
     
     context = {
-        'projects': projects,
+    'projects': projects,
     'categories': [],
     'statuses': [],
     }
@@ -85,7 +86,7 @@ def project_create(request):
             # create a Respons instead of old Project
             # keep using the same form instance shape for now; form should be updated later
             project = form.save(commit=False)
-            project.student = request.user
+            project.created_by = request.user
             project.save()
             form.save_m2m()
             messages.success(request, 'Proje başarıyla oluşturuldu.')
@@ -93,7 +94,10 @@ def project_create(request):
     else:
         form = ProjectForm()
     
-    return render(request, 'projects/project_form.html', {'form': form, 'action': 'create'})
+    # prepare mapping of Request.id -> teacher_id for template JS
+    requests = Request.objects.all().values('id', 'teacher_id')
+    request_teacher_map = {str(r['id']): r['teacher_id'] for r in requests}
+    return render(request, 'projects/project_form.html', {'form': form, 'action': 'create', 'request_teacher_map': json.dumps(request_teacher_map)})
 
 @login_required
 def project_update(request, project_id):

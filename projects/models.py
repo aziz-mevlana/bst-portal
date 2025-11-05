@@ -8,7 +8,7 @@ class Request(models.Model):
     course = models.CharField(max_length=200, blank=True, null=True)
     duration = models.CharField(max_length=100, blank=True, null=True)
     team_size = models.PositiveSmallIntegerField(blank=True, null=True)
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requests')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='requests')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -16,7 +16,11 @@ class Request(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.title} - {self.teacher.get_full_name()}"
+        if self.teacher:
+            return f"{self.title} - {self.teacher.get_full_name()}"
+        else:
+            return self.title
+        
 
 
 class Respons(models.Model):
