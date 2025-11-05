@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Respons, ResponsUpdate, Comment, Request
+from .models import Respons, Request
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
 import json
@@ -87,6 +87,7 @@ def project_create(request):
             # keep using the same form instance shape for now; form should be updated later
             project = form.save(commit=False)
             project.created_by = request.user
+            project.advisor = project.request.teacher  # assign teacher from selected Request
             project.save()
             form.save_m2m()
             messages.success(request, 'Proje başarıyla oluşturuldu.')
