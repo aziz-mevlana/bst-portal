@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 
 
 class Request(models.Model):
-    """Teacher creates a Request that students can respond to."""
     title = models.CharField(max_length=200)
     course = models.CharField(max_length=200, blank=True, null=True)
     duration = models.CharField(max_length=100, blank=True, null=True)
@@ -24,14 +23,20 @@ class Request(models.Model):
 
 
 class Respons(models.Model):
-    """Student response to a Request. Central model holding project info."""
+    STATUS_CHOICES = [
+        ('draft', 'Taslak'),
+        ('approved', 'Onaylandı'),
+        ('rejected', 'Reddedildi'),
+        ('completed', 'Tamamlandı'),
+    ]
+
     request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='responses')
     title = models.CharField(max_length=200)
     advisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='advised_responses')
     description = models.TextField(blank=True, null=True)
     team = models.ManyToManyField(User, related_name='responses', blank=True)
     project_link = models.URLField(blank=True, null=True)
-    status = models.CharField(max_length=50, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_responses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,7 +49,6 @@ class Respons(models.Model):
 
 
 class ResponsUpdate(models.Model):
-    """Updates linked to a Respons (progress, state changes)."""
     respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='updates')
     which_respons = models.CharField(max_length=200, blank=True, null=True)
     when = models.DateTimeField(blank=True, null=True)
@@ -61,7 +65,6 @@ class ResponsUpdate(models.Model):
 
 
 class Comment(models.Model):
-    """Comments attached to a Respons."""
     respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='respons_comments')
     content = models.TextField()
