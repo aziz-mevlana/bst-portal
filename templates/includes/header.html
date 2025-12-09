@@ -19,11 +19,6 @@
 
             <!-- Right side actions - Desktop -->
             <div class="nav-actions desktop-only">
-                <!-- Theme Toggle -->
-                <button id="theme-toggle" class="theme-toggle" aria-label="Tema değiştir">
-                    <img id="sun-icon" src="{% static 'images/icons/sun.svg' %}" alt="Açık tema" class="h-5 w-5">
-                    <img id="moon-icon" src="{% static 'images/icons/moon.svg' %}" alt="Koyu tema" class="h-5 w-5 hidden section-link-icon">
-                </button>
 
                 <!-- Auth Actions -->
                 {% if user.is_authenticated %}
@@ -78,14 +73,7 @@
                 <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                 <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
                 
-                <!-- Mobile Theme Toggle -->
-                <li class="mobile-theme-toggle">
-                    <button id="mobile-theme-toggle" class="mobile-theme-button" aria-label="Tema değiştir">
-                        <img id="sun-icon" src="{% static 'images/icons/sun.svg' %}" alt="Açık tema" class="h-5 w-5">
-                        <img id="moon-icon" src="{% static 'images/icons/moon.svg' %}" alt="Koyu tema" class="h-5 w-5 hidden section-link-icon">
-                        <span>Tema Değiştir</span>
-                    </button>
-                </li>
+                
 
                 <!-- Mobile Auth Actions -->
                 {% if user.is_authenticated %}

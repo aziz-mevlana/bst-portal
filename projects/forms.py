@@ -1,5 +1,5 @@
 from django import forms
-from .models import Respons, ResponsUpdate, Comment
+from .models import Respons, ResponsUpdate, Comment, ProjectCategory, Technology
 from django.contrib.auth.models import User
 
 
@@ -16,18 +16,20 @@ class RequestForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
-    """Form used by views but mapped to the new Respons model."""
+    """Form used by views but mapped to new Respons model."""
     class Meta:
         model = Respons
-        fields = ['request', 'advisor', 'title', 'description', 'project_link', 'status', 'team']
+        fields = ['request', 'advisor', 'title', 'description', 'project_link', 'status', 'team', 'categories', 'technologies']
         widgets = {
             'request': forms.Select(attrs={'class': 'project-form-input'}),
             'advisor': forms.Select(attrs={'class': 'project-form-input'}),
             'title': forms.TextInput(attrs={'class': 'project-form-input'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input'}),
             'project_link': forms.TextInput(attrs={'class': 'project-form-input'}),
-            'status': forms.TextInput(attrs={'class': 'project-form-input'}),
+            'status': forms.Select(attrs={'class': 'project-form-input'}),
             'team': forms.SelectMultiple(attrs={'class': 'project-form-input'}),
+            'categories': forms.CheckboxSelectMultiple(attrs={'class': 'space-y-2'}),
+            'technologies': forms.CheckboxSelectMultiple(attrs={'class': 'space-y-2'}),
         }
 
     def __init__(self, *args, **kwargs):

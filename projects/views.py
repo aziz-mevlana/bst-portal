@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Respons, Request
+from .models import Respons, Request, ProjectCategory, Technology
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
 import json
@@ -13,10 +13,11 @@ import json
 @login_required
 def project_list(request):
     query = request.GET.get('q', '')
-    category = request.GET.get('category', '')
+    category_id = request.GET.get('category', '')
+    technology_id = request.GET.get('technology', '')
     status = request.GET.get('status', '')
     
-    projects = Respons.objects.all()
+    projects = Respons.objects.prefetch_related('categories', 'technologies').all()
     
     if request.user.profile.user_type == 'teacher':
         projects = projects.filter(advisor=request.user)
@@ -25,15 +26,21 @@ def project_list(request):
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    if category:
-        projects = projects.filter(category=category)
+    if category_id:
+        projects = projects.filter(categories__id=category_id)
+    if technology_id:
+        projects = projects.filter(technologies__id=technology_id)
     if status:
         projects = projects.filter(status=status)
     
     context = {
-    'projects': projects,
-    'categories': [],
-    'statuses': [],
+        'projects': projects.distinct(),
+        'categories': ProjectCategory.objects.all(),
+        'technologies': Technology.objects.all(),
+        'statuses': Respons.STATUS_CHOICES,
+        'selected_category': category_id,
+        'selected_technology': technology_id,
+        'selected_status': status,
     }
     return render(request, 'projects/project_list.html', context)
 

@@ -80,9 +80,7 @@ def profile_view(request):
         user.last_name = request.POST.get('last_name', user.last_name)
         user.save()
 
-        profile = user.profile
-        profile.bio = request.POST.get('bio', profile.bio)
-        
+        profile = user.profile        
         # Base64 resim verisini işle
         cropped_image_data = request.POST.get('profile_picture')
         if cropped_image_data and cropped_image_data.startswith('data:image'):
@@ -132,7 +130,6 @@ def profile_edit_view(request):
         profile.student_number = request.POST.get('student_number', profile.student_number)
         profile.department = request.POST.get('department', profile.department)
         profile.phone_number = request.POST.get('phone_number', profile.phone_number)
-        profile.bio = request.POST.get('bio', profile.bio)
         
         if 'profile_picture' in request.FILES:
             profile.profile_picture = request.FILES['profile_picture']

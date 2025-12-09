@@ -141,6 +141,8 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    margin: 0;
+    padding: 0;
 }
 
 .dark body {
@@ -162,14 +164,17 @@ header {
     background-color: #1f2937;
 }
 
+.dark .nav-container {
+    background-color: #1f2937;
+}
+
 header.scrolled {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    width: 100%;
+    background-color: #fff;
 }
 
 .nav-content {
@@ -177,6 +182,10 @@ header.scrolled {
     height: 4rem;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
 .icon-thema{
@@ -233,12 +242,16 @@ header.scrolled {
 @media (min-width: 768px) {
     .nav-links {
         display: block;
+        flex: 1;
+        max-width: 500px;
+        margin: 0 2rem;
     }
 
     .nav-links ul {
         display: flex;
         gap: 2rem;
         list-style: none;
+        justify-content: center;
     }
 
     .nav-links a {
@@ -270,6 +283,10 @@ header.scrolled {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-shrink: 0; /* Prevent shrinking */
+    min-width: 0;   /* Allow flex item to shrink */
+    width: 250px; /* Fixed width to prevent expansion */
+    justify-content: flex-end;
 }
 
 /* Theme Toggle */
@@ -381,6 +398,10 @@ header.scrolled {
     border: none;
     cursor: pointer;
     transition: background-color 0.2s;
+    max-width: 180px; /* Maximum width constraint */
+    min-width: 140px; /* Minimum width for consistency */
+    flex-shrink: 0;   /* Prevent shrinking */
+    overflow: hidden; /* Hide overflow */
 }
 
 .profile-avatar {
@@ -417,6 +438,16 @@ header.scrolled {
 
 .dark .profile-button:hover {
     background-color: #4b5563;
+}
+
+/* Text truncation for long usernames in profile button */
+.profile-button span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px; /* Allow room for avatar and chevron */
+    flex: 1; /* Allow span to grow within button */
+    min-width: 0; /* Enable text truncation in flexbox */
 }
 
 .dropdown-menu {
@@ -772,50 +803,14 @@ main {
     color: #60a5fa;
 }
 
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-    footer {
-        background-color: #1f2937;
-    }
+/* Footer dark mode styles - .dark sınıfı için */
+footer {
+    background-color: #fff;
+    transition: background-color 0.3s ease;
+}
 
-    .footer-logo span {
-        color: #60a5fa;
-    }
-
-    .footer-description {
-        color: #9ca3af;
-    }
-
-    .footer-heading {
-        color: #fff;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-    }
-
-    .footer-links a {
-        color: #9ca3af;
-    }
-
-    .footer-links a:hover {
-        color: #60a5fa;
-    }
-
-    .footer-contact-item svg {
-        color: #9ca3af;
-    }
-
-    .footer-bottom {
-        border-top-color: #374151;
-    }
-
-    .footer-copyright,
-    .footer-legal a {
-        color: #9ca3af;
-    }
-
-    .footer-legal a:hover {
-        color: #60a5fa;
-    }
+.dark footer {
+    background-color: #1f2937;
 }
 
 /* Hero Section */
@@ -1403,7 +1398,14 @@ main {
 }
 
 footer {
-    margin-bottom: 0.5rem;
+    margin-top: auto;
+    margin-bottom: 0;
+    background-color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.dark footer {
+    background-color: #1f2937;
 }
 
 .section-link-icon {
@@ -1917,4 +1919,29 @@ a, a:visited, a:active {
 
 .dark .mobile-auth-button:hover {
     background-color: #1e40af;
+}
+
+/* Responsive adjustments for profile button */
+@media (max-width: 1024px) {
+    .nav-actions {
+        width: 220px;
+    }
+    .profile-button {
+        max-width: 160px;
+    }
+    .profile-button span {
+        max-width: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-actions {
+        width: 200px;
+    }
+    .profile-button {
+        max-width: 140px;
+    }
+    .profile-button span {
+        max-width: 60px;
+    }
 }

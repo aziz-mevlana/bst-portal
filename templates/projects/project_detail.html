@@ -3,118 +3,395 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+<style>
+/* Dynamic category colors */
+.category-tag {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.category-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.category-tag:hover::before {
+    left: 100%;
+}
+
+/* Apply dynamic colors from data attributes */
+.category-tag[data-category-color] {
+    background-color: var(--category-bg);
+    color: var(--category-color);
+    border: 1px solid var(--category-border);
+}
+
+/* Dark mode adjustments */
+.dark .category-tag[data-category-color] {
+    opacity: 0.9;
+}
+
+.dark .category-tag[data-category-color]:hover {
+    opacity: 1;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="w-full max-w-5xl mx-auto px-4 ">
-  <div class="p-8 lg:p-16">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      <!-- Sol Ana İçerik -->
-      <div class="flex flex-col gap-8">
-        <!-- Proje Detay Kartı -->
+<div class="w-full max-w-6xl mx-auto px-4">
+  <div class="p-6 lg:p-12">
+    <!-- Proje Başlık Hero Bölümü -->
+    <div class="project-detail-item rounded-2xl shadow-xl p-8 mb-8 bg-gradient-to-br   dark:to-gray-900">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="px-4 py-2 rounded-full text-sm font-bold project-tag-blue shadow-md">
+              {{ project.status|capfirst }}
+            </span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">
+              <i class="far fa-calendar mr-1"></i>
+              {{ project.created_at|date:"d F Y" }}
+            </span>
+          </div>
+          <h1 class="text-3xl lg:text-4xl font-bold text-blue-800 dark:text-blue-300 mb-4 leading-tight">
+            {{ project.title }}
+          </h1>
+          <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
+            {{ project.description|truncatewords:30 }}
+          </p>
+        </div>
+        {% if project.project_link %}
+        <div class="flex-shrink-0">
+          <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+            <i class="fas fa-external-link-alt"></i>
+            Projeyi Görüntüle
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Sol Ana İçerik (2 kolon) -->
+      <div class="lg:col-span-2 flex flex-col gap-8">
+        <!-- Proje Detayları Kartı -->
         <div class="project-detail-item rounded-xl shadow-lg p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <h2 class="text-2xl md:text-3xl font-bold text-blue-700 ">{{ project.title }}</h2>
-            <div class="flex gap-2">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-blue">{{ project.status|capfirst }}</span>
-            </div>
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+            <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fas fa-info-circle"></i>
+              Proje Detayları
+            </h2>
           </div>
-          <div class="mb-6">
-            <h3 class="text-lg font-semibold text-blue-600 mb-1">Proje Açıklaması</h3>
-            <p class="">{{ project.description }}</p>
-          </div>
-          <div class="grid gap-6 mb-6">
+          
+          <div class="space-y-6">
+            <!-- Tam Açıklama -->
             <div>
-              <h4 class="text-blue-600 font-semibold mb-2">Proje Bilgileri</h4>
-              <ul class="dark:text-gray-300 space-y-2">
-                  <li><span class="font-medium">Oluşturan:</span> {{ project.created_by.get_full_name }}</li>
-                  <li><span class="font-medium">Danışman:</span> {% if project.advisor %}{{ project.advisor.get_full_name }}{% else %}Yok{% endif %}</li>
-                  <li><span class="font-medium">Proje Linki:</span> {% if project.project_link %}<a href="{{ project.project_link }}" class="text-blue-600">{{ project.project_link }}</a>{% else %}Yok{% endif %}</li>
-                  <li><span class="font-medium">Durum:</span> {{ project.status|capfirst }}</li>
-                  <li><span class="font-medium">Eklenme:</span> {{ project.created_at|date:"d.m.Y" }}</li>
-              </ul>
+              <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-2">
+                <i class="fas fa-align-left"></i>
+                Proje Açıklaması
+              </h3>
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+                {{ project.description|linebreaks }}
+              </div>
+            </div>
+            
+            <!-- Proje Kategorileri ve Teknolojiler -->
+            <div class="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 class="text-blue-600 font-semibold my-2">Takım Üyeleri</h4>
-                <ul class="space-y-2">
-                  {% for member in project.team.all %}
-                  <li>{{ member.get_full_name }}</li>
+                <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                  <i class="fas fa-tags"></i>
+                  Proje Kategorileri
+                </h4>
+                <div class="flex flex-wrap gap-2">
+                  {% for category in project.categories.all %}
+                  <span class="category-tag px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md transition-shadow" style="--category-bg: {{ category.color }}20; --category-color: {{ category.color }}; --category-border: {{ category.color }}40;" data-category-color="{{ category.color }}">
+                    {{ category.name }}
+                  </span>
                   {% empty %}
-                  <li class="italic">Henüz takım üyesi yok</li>
+                  <span class="text-gray-500 italic bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full">Kategori belirtilmemiş</span>
                   {% endfor %}
-                </ul>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                  <i class="fas fa-code"></i>
+                  Kullanılan Teknolojiler
+                </h4>
+                <div class="flex flex-wrap gap-2">
+                  {% for technology in project.technologies.all %}
+                  <span class="px-3 py-1.5 rounded-full text-sm font-semibold project-tag-gray shadow-sm hover:shadow-md transition-shadow">
+                    {% if technology.icon %}<i class="{{ technology.icon }} mr-1"></i>{% endif %}
+                    {{ technology.name }}
+                  </span>
+                  {% empty %}
+                  <span class="text-gray-500 italic bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full">Teknoloji belirtilmemiş</span>
+                  {% endfor %}
+                </div>
               </div>
             </div>
           </div>
-          {% if project.project_link %}
-          <div class="mb-4">
-            <h4 class="text-blue-600 font-semibold mb-2">Proje Linki</h4>
-            <a href="{{ project.project_link }}" target="_blank" class="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold hover:bg-blue-100 transition">Projeyi Görüntüle</a>
+        </div>
+
+        <!-- Proje Bilgileri ve Takım Kartı -->
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+            <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fas fa-users"></i>
+              Proje Ekibi ve Bilgileri
+            </h2>
           </div>
-          {% endif %}
+          
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Proje Bilgileri -->
+            <div class="space-y-4">
+              <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                <i class="fas fa-chart-line"></i>
+                Proje Bilgileri
+              </h4>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <span class="font-medium text-gray-600 dark:text-gray-400">Oluşturan</span>
+                <span class="text-gray-800 dark:text-gray-200 font-semibold">{{ project.created_by.get_full_name }}</span>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <span class="font-medium text-gray-600 dark:text-gray-400">Danışman</span>
+                <span class="text-gray-800 dark:text-gray-200 font-semibold">
+                  {% if project.advisor %}{{ project.advisor.get_full_name }}{% else %}<span class="text-gray-500 dark:text-gray-400">Yok</span>{% endif %}
+                </span>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <span class="font-medium text-gray-600 dark:text-gray-400">Durum</span>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">{{ project.status|capfirst }}</span>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <span class="font-medium text-gray-600 dark:text-gray-400">Eklenme</span>
+                <span class="text-gray-800 dark:text-gray-200 font-semibold">{{ project.created_at|date:"d.m.Y" }}</span>
+              </div>
+            </div>
+            </div>
+            
+            <!-- Takım Üyeleri -->
+            <div>
+              <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                <i class="fas fa-user-friends"></i>
+                Takım Üyeleri
+              </h4>
+              <div class="space-y-2">
+                {% for member in project.team.all %}
+                <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div class="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm team-avatar">
+                    {{ member.get_full_name|first|upper }}
+                  </div>
+                  <span class="text-gray-800 dark:text-gray-200 font-medium">{{ member.get_full_name }}</span>
+                </div>
+                {% empty %}
+                <div class="text-gray-500 italic bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-center">
+                  <i class="fas fa-user-slash mr-2"></i>
+                  Henüz takım üyesi yok
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
           {% if user == project.created_by or user == project.advisor %}
-          <div class="flex gap-2 mt-6">
-            <a href="{% url 'projects:project_update' project.id %}" class="px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 project-list-button transition">Projeyi Düzenle</a>
-            <a href="{% url 'projects:add_project_update' project.id %}" class="px-4 py-2 bg-green-600 text-white hover:text-green-600 rounded-lg font-semibold hover:bg-green-100 transition">Güncelleme Ekle</a>
+          <div class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <a href="{% url 'projects:project_update' project.id %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg font-semibold shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 btn-enhanced">
+              <i class="fas fa-edit"></i>
+              Projeyi Düzenle
+            </a>
+            <a href="{% url 'projects:add_project_update' project.id %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg font-semibold shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 btn-enhanced">
+              <i class="fas fa-plus-circle"></i>
+              Güncelleme Ekle
+            </a>
           </div>
           {% endif %}
         </div>
-        <!-- Yorumlar -->
-        <div class="project-detail-item rounded-lg p-6 shadow-lg">
-          <h3 class="text-lg font-semibold text-blue-600 mb-4">Yorumlar</h3>
-          <form method="post" action="{% url 'projects:add_comment' project.id %}" class="p-6 mb-6">
-            {% csrf_token %}
-            {{ comment_form.as_p }}
-            <button type="submit" class="px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 project-list-button transition mt-2">Yorum Ekle</button>
-          </form>
+        <!-- Yorumlar Bölümü -->
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+            <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fas fa-comments"></i>
+              Yorumlar
+              <span class="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-sm rounded-full">
+                {{ comments.count }}
+              </span>
+            </h2>
+          </div>
+          
+          <!-- Yorum Ekleme Formu -->
+          <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Yorum Ekle</h3>
+            <form method="post" action="{% url 'projects:add_comment' project.id %}">
+              {% csrf_token %}
+              <div class="space-y-4">
+                <div>
+                  {{ comment_form.content.label_tag }}
+                  {{ comment_form.content }}
+                </div>
+                <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg font-semibold shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 btn-enhanced">
+                  <i class="fas fa-paper-plane"></i>
+                  Yorum Ekle
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Yorumlar Listesi -->
           <div class="space-y-4">
             {% for comment in comments %}
-            <div class=" rounded-lg p-4">
-              <div class=" mb-1">{{ comment.content }}</div>
-              <div class="text-xs">{{ comment.author.get_full_name }} | {{ comment.created_at|date:"d.m.Y H:i" }}</div>
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition-shadow">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 team-avatar">
+                  {{ comment.author.get_full_name|first|upper }}
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold text-gray-800 dark:text-gray-200">{{ comment.author.get_full_name }}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                      <i class="far fa-clock mr-1"></i>
+                      {{ comment.created_at|date:"d.m.Y H:i" }}
+                    </span>
+                  </div>
+                  <div class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content|linebreaks }}</div>
+                </div>
+              </div>
             </div>
             {% empty %}
-            <div class="italic">Henüz yorum yok.</div>
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-comment-slash text-4xl mb-3 opacity-50"></i>
+              <p class="text-lg">Henüz yorum yok.</p>
+              <p class="text-sm mt-1">İlk yorumu siz yapın!</p>
+            </div>
             {% endfor %}
           </div>
         </div>
       </div>
-      <!-- Sağ Panel -->
+      
+      <!-- Sağ Panel (1 kolon) -->
       <div class="flex flex-col gap-8">
+        <!-- Proje Durumu Kartı -->
         <div class="project-detail-item rounded-xl shadow-lg p-6">
-          <h3 class="text-lg font-semibold text-blue-600 mb-4">Proje Durumu</h3>
-          <div class="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-4 mb-4">
-            {% if project.status == 'completed' %}
-            <div class="bg-green-500 h-4 rounded-full" style="width: 100%"></div>
-            {% elif project.status == 'in_progress' %}
-            <div class="bg-blue-500 h-4 rounded-full" style="width: 50%"></div>
-            {% elif project.status == 'planning' %}
-            <div class="bg-sky-400 h-4 rounded-full" style="width: 25%"></div>
-            {% else %}
-            <div class="bg-yellow-400 h-4 rounded-full" style="width: 75%"></div>
-            {% endif %}
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+            <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fas fa-chart-pie"></i>
+              Proje Durumu
+            </h3>
           </div>
-          <ul class="space-y-1 text-sm">
-            <li><span class="font-medium">Durum:</span> {{ project.status|capfirst }}</li>
-              <li><span class="font-medium">Oluşturulma:</span> {{ project.created_at|date:"d.m.Y" }}</li>
-              <li><span class="font-medium">Son Güncelleme:</span> {{ project.updated_at|date:"d.m.Y" }}</li>
-              <li><span class="font-medium">Yorumlar:</span> {{ project.comments.count }}</li>
-          </ul>
-        </div>
-        <!-- Proje Güncellemeleri -->
-        <div class="project-detail-item rounded-lg p-6 shadow-lg">
-          <h3 class="text-lg font-semibold text-blue-600 mb-4">Proje Güncellemeleri</h3>
-          <div class="space-y-4">
-            {% for update in updates %}
-            <div class="rounded-lg p-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-semibold text-blue-700">{% if update.which_respons %}{{ update.which_respons }}{% else %}Güncelleme{% endif %}</span>
-                <span class="text-xs text-gray-500">{{ update.updated_at|date:"d.m.Y H:i" }}</span>
+          
+          <!-- Gelişmiş Progress Bar -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400">İlerleme</span>
+              <span class="text-sm font-bold text-blue-600 dark:text-blue-400">
+                {% if project.status == 'completed' %}100%{% elif project.status == 'in_progress' %}50%{% elif project.status == 'planning' %}25%{% else %}75%{% endif %}
+              </span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+              {% if project.status == 'completed' %}
+              <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500" style="width: 100%">
+                <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
               </div>
-              <div class="text-xs text-gray-500 mb-2">Durum: {% if update.project_status %}{{ update.project_status }}{% else %}—{% endif %}</div>
-              <div class="text-gray-700">{{ update.note }}</div>
+              {% elif project.status == 'in_progress' %}
+              <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: 50%">
+                <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
+              </div>
+              {% elif project.status == 'planning' %}
+              <div class="bg-gradient-to-r from-sky-400 to-sky-600 h-3 rounded-full transition-all duration-500" style="width: 25%">
+                <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
+              </div>
+              {% else %}
+              <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 h-3 rounded-full transition-all duration-500" style="width: 75%">
+                <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Proje İstatistikleri -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <i class="fas fa-flag"></i>
+                Durum
+              </span>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.status|capfirst }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <i class="fas fa-calendar-plus"></i>
+                Oluşturulma
+              </span>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.created_at|date:"d.m.Y" }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <i class="fas fa-sync"></i>
+                Son Güncelleme
+              </span>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.updated_at|date:"d.m.Y" }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <i class="fas fa-comments"></i>
+                Yorumlar
+              </span>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.comments.count }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Proje Güncellemeleri Kartı -->
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+            <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <i class="fas fa-history"></i>
+              Proje Güncellemeleri
+              <span class="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-sm rounded-full">
+                {{ updates.count }}
+              </span>
+            </h3>
+          </div>
+          
+          <div class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+            {% for update in updates %}
+            <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse"></div>
+                  <span class="font-semibold text-blue-700 dark:text-blue-400 text-sm">
+                    {% if update.which_respons %}{{ update.which_respons }}{% else %}Güncelleme{% endif %}
+                  </span>
+                </div>
+                <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  {{ update.updated_at|date:"d.m.Y H:i" }}
+                </span>
+              </div>
+              {% if update.project_status %}
+              <div class="mb-2">
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs rounded-full">
+                  <i class="fas fa-info-circle"></i>
+                  {{ update.project_status }}
+                </span>
+              </div>
+              {% endif %}
+              <div class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{{ update.note|linebreaks }}</div>
             </div>
             {% empty %}
-            <div class=" italic">Henüz güncelleme yok.</div>
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-clock text-4xl mb-3 opacity-50"></i>
+              <p class="text-lg">Henüz güncelleme yok.</p>
+              <p class="text-sm mt-1">Proje geliştikçe burada güncellemeler görünecek.</p>
+            </div>
             {% endfor %}
           </div>
         </div>
@@ -122,4 +399,62 @@
     </div>
   </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced category tag functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryTags = document.querySelectorAll('.category-tag[data-category-color]');
+    
+    categoryTags.forEach(tag => {
+        const color = tag.dataset.categoryColor;
+        
+        // Apply dynamic colors
+        tag.style.setProperty('--category-bg', color + '20');
+        tag.style.setProperty('--category-color', color);
+        tag.style.setProperty('--category-border', color + '40');
+        
+        // Add hover effect
+        tag.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-1px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        tag.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Enhanced form styling
+    const formElements = document.querySelectorAll('textarea, input, select');
+    formElements.forEach(element => {
+        element.classList.add('project-comment-input');
+    });
+    
+    // Add ripple effect to buttons
+    const buttons = document.querySelectorAll('.btn-enhanced');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+});
+</script>
+{% endblock %}

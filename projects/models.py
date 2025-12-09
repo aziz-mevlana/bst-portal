@@ -2,6 +2,38 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class ProjectCategory(models.Model):
+    """Proje türü/kategorisi (ne projesi olduğunu)"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default='#3B82F6', help_text='Hex renk kodu')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Proje Kategorisi"
+        verbose_name_plural = "Proje Kategorileri"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class Technology(models.Model):
+    """Kullanılan teknolojiler (hangi teknolojileri içerdiğini)"""
+    name = models.CharField(max_length=100, unique=True)
+    icon = models.CharField(max_length=50, blank=True, help_text='Font Awesome icon class')
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Teknoloji"
+        verbose_name_plural = "Teknolojiler"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
 class Request(models.Model):
     title = models.CharField(max_length=200)
     course = models.CharField(max_length=200, blank=True, null=True)
@@ -40,6 +72,13 @@ class Respons(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_responses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Etiket ilişkileri
+    categories = models.ManyToManyField(ProjectCategory, related_name='projects', blank=True)
+    technologies = models.ManyToManyField(Technology, related_name='projects', blank=True)
+
+
+
 
     class Meta:
         ordering = ['-created_at']
