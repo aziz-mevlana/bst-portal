@@ -1,26 +1,26 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Mezunlar Dizini - BST Portal{% endblock %}
+{% block title %}BST Portal | Mezunlar{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8 page-container-large">
     <!-- Arama ve Filtreleme -->
     <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        <input type="text" name="q" class="project-list-input col-span-1 md:col-span-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
-        <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
+        <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
+        <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
             <option value="">Deneyim Seviyesi</option>
             {% for value, label in alumni_list.model.EXPERIENCE_LEVEL_CHOICES %}
             <option value="{{ value }}" {% if selected_experience_level == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <select name="graduation_year" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
+        <select name="graduation_year" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
             <option value="">Mezuniyet Yılı</option>
             {% for year in graduation_years %}
             <option value="{{ year }}" {% if selected_graduation_year|add:"" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
             {% endfor %}
         </select>
-        <select name="tag" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white">
+        <select name="tag" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
             <option value="">Etiket Seçin</option>
             {% for tag in tags %}
             <option value="{{ tag.id }}" {% if selected_tag|add:"" == tag.id|stringformat:"s" %}selected{% endif %}>{{ tag.name }}</option>

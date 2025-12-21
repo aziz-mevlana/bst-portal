@@ -13,12 +13,8 @@
 .profile-page__title {
     font-size: 2rem;
     font-weight: 700;
-    color: #1f2937;
-    margin: 0;
-}
-
-.dark .profile-page__title {
     color: #f3f4f6;
+    margin: 0;
 }
 
 /* Mesajlar */
@@ -33,49 +29,31 @@
 }
 
 .profile-page__alert--success {
-    background-color: #d1fae5;
-    color: #065f46;
-}
-
-.profile-page__alert--error {
-    background-color: #fee2e2;
-    color: #991b1b;
-}
-
-.dark .profile-page__alert--success {
     background-color: #064e3b;
     color: #a7f3d0;
 }
 
-.dark .profile-page__alert--error {
+.profile-page__alert--error {
     background-color: #7f1d1d;
     color: #fecaca;
 }
 
 /* Profil Kartı */
 .profile-page__card {
-    background: white;
+    background: #1f2937;
     border-radius: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
-.dark .profile-page__card {
-    background: #1f2937;
-}
-
 /* Kart Başlığı */
 .profile-page__card-header {
-    background: linear-gradient(to right, #1e40af, #2563eb);
+    background: linear-gradient(to right, #003366, #004080);
     padding: 2rem;
     color: white;
     display: flex;
     align-items: center;
     gap: 1.5rem;
-}
-
-.dark .profile-page__card-header {
-    background: linear-gradient(to right, #003366, #004080);
 }
 
 /* Avatar */
@@ -147,47 +125,24 @@
 
 .profile-page__label {
     font-weight: 500;
-    color: #374151;
-}
-
-.dark .profile-page__label {
     color: #e5e7eb;
 }
 
 .profile-page__input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid #4b5563;
     border-radius: 0.5rem;
-    background-color: white;
-    color: #1f2937;
+    background-color: #374151;
+    color: #e5e7eb;
     font-size: 1rem;
     transition: all 0.2s;
 }
 
-.dark .profile-page__input {
-    background-color: #374151;
-    border-color: #4b5563;
-    color: #e5e7eb;
-}
-
 .profile-page__input:focus {
     outline: none;
-    border-color: #003366;
-    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
-}
-
-.dark .profile-page__input:focus {
     border-color: #60a5fa;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-}
-
-.profile-page__input{
-    background-color: #f3f4f6;
-}
-
-.dark .profile-page__input{
-    background-color: #1f2937;
 }
 
 .profile-page__textarea {
@@ -197,12 +152,8 @@
 
 .profile-page__help-text {
     font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-}
-
-.dark .profile-page__help-text {
     color: #9ca3af;
+    margin-top: 0.25rem;
 }
 
 /* Form Butonları */
@@ -220,7 +171,7 @@
     font-size: 1rem;
     font-weight: 500;
     border-radius: 0.5rem;
-    background-color: #1d4ed8;
+    background-color: #003366;
     color: white;
     border: none;
     cursor: pointer;
@@ -228,16 +179,8 @@
 }
 
 .profile-page__button:hover {
-    background-color: #002244;
-    transform: translateY(-1px);
-}
-
-.dark .profile-page__button {
-    background-color: #003366;
-}
-
-.dark .profile-page__button:hover {
     background-color: #1e40af;
+    transform: translateY(-1px);
 }
 
 /* Mobil Uyumluluk */
@@ -400,11 +343,7 @@
     height: 150px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #e5e7eb;
-}
-
-.dark .profile-page__cropped-preview img {
-    border-color: #4b5563;
+    border: 3px solid #4b5563;
 }
 
 .profile-page__remove-btn {
@@ -429,7 +368,7 @@
     transform: scale(1.1);
 }
 
-.dark .profile-page__remove-btn {
+.profile-page__remove-btn {
     border-color: #1f2937;
 }
 
@@ -453,7 +392,7 @@
 }
 
 .cropper-modal__content {
-    background: white;
+    background: #1f2937;
     border-radius: 1rem;
     width: 100%;
     max-width: 800px;
@@ -466,21 +405,12 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.dark .cropper-modal__content {
-    background: #1f2937;
-}
-
 .cropper-modal__header {
     padding: 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #374151;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: white;
-}
-
-.dark .cropper-modal__header {
-    border-bottom-color: #374151;
     background: #1f2937;
 }
 
@@ -488,10 +418,6 @@
     font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
-    color: #1f2937;
-}
-
-.dark .cropper-modal__title {
     color: #f3f4f6;
 }
 
@@ -500,21 +426,13 @@
     border: none;
     cursor: pointer;
     padding: 0.5rem;
-    color: #6b7280;
+    color: #9ca3af;
     transition: color 0.2s;
     position: relative;
     z-index: 10001;
 }
 
 .cropper-modal__close:hover {
-    color: #1f2937;
-}
-
-.dark .cropper-modal__close {
-    color: #9ca3af;
-}
-
-.dark .cropper-modal__close:hover {
     color: #f3f4f6;
 }
 
@@ -527,10 +445,6 @@
     min-height: 400px;
     max-height: 500px;
     overflow: hidden;
-    background: #f9fafb;
-}
-
-.dark .cropper-modal__body {
     background: #111827;
 }
 
@@ -542,15 +456,10 @@
 
 .cropper-modal__footer {
     padding: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #374151;
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
-    background: white;
-}
-
-.dark .cropper-modal__footer {
-    border-top-color: #374151;
     background: #1f2937;
 }
 
@@ -567,37 +476,20 @@
 }
 
 .cropper-modal__btn--cancel {
-    background-color: #e5e7eb;
-    color: #374151;
-}
-
-.cropper-modal__btn--cancel:hover {
-    background-color: #d1d5db;
-}
-
-.dark .cropper-modal__btn--cancel {
     background-color: #374151;
     color: #e5e7eb;
 }
 
-.dark .cropper-modal__btn--cancel:hover {
+.cropper-modal__btn--cancel:hover {
     background-color: #4b5563;
 }
 
 .cropper-modal__btn--primary {
-    background-color: #003366;
+    background-color: #1e40af;
     color: white;
 }
 
 .cropper-modal__btn--primary:hover {
-    background-color: #002244;
-}
-
-.dark .cropper-modal__btn--primary {
-    background-color: #1e40af;
-}
-
-.dark .cropper-modal__btn--primary:hover {
     background-color: #1d4ed8;
 }
 
@@ -628,7 +520,7 @@
         margin: 1rem;
         max-height: 80vh;
     }
-    
+
     .cropper-modal__body {
         min-height: 300px;
         max-height: 400px;

@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}
+  BST Portal | {{ project.title }}
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/projects.css' %}">
 <style>
@@ -33,14 +37,7 @@
     border: 1px solid var(--category-border);
 }
 
-/* Dark mode adjustments */
-.dark .category-tag[data-category-color] {
-    opacity: 0.9;
-}
 
-.dark .category-tag[data-category-color]:hover {
-    opacity: 1;
-}
 </style>
 {% endblock %}
 
@@ -48,7 +45,7 @@
 <div class="w-full max-w-6xl mx-auto px-4">
   <div class="p-6 lg:p-12">
     <!-- Proje Başlık Hero Bölümü -->
-    <div class="project-detail-item rounded-2xl shadow-xl p-8 mb-8 bg-gradient-to-br   dark:to-gray-900">
+    <div class="project-detail-item rounded-2xl shadow-xl p-8 mb-8 bg-gradient-to-br">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div class="flex-1">
           <div class="flex items-center gap-3 mb-4">
