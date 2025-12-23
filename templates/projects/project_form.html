@@ -1,83 +1,236 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load widget_tweaks %}
+
 {% block title %}
   BST Portal | Proje Ekle
 {% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+<style>
+  .checkbox-group label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    background: #232a36 !important;
+    border: 1px solid #4b5563 !important;
+    border-radius: 0.5rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .checkbox-group label:hover {
+    background: #374151 !important;
+    border-color: #60a5fa !important;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    accent-color: #3b82f6 !important;
+    cursor: pointer !important;
+  }
+  .checkbox-group input[type="checkbox"]:checked + span {
+    color: #60a5fa !important;
+    font-weight: 500 !important;
+  }
+  .checkbox-group span {
+    color: #e5e7eb !important;
+    font-size: 0.875rem !important;
+    transition: color 0.2s ease !important;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="w-full max-w-5xl mx-auto px-4 py-12">
-  <div class="color-page rounded-xl shadow-lg p-8 lg:p-16">
-    <h2 class="text-2xl font-bold mb-8 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-      Yeni Proje Ekle
-    </h2>
-    <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="min-h-screen bg-[#181e29] py-2 px-4">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Yeni Proje
+      </h2>
+    </div>
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
-  {% for field in form %}
-      <div>
-        <label for="{{ field.id_for_label }}" class="block mb-1 font-semibold">{{ field.label }}</label>
-        {% if field.errors %}
-        <div class="text-red-600 text-sm mb-1">{{ field.errors }}</div>
-        {% endif %}
-  {% if field.field.widget.input_type == 'textarea' %}
-          {{ field|add_class:'project-form-input text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none w-full min-h-[120px] p-3' }}
-        {% elif field.field.widget.input_type == 'file' %}
-          {{ field|add_class:'block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100' }}
-        {% else %}
-          {{ field|add_class:'project-form-input text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none w-full p-3' }}
-        {% endif %}
-        {% if field.help_text %}
-        <div class="text-xs text-gray-500 mt-1">{{ field.help_text }}</div>
-  {% endif %}
-      </div>
-      {% endfor %}
-      <div class="md:col-span-2 flex gap-2 mt-8">
-        <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          Projeyi Oluştur
-        </button>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Sol Kolon - Temel Bilgiler -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+              <h3 class="text-white font-semibold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+                Temel Bilgiler
+              </h3>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <!-- Temel Alanlar -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for field in form %}
+                  {% if field.name in 'title description project_link status request advisor' %}
+                    <div class="space-y-2 {% if field.name == 'description' %}md:col-span-2{% endif %}">
+                      <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
+                        {% if field.name == 'title' %}Başlık
+                        {% elif field.name == 'description' %}Açıklama
+                        {% elif field.name == 'project_link' %}Proje Linki
+                        {% elif field.name == 'status' %}Durum
+                        {% elif field.name == 'request' %}Talep
+                        {% elif field.name == 'advisor' %}Danışman
+                        {% else %}{{ field.label }}
+                        {% endif %}
+                        {% if field.field.required %}
+                          <span class="text-blue-400">*</span>
+                        {% endif %}
+                      </label>
+
+                      {% if field.errors %}
+                        <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
+                          {{ field.errors }}
+                        </div>
+                      {% endif %}
+
+                      {% if field.field.widget.input_type == 'textarea' %}
+                        {{ field|add_class:'project-form-input w-full min-h-[120px] p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none' }}
+                      {% elif field.field.widget.input_type == 'file' %}
+                        <div class="w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg">
+                          {{ field|add_class:'w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer file:hover:bg-blue-700 file:transition-colors file:text-sm file:font-medium' }}
+                        </div>
+                      {% elif field.field.widget.input_type == 'select' %}
+                        <div class="relative">
+                          {{ field|add_class:'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer' }}
+                          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          </div>
+                        </div>
+                      {% else %}
+                        {{ field|add_class:'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
+                      {% endif %}
+
+                      {% if field.help_text %}
+                        <div class="text-xs text-gray-500">{{ field.help_text }}</div>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <!-- Form Actions -->
+              <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-700">
+                <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-600/25">
+                  Projeyi Oluştur
+                </button>
+                <a href="{% url 'projects:project_list' %}" class="px-8 py-3 bg-gray-700 text-gray-300 rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center justify-center gap-2">
+                  İptal
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sağ Kolon - Seçimler -->
+        <div class="lg:col-span-1 space-y-6">
+          {% for field in form %}
+
+            {% if field.name == 'team' %}
+              <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
+                  <h3 class="text-white font-semibold">Takım</h3>
+                </div>
+                <div class="p-6">
+                  {{ field|add_class:'w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
+                </div>
+              </div>
+            {% endif %}
+
+            {% if field.name == 'categories' %}
+              <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+                  <h3 class="text-white font-semibold">Kategoriler</h3>
+                </div>
+                <div class="p-6">
+                  <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                    {% for choice in field.field.queryset %}
+                      <label>
+                        <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}">
+                        <span>{{ choice.name }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if field.name == 'technologies' %}
+              <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
+                  <h3 class="text-white font-semibold">Teknolojiler</h3>
+                </div>
+                <div class="p-6">
+                  <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                    {% for choice in field.field.queryset %}
+                      <label>
+                        <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}">
+                        <span>{{ choice.name }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+          {% endfor %}
+        </div>
+
       </div>
     </form>
+
   </div>
 </div>
-  <script>
-    // request_teacher_map is provided by the view as JSON mapping of request id -> teacher id
-    const requestTeacherMap = {{ request_teacher_map|default:'{}'|safe }};
 
-    function findFieldByName(name) {
-      return document.querySelector('[name="' + name + '"]');
+<script>
+  const requestTeacherMap = {{ request_teacher_map|default:'{}'|safe }};
+
+  function findFieldByName(name) {
+    return document.querySelector('[name="' + name + '"]');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const requestField = findFieldByName('request');
+    const advisorField = findFieldByName('advisor');
+
+    if (!requestField || !advisorField) return;
+
+    function applyAdvisorForRequest(requestId) {
+      const teacherId = requestTeacherMap[requestId] ?? null;
+      if (teacherId) {
+        advisorField.value = String(teacherId);
+        advisorField.disabled = true;
+        advisorField.classList.add('opacity-60', 'pointer-events-none');
+      } else {
+        advisorField.disabled = false;
+        advisorField.classList.remove('opacity-60', 'pointer-events-none');
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-      const requestField = findFieldByName('request');
-      const advisorField = findFieldByName('advisor');
-
-      if (!requestField || !advisorField) return;
-
-      function applyAdvisorForRequest(requestId) {
-        const teacherId = requestTeacherMap[requestId] ?? null;
-        if (teacherId) {
-          advisorField.value = String(teacherId);
-          advisorField.disabled = true;
-          advisorField.classList.add('opacity-60', 'pointer-events-none');
-        } else {
-          advisorField.disabled = false;
-          advisorField.classList.remove('opacity-60', 'pointer-events-none');
-        }
-      }
-
-      // initial apply
-      applyAdvisorForRequest(requestField.value || '');
-
-      requestField.addEventListener('change', function (e) {
-        applyAdvisorForRequest(e.target.value);
-      });
+    applyAdvisorForRequest(requestField.value || '');
+    requestField.addEventListener('change', function (e) {
+      applyAdvisorForRequest(e.target.value);
     });
-  </script>
+  });
+</script>
 
-  {% endblock %}
+{% endblock %}

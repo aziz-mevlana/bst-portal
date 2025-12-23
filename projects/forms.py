@@ -34,7 +34,6 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # advisor and team queryset filters assume UserProfile exists
         self.fields['advisor'].queryset = User.objects.filter(profile__user_type='teacher')
         self.fields['team'].queryset = User.objects.filter(profile__user_type='student')
 

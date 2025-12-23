@@ -16,22 +16,122 @@
 <body>
     {% include 'includes/header.html' %}
 
+    <!-- Modern Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
     <main>
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
     {% include 'includes/footer.html' %}
     <!-- Swiper.js JS -->
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    
+    <!-- Toast Notification System -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Messages from Django template
+        const messages = [
+            {% for message in messages %}
+            {
+                text: "{{ message|safe }}",
+                type: "{{ message.tags }}",
+                duration: 5000
+            },
+            {% endfor %}
+        ];
+
+        // Toast notification function
+        function showToast(text, type = 'info', duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            
+            // Icon and color based on type
+            const icons = {
+                'success': '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
+                'error': '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 3.813-1.874 2.083-3.374L13.932 3.68A2.25 2.25 0 0 0 12 2.25h-3.75c-1.273 0-2.38.712-2.932 1.43L2.083 15.376Z" /></svg>',
+                'warning': '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 3.813-1.874 2.083-3.374L13.932 3.68A2.25 2.25 0 0 0 12 2.25h-3.75c-1.273 0-2.38.712-2.932 1.43L2.083 15.376Z" /></svg>',
+                'info': '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg>'
+            };
+
+            const colors = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600', 
+                'warning': 'bg-yellow-600',
+                'info': 'bg-blue-600'
+            };
+
+            // Create toast HTML
+            toast.className = `toast-enter flex items-center gap-3 min-w-[320px] max-w-md ${colors[type] || colors.info} text-white px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm transform transition-all duration-300 ease-out`;
+            toast.innerHTML = `
+                <div class="flex-shrink-0">
+                    ${icons[type] || icons.info}
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${text}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-3 flex-shrink-0 text-white/70 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            `;
+
+            // Add to container
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-enter-active');
+            }, 10);
+
+            // Auto remove
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeToast(toast);
+                }, duration);
+            }
+        }
+
+        function removeToast(toast) {
+            if (!toast) return;
+            
+            toast.classList.add('toast-leave');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+
+        // Show Django messages
+        messages.forEach(msg => {
+            showToast(msg.text, msg.type, msg.duration);
+        });
+
+        // Make showToast globally available
+        window.showToast = showToast;
+    });
+    </script>
+
+    <style>
+    .toast-enter {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    
+    .toast-enter-active {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .toast-leave {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    </style>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

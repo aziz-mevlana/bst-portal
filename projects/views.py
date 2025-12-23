@@ -92,15 +92,18 @@ def project_create(request):
         if form.is_valid():
             # create a Respons instead of old Project
             # keep using the same form instance shape for now; form should be updated later
+
             project = form.save(commit=False)
             project.created_by = request.user
             project.advisor = project.request.teacher  # assign teacher from selected Request
             project.save()
             form.save_m2m()
+
             messages.success(request, 'Proje başarıyla oluşturuldu.')
             return redirect('projects:project_detail', project_id=project.id)
     else:
         form = ProjectForm()
+
     
     # prepare mapping of Request.id -> teacher_id for template JS
     requests = Request.objects.all().values('id', 'teacher_id')
