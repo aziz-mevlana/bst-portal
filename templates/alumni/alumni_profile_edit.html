@@ -2,13 +2,74 @@
 {% load static %}
 {% block title %}BST Portal | Mezun Profilini Düzenle{% endblock %}
 
+{% block extra_css %}
+<style>
+.checkbox-group label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+  background: #232a36 !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+.checkbox-group label:hover {
+  background: #374151 !important;
+  border-color: #60a5fa !important;
+}
+.checkbox-group input[type="checkbox"] {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  accent-color: #3b82f6 !important;
+  cursor: pointer !important;
+}
+.checkbox-group input[type="checkbox"]:checked + span {
+  color: #60a5fa !important;
+  font-weight: 500 !important;
+}
+.checkbox-group span {
+  color: #e5e7eb !important;
+  font-size: 0.875rem !important;
+  transition: color 0.2s ease !important;
+}
+
+.skills-scrollable {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  background: #1f2937 !important;
+}
+
+.skills-scrollable::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.skills-scrollable::-webkit-scrollbar-track {
+  background: #374151 !important;
+  border-radius: 4px !important;
+}
+
+.skills-scrollable::-webkit-scrollbar-thumb {
+  background: #6b7280 !important;
+  border-radius: 4px !important;
+}
+
+.skills-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8 alumni-detail-page-container">
+<div class="container mx-auto px-4 py-3 alumni-detail-page-container">
     <div class="max-w-4xl mx-auto">
         <!-- Başlık -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold">Mezun Profilini Düzenle</h1>
-            <p class="mt-2">Profil bilgilerinizi güncelleyerek öğrencilerle bağlantı kurabilirsiniz.</p>
         </div>
 
         <form method="post" class="space-y-6">
@@ -28,9 +89,9 @@
                                name="graduation_year" 
                                id="graduation_year" 
                                value="{{ profile.graduation_year }}" 
-                               min="1950" 
+                               min="1980" 
                                max="2030"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
 
@@ -41,7 +102,7 @@
                         </label>
                         <select name="experience_level" 
                                 id="experience_level" 
-                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                             <option value="junior" {% if profile.experience_level == 'junior' %}selected{% endif %}>Junior (0-2 yıl)</option>
                             <option value="mid" {% if profile.experience_level == 'mid' %}selected{% endif %}>Mid-Level (2-5 yıl)</option>
                             <option value="senior" {% if profile.experience_level == 'senior' %}selected{% endif %}>Senior (5+ yıl)</option>
@@ -58,7 +119,7 @@
                                id="current_position" 
                                value="{{ profile.current_position }}" 
                                placeholder="Örn: Software Developer"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
 
@@ -72,7 +133,7 @@
                                id="company" 
                                value="{{ profile.company }}" 
                                placeholder="Örn: ABC Teknoloji"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
                                required>
                     </div>
                 </div>
@@ -86,8 +147,8 @@
                               id="bio" 
                               rows="4" 
                               placeholder="Kendinizden, deneyimlerinizden ve hedeflerinizden bahsedin..."
-                              class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">{{ profile.bio }}</textarea>
-                    <p class="mt-2 text-sm ">Maksimum 500 karakter</p>
+                              class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">{{ profile.bio }}</textarea>
+                    <p class="mt-2 text-sm text-gray-400">Maksimum 500 karakter</p>
                 </div>
             </div>
 
@@ -109,7 +170,7 @@
                                id="linkedin_url" 
                                value="{{ profile.linkedin_url }}" 
                                placeholder="https://linkedin.com/in/kullaniciadi"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
 
                     <!-- GitHub -->
@@ -125,7 +186,7 @@
                                id="github_url" 
                                value="{{ profile.github_url }}" 
                                placeholder="https://github.com/kullaniciadi"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
 
                     <!-- Kişisel Web Sitesi -->
@@ -141,37 +202,34 @@
                                id="personal_website" 
                                value="{{ profile.personal_website }}" 
                                placeholder="https://orneksite.com"
-                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
                     </div>
                 </div>
             </div>
 
             <!-- Yetenekler ve Mentorluk -->
             <div class="color-page dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold  dark:text-white mb-6">Yetenekler ve Mentorluk</h2>
+                <h2 class="text-xl font-semibold  dark:text-white mb-6">Seçenekler</h2>
                 
                 <!-- Mentorluk ve Görünüm -->
                 <div class="mb-6">
-                    <label class="flex items-center">
-                        <input type="checkbox" 
-                               name="is_available_for_mentoring" 
-                               id="is_available_for_mentoring" 
-                               {% if profile.is_available_for_mentoring %}checked{% endif %}
-                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                        <span class="ml-3  ">
-                            <span class="font-medium">Mentorluk yapmak istiyorum</span>
-                            <span class="block text-sm  ">Öğrencilere kariyer yolculuklarında yardımcı olabilirsiniz</span>
-                        </span>
-                        <input type="checkbox" 
-                               name="is_show_in_alumni_list" 
-                               id="is_show_in_alumni_list" 
-                               {% if profile.is_show_in_alumni_list %}checked{% endif %}
-                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                        <span class="ml-3  ">
-                            <span class="font-medium">Profilimi görünüm listesinde göster</span>
-                            <span class="block text-sm  ">Öğrencilerinizin profil listesinde görünür</span>
-                        </span>
-                    </label>
+                    <div class="checkbox-group pro flex flex-wrap gap-4">
+                        <label>
+                            <input type="checkbox" 
+                                   name="is_available_for_mentoring" 
+                                   id="is_available_for_mentoring" 
+                                   {% if profile.is_available_for_mentoring %}checked{% endif %}>
+                            <span>Mentorluk yapmak istiyorum</span>
+                        </label>
+                        
+                        <label>
+                            <input type="checkbox" 
+                                   name="is_show_in_alumni_list" 
+                                   id="is_show_in_alumni_list" 
+                                   {% if profile.is_show_in_alumni_list %}checked{% endif %}>
+                            <span>Profilimi görünüm listesinde göster</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Etiketler -->
@@ -179,17 +237,140 @@
                     <label class="block text-sm font-medium  mb-3">
                         Yetenekleriniz
                     </label>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div class="checkbox-group space-y-2 skills-scrollable">
                         {% for tag in tags %}
-                        <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+                        <label>
                             <input type="checkbox" 
                                    name="tags" 
                                    value="{{ tag.id }}" 
-                                   {% if tag in profile.tags.all %}checked{% endif %}
-                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <span class="ml-2 text-sm ">{{ tag.name }}</span>
+                                   {% if tag in profile.tags.all %}checked{% endif %}>
+                            <span>{{ tag.name }}</span>
                         </label>
                         {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- İş Deneyimleri -->
+            <div class="color-page rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-6">İş Deneyimleri</h2>
+                
+                <!-- Mevcut Deneyimler -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4">Mevcut Deneyimler</h3>
+                    {% if profile.experiences.all %}
+                        <div class="space-y-4">
+                            {% for exp in profile.experiences.all %}
+                                <div id="experience-{{ exp.id }}" class="border  project-form-input rounded-lg p-4">
+                                     <div class="flex justify-between items-start">
+                                         <div>
+                                             <h4 class="font-semibold">{{ exp.position }}</h4>
+                                             <p class="text-gray-300">{{ exp.company }}</p>
+                                             <p class="text-sm text-gray-200">
+                                                 {{ exp.start_date|date:"F Y" }} - 
+                                                 {% if exp.is_current %}Devam Ediyor{% else %}{{ exp.end_date|date:"F Y" }}{% endif %}
+                                             </p>
+                                             {% if exp.description %}
+                                                 <p class="mt-2 text-sm">{{ exp.description }}</p>
+                                             {% endif %}
+                                         </div>
+                                         <div class="flex gap-2">
+                                             <button type="button" 
+                                                     onclick="editExperience({{ exp.id }})"
+                                                     class="text-blue-600 hover:text-blue-800 text-sm">
+                                                 Düzenle
+                                             </button>
+                                             <button type="button" 
+                                                     onclick="deleteExperience({{ exp.id }})"
+                                                     class="text-red-600 hover:text-red-800 text-sm">
+                                                 Sil
+                                             </button>
+                                         </div>
+                                     </div>
+                                 </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">Henüz iş deneyimi eklenmemiş.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Yeni Deneyim Ekle -->
+                <div>
+                    <h3 class="text-lg font-medium mb-4">Yeni Deneyim Ekle</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="exp_company" class="block text-sm font-medium mb-2">
+                                Şirket <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="exp_company" 
+                                   id="exp_company" 
+                                   placeholder="Örn: ABC Teknoloji"
+                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                        </div>
+
+                        <div>
+                            <label for="exp_position" class="block text-sm font-medium mb-2">
+                                Pozisyon <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="exp_position" 
+                                   id="exp_position" 
+                                   placeholder="Örn: Software Developer"
+                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                        </div>
+
+                        <div>
+                            <label for="exp_start_date" class="block text-sm font-medium mb-2">
+                                Başlangıç Tarihi <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="exp_start_date" 
+                                   id="exp_start_date" 
+                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                        </div>
+
+                        <div>
+                            <label for="exp_end_date" class="block text-sm font-medium mb-2">
+                                Bitiş Tarihi
+                            </label>
+                            <input type="date" 
+                                   name="exp_end_date" 
+                                   id="exp_end_date" 
+                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="checkbox-group">
+                            <label>
+                                <input type="checkbox" 
+                                       name="exp_is_current" 
+                                       id="exp_is_current"
+                                       onchange="toggleEndDate()">
+                                <span>Halen bu şirkette çalışıyorum</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="exp_description" class="block text-sm font-medium mb-2">
+                            Açıklama
+                        </label>
+                        <textarea name="exp_description" 
+                                  id="exp_description" 
+                                  rows="3" 
+                                  placeholder="Bu iş pozisyonunda yaptığınız çalışmalardan bahsedin..."
+                                  class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input"></textarea>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" 
+                                onclick="addExperience()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            Deneyim Ekle
+                        </button>
                     </div>
                 </div>
             </div>
@@ -197,7 +378,7 @@
             <!-- Form Aksiyonları -->
             <div class="flex flex-col sm:flex-row gap-4 justify-end">
                 <a href="{% url 'alumni:alumni_profile' %}" 
-                   class="inline-flex justify-center items-center px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium  color-page hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                   class="inline-flex justify-center items-center px-6 py-3 border  rounded-lg shadow-sm text-sm font-medium  color-page hover:border-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     İptal
                 </a>
                 <button type="submit" 
@@ -212,17 +393,241 @@
     </div>
 </div>
 
+
 <script>
-// Karakter sayacı için
-document.getElementById('bio').addEventListener('input', function() {
-    const maxLength = 500;
-    const currentLength = this.value.length;
-    const counter = document.querySelector('.');
-    counter.textContent = `${currentLength}/500 karakter`;
-    
-    if (currentLength > maxLength) {
-        this.value = this.value.substring(0, maxLength);
+function toggleEndDate() {
+    const isCurrent = document.getElementById('exp_is_current').checked;
+    const endDateField = document.getElementById('exp_end_date');
+    endDateField.disabled = isCurrent;
+    if (isCurrent) {
+        endDateField.value = '';
     }
-});
+}
+
+function addExperience() {
+    const company = document.getElementById('exp_company').value;
+    const position = document.getElementById('exp_position').value;
+    const startDate = document.getElementById('exp_start_date').value;
+    const endDate = document.getElementById('exp_end_date').value;
+    const isCurrent = document.getElementById('exp_is_current').checked;
+    const description = document.getElementById('exp_description').value;
+
+    if (!company || !position || !startDate) {
+        alert('Lütfen zorunlu alanları doldurun (Şirket, Pozisyon, Başlangıç Tarihi)');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'add_experience');
+    formData.append('company', company);
+    formData.append('position', position);
+    formData.append('start_date', startDate);
+    formData.append('end_date', endDate);
+    formData.append('is_current', isCurrent ? 'on' : '');
+    formData.append('description', description);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('{% url "alumni:alumni_profile_edit" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Hata: ' + (data.error || 'Deneyim eklenemedi'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    });
+}
+
+function deleteExperience(expId) {
+    if (!confirm('Bu deneyimi silmek istediğinizden emin misiniz?')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'delete_experience');
+    formData.append('experience_id', expId);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('{% url "alumni:alumni_profile_edit" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Hata: ' + (data.error || 'Deneyim silinemedi'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    });
+}
+
+function editExperience(expId) {
+    const expCard = document.getElementById(`experience-${expId}`);
+    const editForm = document.getElementById(`edit-form-${expId}`);
+    
+    if (editForm) {
+        editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
+        expCard.style.display = expCard.style.display === 'none' ? 'block' : 'none';
+    } else {
+        fetchExperienceData(expId);
+    }
+}
+
+function fetchExperienceData(expId) {
+    const formData = new FormData();
+    formData.append('action', 'get_experience');
+    formData.append('experience_id', expId);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('{% url "alumni:alumni_profile_edit" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showEditForm(expId, data.experience);
+        } else {
+            alert('Hata: ' + (data.error || 'Deneyim bilgileri alınamadı'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    });
+}
+
+function showEditForm(expId, experience) {
+    const expCard = document.getElementById(`experience-${expId}`);
+    
+    const editForm = document.createElement('div');
+    editForm.id = `edit-form-${expId}`;
+    editForm.className = 'border border-blue-400 rounded-lg p-4  project-form-input mt-4';
+    editForm.innerHTML = `
+        <h4 class="font-semibold mb-3">Deneyim Düzenle</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Şirket <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-company-${expId}" value="${experience.company}" 
+                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Pozisyon <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-position-${expId}" value="${experience.position}" 
+                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Başlangıç Tarihi <span class="text-red-500">*</span></label>
+                <input type="date" id="edit-start-date-${expId}" value="${experience.start_date}" 
+                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Bitiş Tarihi</label>
+                <input type="date" id="edit-end-date-${expId}" value="${experience.end_date || ''}" 
+                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input"
+                       ${experience.is_current ? 'disabled' : ''}>
+            </div>
+        </div>
+        <div class="mt-3">
+            <label class="flex items-center">
+                <input type="checkbox" id="edit-is-current-${expId}" ${experience.is_current ? 'checked' : ''} 
+                       onchange="toggleEditEndDate(${expId})" class="mr-2">
+                <span>Halen bu şirkette çalışıyorum</span>
+            </label>
+        </div>
+        <div class="mt-3">
+            <label class="block text-sm font-medium mb-2">Açıklama</label>
+            <textarea id="edit-description-${expId}" rows="3" 
+                      class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">${experience.description || ''}</textarea>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button type="button" onclick="updateExperience(${expId})" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Kaydet
+            </button>
+            <button type="button" onclick="cancelEdit(${expId})" 
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                İptal
+            </button>
+        </div>
+    `;
+    
+    expCard.parentNode.insertBefore(editForm, expCard.nextSibling);
+    expCard.style.display = 'none';
+}
+
+function toggleEditEndDate(expId) {
+    const isCurrent = document.getElementById(`edit-is-current-${expId}`).checked;
+    const endDateField = document.getElementById(`edit-end-date-${expId}`);
+    endDateField.disabled = isCurrent;
+    if (isCurrent) {
+        endDateField.value = '';
+    }
+}
+
+function updateExperience(expId) {
+    const company = document.getElementById(`edit-company-${expId}`).value;
+    const position = document.getElementById(`edit-position-${expId}`).value;
+    const startDate = document.getElementById(`edit-start-date-${expId}`).value;
+    const endDate = document.getElementById(`edit-end-date-${expId}`).value;
+    const isCurrent = document.getElementById(`edit-is-current-${expId}`).checked;
+    const description = document.getElementById(`edit-description-${expId}`).value;
+
+    if (!company || !position || !startDate) {
+        alert('Lütfen zorunlu alanları doldurun (Şirket, Pozisyon, Başlangıç Tarihi)');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'edit_experience');
+    formData.append('experience_id', expId);
+    formData.append('company', company);
+    formData.append('position', position);
+    formData.append('start_date', startDate);
+    formData.append('end_date', endDate);
+    formData.append('is_current', isCurrent ? 'on' : '');
+    formData.append('description', description);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('{% url "alumni:alumni_profile_edit" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Hata: ' + (data.error || 'Deneyim güncellenemedi'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    });
+}
+
+function cancelEdit(expId) {
+    const expCard = document.getElementById(`experience-${expId}`);
+    const editForm = document.getElementById(`edit-form-${expId}`);
+    
+    if (editForm) {
+        editForm.remove();
+    }
+    expCard.style.display = 'block';
+}
 </script>
-{% endblock %} 
+
+{% endblock %}

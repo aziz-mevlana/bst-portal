@@ -34,12 +34,12 @@
             <a href="{% url 'alumni:alumni_detail' alumni.user.username %}">
                 <div class="flex items-center gap-4 mb-4">
                     {% if alumni.user.profile.profile_picture %}
-                    <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover border-2 border-blue-100 alumni-list-profile-picture">
+                        <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover alumni-list-profile-picture">
                     {% else %}
-                        <img src="{% static 'images/icons/profile.svg' %}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover border-2 border-blue-100 alumni-list-profile-picture icon-thema">
+                        <img src="{% static 'images/icons/profile.svg' %}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover alumni-list-profile-picture icon-thema">
                     {% endif %}
                     <div>
-                        <h3 class="text-xl font-bold mb-1">{{ alumni.user.username }}</h3>
+                        <h3 class="text-xl font-bold mb-1">{{ alumni.user.get_full_name }}</h3>
                         <div class="flex flex-wrap gap-2 mb-1">
                             <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-blue">{{ alumni.experience_level }}</span>
                             <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-gray">{{ alumni.graduation_year }}</span>
@@ -50,12 +50,11 @@
                             <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-yellow">{{ tag.name }}</span>
                             {% endfor %}
                         </div>
-                        <div class="text-sm">{{ alumni.current_position }} @ {{ alumni.company }}</div>
                     </div>
                 </div>
+                <div class="text-sm">{{ alumni.current_position }} @ {{ alumni.company }}</div>
             </a>
-            <div class="mb-4 line-clamp-3">{{ alumni.bio }}</div>
-            <div class="flex items-center gap-3 mt-auto alumni-list-social-media-icons">
+            <div class="flex items-center gap-3 mt-auto alumni-list-social-media-icons pt-3">
                 {% if alumni.linkedin_url %}
                 <a href="{{ alumni.linkedin_url }}" target="_blank" title="LinkedIn" class="hover:scale-110 transition"><img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="20" height="20"></a>
                 {% endif %}

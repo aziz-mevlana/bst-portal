@@ -1143,8 +1143,8 @@ footer {
 }
 
 .alumni-list-profile-picture {
-    border: 2px solid #23355a;
-    border-radius: 25%;
+    border: 3px solid #60a5fa;
+    border-radius: 50%;
 }
 
 .alumni-list-social-media-icons {
@@ -1156,7 +1156,7 @@ footer {
 .project-form-input {
     background: #181e29;
     color: #ffffff;
-    border: 1px solid #000000;
+    border: 1px solid #454444;
 }
 
 @media (min-width: 1024px) {

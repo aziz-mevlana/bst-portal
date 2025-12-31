@@ -7,16 +7,22 @@
 <div class="max-w-5xl mx-auto px-4 py-8 page-container-large">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <h2 class="text-3xl font-bold">Haberler</h2>
-        {% if user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
-        <a href="{% url 'news:create_news' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg shadow hover:bg-blue-100 project-list-button transition">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Yeni Haber
-        </a>
-        {% endif %}
+
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Haber Ekle Kartı -->
+        {% if user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
+        <a href="{% url 'news:create_news' %}" class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-600 hover:border-blue-400 bg-gray-800 hover:bg-gray-750 group">
+            <div class="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center mb-4 group-hover:bg-blue-800 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold group-hover:text-blue-400 transition">Yeni Haber</h3>
+            <p class="text-center mt-2">Haber eklemek için tıklayın</p>
+        </a>
+        {% endif %}
+        
         {% for news in news %}
         <div class="rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full color-page">
             <div>
@@ -38,9 +44,9 @@
                     <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ news.created_by.get_full_name|default:news.created_by.username }}</span>
                 </span>
             </div>
-            {% if news.url %}
-            <a href="{% url 'news:news_detail' news.id %}" class="mt-auto inline-block px-4 py-2 bg-blue-50  text-blue-700  rounded-lg font-semibold hover:bg-blue-100 transition text-center w-full project-list-button">Devamını Oku</a>
-            {% endif %}
+            <a href="{% url 'news:news_detail' news.id %}" class="mt-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-600/25 text-center w-full">
+                Devamını Oku
+            </a>
         </div>
         {% empty %}
         <div class="col-span-full">

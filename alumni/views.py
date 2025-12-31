@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import AlumniProfile, AlumniExperience, Tag
 from django.db import models
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect
 
 @login_required
 def alumni_list(request):
@@ -76,30 +78,129 @@ def alumni_profile_edit(request):
         profile = AlumniProfile(user=request.user)
     
     if request.method == 'POST':
-        profile.graduation_year = request.POST.get('graduation_year')
-        profile.current_position = request.POST.get('current_position')
-        profile.company = request.POST.get('company')
-        profile.experience_level = request.POST.get('experience_level')
-        profile.bio = request.POST.get('bio')
-        profile.linkedin_url = request.POST.get('linkedin_url')
-        profile.github_url = request.POST.get('github_url')
-        profile.personal_website = request.POST.get('personal_website')
-        profile.is_available_for_mentoring = request.POST.get('is_available_for_mentoring') == 'on'
-        profile.is_show_in_alumni_list = request.POST.get('is_show_in_alumni_list') == 'on'
+        action = request.POST.get('action')
         
-        # Etiketleri güncelle
-        tag_ids = request.POST.getlist('tags')
-        profile.tags.set(tag_ids)
-        
-        profile.save()
-        messages.success(request, 'Profiliniz başarıyla güncellendi.')
-        return redirect('alumni:alumni_profile')
+        if action == 'add_experience':
+            return add_experience(request, profile)
+        elif action == 'delete_experience':
+            return delete_experience(request, profile)
+        elif action == 'edit_experience':
+            return edit_experience(request, profile)
+        elif action == 'get_experience':
+            return get_experience(request, profile)
+        else:
+            # Normal profile update
+            profile.graduation_year = request.POST.get('graduation_year')
+            profile.current_position = request.POST.get('current_position')
+            profile.company = request.POST.get('company')
+            profile.experience_level = request.POST.get('experience_level')
+            profile.bio = request.POST.get('bio')
+            profile.linkedin_url = request.POST.get('linkedin_url')
+            profile.github_url = request.POST.get('github_url')
+            profile.personal_website = request.POST.get('personal_website')
+            profile.is_available_for_mentoring = request.POST.get('is_available_for_mentoring') == 'on'
+            profile.is_show_in_alumni_list = request.POST.get('is_show_in_alumni_list') == 'on'
+            
+            # Etiketleri güncelle
+            tag_ids = request.POST.getlist('tags')
+            profile.tags.set(tag_ids)
+            
+            profile.save()
+            messages.success(request, 'Profiliniz başarıyla güncellendi.')
+            return redirect('alumni:alumni_profile')
     
     tags = Tag.objects.all()
     return render(request, 'alumni/alumni_profile_edit.html', {
         'profile': profile,
         'tags': tags
     })
+
+def add_experience(request, profile):
+    try:
+        company = request.POST.get('company')
+        position = request.POST.get('position')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        is_current = request.POST.get('is_current') == 'on'
+        description = request.POST.get('description', '')
+        
+        if not company or not position or not start_date:
+            return JsonResponse({'success': False, 'error': 'Zorunlu alanlar eksik'})
+        
+        experience = AlumniExperience.objects.create(
+            alumni=profile,
+            company=company,
+            position=position,
+            start_date=start_date,
+            end_date=end_date if not is_current else None,
+            is_current=is_current,
+            description=description
+        )
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def delete_experience(request, profile):
+    try:
+        experience_id = request.POST.get('experience_id')
+        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        experience.delete()
+        return JsonResponse({'success': True})
+    except AlumniExperience.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_experience(request, profile):
+    try:
+        experience_id = request.POST.get('experience_id')
+        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        
+        experience_data = {
+            'id': experience.id,
+            'company': experience.company,
+            'position': experience.position,
+            'start_date': experience.start_date,
+            'end_date': experience.end_date,
+            'is_current': experience.is_current,
+            'description': experience.description
+        }
+        
+        return JsonResponse({'success': True, 'experience': experience_data})
+    except AlumniExperience.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def edit_experience(request, profile):
+    try:
+        experience_id = request.POST.get('experience_id')
+        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        
+        company = request.POST.get('company')
+        position = request.POST.get('position')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        is_current = request.POST.get('is_current') == 'on'
+        description = request.POST.get('description', '')
+        
+        if not company or not position or not start_date:
+            return JsonResponse({'success': False, 'error': 'Zorunlu alanlar eksik'})
+        
+        experience.company = company
+        experience.position = position
+        experience.start_date = start_date
+        experience.end_date = end_date if not is_current else None
+        experience.is_current = is_current
+        experience.description = description
+        experience.save()
+        
+        return JsonResponse({'success': True})
+    except AlumniExperience.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def tag_list(request):
     tags = Tag.objects.all()
