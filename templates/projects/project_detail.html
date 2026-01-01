@@ -37,6 +37,35 @@
       border: 1px solid var(--category-border);
     }
     
+    /* Technology tag styling */
+    .technology-tag {
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .technology-tag::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .technology-tag:hover::before {
+      left: 100%;
+    }
+    
+    /* Apply dynamic colors to technology tags */
+    .technology-tag[data-technology-color] {
+      background-color: var(--technology-bg);
+      color: var(--technology-color);
+      border: 1px solid var(--technology-border);
+    }
+    
     /* Team members scrollable styles */
     .team-members-scrollable {
       scrollbar-width: thin;
@@ -54,6 +83,31 @@
       background: #9ca3af;
       border-radius: 3px;
     }
+    
+    /* Update creator info styling */
+    .update-creator-info {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: rgb(75 85 99);
+      transition: color 0.2s;
+    }
+    
+    .update-creator-info {
+      color: rgb(156 163 175);
+    }
+    
+    .dark .update-creator-info:hover {
+      color: rgb(209 213 219);
+    }
+    
+    .update-avatar-small {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
   </style>
 {% endblock %}
 
@@ -65,18 +119,14 @@
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-4">
-              <span class="px-4 py-2 rounded-full text-sm font-bold project-tag-blue shadow-md">{{ project.status|capfirst }}</span>
-              <span class="text-sm text-gray-500 dark:text-gray-400">
-                <i class="far fa-calendar mr-1"></i>
-                {{ project.created_at|date:'d F Y' }}
-              </span>
+              <span class="px-4 py-2 rounded-full text-sm font-bold project-tag-blue shadow-md">{{ project.get_status_display }}</span>
             </div>
             <h1 class="text-3xl lg:text-4xl font-bold text-blue-800 dark:text-blue-300 mb-4 leading-tight">{{ project.title }}</h1>
-            <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">{{ project.description|truncatewords:30 }}</p>
+            <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">{{ project.description }}</p>
           </div>
           {% if project.project_link %}
             <div class="flex-shrink-0">
-              <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+              <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform ">
                 <i class="fas fa-external-link-alt"></i>
                 Projeyi Görüntüle
               </a>
@@ -99,13 +149,6 @@
 
             <div class="space-y-6">
               <!-- Tam Açıklama -->
-              <div>
-                <h3 class="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-2">
-                  <i class="fas fa-align-left"></i>
-                  Proje Açıklaması
-                </h3>
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-gray-700 dark:text-gray-300 leading-relaxed">{{ project.description|linebreaks }}</div>
-              </div>
 
               <!-- Proje Kategorileri ve Teknolojiler -->
               <div class="grid md:grid-cols-2 gap-6">
@@ -125,12 +168,13 @@
 
                 <div>
                   <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                    <i class="fas fa-code"></i>
                     Kullanılan Teknolojiler
                   </h4>
                   <div class="flex flex-wrap gap-2">
                     {% for technology in project.technologies.all %}
-                      <span class="px-3 py-1.5 rounded-full text-sm font-semibold project-tag-gray shadow-sm hover:shadow-md transition-shadow">
+                      <span class="technology-tag px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md transition-shadow" 
+                            style="--technology-bg: {{ technology.color }}20; --technology-color: {{ technology.color }}; --technology-border: {{ technology.color }}40;" 
+                            data-technology-color="{{ technology.color }}">
                         {% if technology.icon %}
                           <i class="{{ technology.icon }} mr-1"></i>
                         {% endif %}
@@ -149,7 +193,6 @@
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
               <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                <i class="fas fa-users"></i>
                 Proje Ekibi ve Bilgileri
               </h2>
             </div>
@@ -158,7 +201,6 @@
               <!-- Proje Bilgileri -->
               <div class="space-y-4">
                 <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                  <i class="fas fa-chart-line"></i>
                   Proje Bilgileri
                 </h4>
                 <div class="space-y-3">
@@ -178,7 +220,7 @@
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <span class="font-medium text-gray-600 dark:text-gray-400">Durum</span>
-                    <span class="font-semibold text-gray-800 dark:text-gray-200">{{ project.status|capfirst }}</span>
+                    <span class="font-semibold text-gray-800 dark:text-gray-200">{{ project.status }}</span>
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <span class="font-medium text-gray-600 dark:text-gray-400">Eklenme</span>
@@ -190,7 +232,6 @@
               <!-- Takım Üyeleri -->
               <div>
                 <h4 class="text-blue-600 dark:text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                  <i class="fas fa-user-friends"></i>
                   Takım Üyeleri
                   <span class="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs rounded-full">{{ project.team.count }}</span>
                 </h4>
@@ -217,7 +258,6 @@
                   {% endif %}
                 {% else %}
                   <div class="text-gray-500 italic bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-center">
-                    <i class="fas fa-user-slash mr-2"></i>
                     Henüz takım üyesi yok
                   </div>
                 {% endif %}
@@ -228,13 +268,11 @@
             {% if user == project.created_by or user == project.advisor %}
               <div class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <a href="{% url 'projects:project_update' project.id %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg font-semibold">
-                  <i class="fas fa-edit"></i>
                   Projeyi Düzenle
                 </a>
-                <a href="{% url 'projects:add_project_update' project.id %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg font-semibold">
-                  <i class="fas fa-plus-circle"></i>
+                <button onclick="openUpdateModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg font-semibold">
                   Güncelleme Ekle
-                </a>
+                </button>
               </div>
             {% endif %}
           </div>
@@ -242,7 +280,6 @@
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
               <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                <i class="fas fa-comments"></i>
                 Yorumlar
                 <span class="ml-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-sm rounded-full">{{ comments.count }} yorum</span>
               </h2>
@@ -250,7 +287,7 @@
 
             <div class="space-y-6">
               <!-- Yorum Ekleme Formu -->
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+              <div class="bg-thema rounded-xl p-6 border border-gray-700">
                 <div class="flex items-center gap-3 mb-4">
                   <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                     <img src="{% if user.profile.profile_picture %}
@@ -262,16 +299,15 @@
                       class="profile-avatar" />
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Yorum Yap</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
+                    <h3 class="text-lg font-semibold text-gray-200">Yorum Yap</h3>
+                    <p class="text-gray-400 text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
                   </div>
                 </div>
                 <form method="post" action="{% url 'projects:add_comment' project.id %}">
                   {% csrf_token %}
                   <div class="space-y-4">
                     <div>{{ comment_form.content }}</div>
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg font-semibold">
-                      <i class="fas fa-paper-plane"></i>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold">
                       Yorumu Gönder
                     </button>
                   </div>
@@ -281,12 +317,12 @@
               <!-- Yorumlar Listesi -->
               <div class="space-y-4">
                 {% for comment in comments %}
-                  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div class="bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-gray-700 overflow-hidden" data-comment-id="{{ comment.id }}">
                     <!-- Yorum Header -->
-                    <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <div class="bg-thema px-4 py-3 border-b border-gray-700">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+                          <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
                             <img src="{% if comment.author.profile.profile_picture %}
                                 {{ comment.author.profile.profile_picture.url }}
                               {% else %}
@@ -296,9 +332,8 @@
                               class="profile-avatar" />
                           </div>
                           <div>
-                            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ comment.author.get_full_name }}</span>
-                            <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                              <i class="far fa-clock"></i>
+                            <span class="font-semibold text-gray-200">{{ comment.author.get_full_name }}</span>
+                            <div class="text-xs text-gray-400 flex items-center gap-1">
                               {{ comment.created_at|date:'d F Y' }} • {{ comment.created_at|date:'H:i' }}
                             </div>
                           </div>
@@ -306,25 +341,26 @@
                         <!-- Yorum İşlemleri -->
                         {% if user == comment.author or user.is_staff %}
                           <div class="flex items-center gap-1">
-                            <button class="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Düzenle"><i class="fas fa-edit"></i></button>
-                            <button class="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Sil"><i class="fas fa-trash"></i></button>
+                            <button onclick="openEditCommentModal({{ comment.id }}, '{{ comment.content|escapejs }}')" class="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors" title="Düzenle">
+                              Düzenle
+                            </button>
+                            <button onclick="deleteComment({{ comment.id }})" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors" title="Sil">
+                              Sil
+                            </button>
                           </div>
                         {% endif %}
                       </div>
                     </div>
 
                     <!-- Yorum İçeriği -->
-                    <div class="p-4">
-                      <div class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content|linebreaks }}</div>
+                    <div class="p-4 bg-gray-700">
+                      <div class="leading-relaxed">{{ comment.content|linebreaks }}</div>
                     </div>
                   </div>
                 {% empty %}
-                  <div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <i class="fas fa-comment-slash text-3xl text-gray-400 dark:text-gray-500"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Henüz yorum yapılmamış</h3>
-                    <p class="text-gray-500 dark:text-gray-500 text-sm">Bu proje hakkında ilk yorumu siz yapın!</p>
+                  <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-400 mb-2">Henüz yorum yapılmamış</h3>
+                    <p class="text-gray-500 text-sm">Bu proje hakkında ilk yorumu siz yapın!</p>
                   </div>
                 {% endfor %}
               </div>
@@ -334,7 +370,6 @@
                 <div class="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors flex items-center gap-2 mx-auto">
                     Tüm yorumları görüntüle
-                    <i class="fas fa-chevron-down"></i>
                   </button>
                 </div>
               {% endif %}
@@ -344,124 +379,77 @@
 
         <!-- Sağ Panel (1 kolon) -->
         <div class="flex flex-col gap-8">
-          <!-- Proje Durumu Kartı -->
-          <div class="project-detail-item rounded-xl shadow-lg p-6">
-            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-              <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                <i class="fas fa-chart-pie"></i>
-                Proje Durumu
-              </h3>
-            </div>
-
-            <!-- Gelişmiş Progress Bar -->
-            <div class="mb-6">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">İlerleme</span>
-                <span class="text-sm font-bold text-blue-600 dark:text-blue-400">
-                  {% if project.status == 'completed' %}
-                    100%
-                  {% elif project.status == 'in_progress' %}
-                    50%
-                  {% elif project.status == 'planning' %}
-                    25%
-                  {% else %}
-                    75%
-                  {% endif %}
-                </span>
-              </div>
-              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                {% if project.status == 'completed' %}
-                  <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500" style="width: 100%">
-                    <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
-                  </div>
-                {% elif project.status == 'in_progress' %}
-                  <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: 50%">
-                    <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
-                  </div>
-                {% elif project.status == 'planning' %}
-                  <div class="bg-gradient-to-r from-sky-400 to-sky-600 h-3 rounded-full transition-all duration-500" style="width: 25%">
-                    <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
-                  </div>
-                {% else %}
-                  <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 h-3 rounded-full transition-all duration-500" style="width: 75%">
-                    <div class="h-full bg-white bg-opacity-20 animate-pulse"></div>
-                  </div>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- Proje İstatistikleri -->
-            <div class="space-y-3">
-              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <i class="fas fa-flag"></i>
-                  Durum
-                </span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.status|capfirst }}</span>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <i class="fas fa-calendar-plus"></i>
-                  Oluşturulma
-                </span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.created_at|date:'d.m.Y' }}</span>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <i class="fas fa-sync"></i>
-                  Son Güncelleme
-                </span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.updated_at|date:'d.m.Y' }}</span>
-              </div>
-              <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <i class="fas fa-comments"></i>
-                  Yorumlar
-                </span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ project.comments.count }}</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Proje Güncellemeleri Kartı -->
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
               <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                <i class="fas fa-history"></i>
                 Proje Güncellemeleri
                 <span class="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-sm rounded-full">{{ updates.count }}</span>
               </h3>
             </div>
 
-            <div class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+            <div class="space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {% for update in updates %}
-                <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
-                  <div class="flex items-start justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <div class="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse"></div>
-                      <span class="font-semibold text-blue-700 dark:text-blue-400 text-sm">
-                        {% if update.which_respons %}
-                          {{ update.which_respons }}
+                <div class="bg-thema border border-gray-700 rounded-xl p-4 hover:shadow-md hover:bg-gray-800 transition-all duration-200">
+                  <div class="flex gap-3">
+                    <!-- Profile Picture Section -->
+                    <div class="flex-shrink-0">
+                      {% if update.created_by %}
+                        {% if update.created_by.profile.profile_picture %}
+                          <img src="{{ update.created_by.profile.profile_picture.url }}" alt="Profil" class="w-10 h-10 rounded-full object-cover border-2 border-gray-600">
                         {% else %}
-                          Güncelleme
+                          <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-gray-300"></i>
+                          </div>
                         {% endif %}
-                      </span>
+                      {% else %}
+                        <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                          <i class="fas fa-user text-gray-300"></i>
+                        </div>
+                      {% endif %}
                     </div>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ update.updated_at|date:'d.m.Y H:i' }}</span>
+                    
+                    <!-- Content Section -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex flex-col gap-2">
+                        <div class="flex flex-col gap-1">
+                          {% if update.created_by %}
+                            <div class="text-sm font-medium text-gray-200">
+                              {{ update.created_by.get_full_name|default:update.created_by.username }}
+                            </div>
+                          {% endif %}
+                          <div class="flex items-center gap-2">
+                            <span class="font-semibold text-blue-400 text-sm">
+                              {% if update.title %}
+                                {{ update.title }}
+                              {% else %}
+                                Güncelleme
+                              {% endif %}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {% if update.project_status %}
+                          <div class="mb-1">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs rounded-full">
+                              <i class="fas fa-info-circle"></i>
+                              {{ update.project_status }}
+                            </span>
+                          </div>
+                        {% endif %}
+                        
+                        <div class="text-gray-300 text-sm leading-relaxed">{{ update.note|linebreaks }}</div>
+                        
+                        <!-- Date at bottom right -->
+                        <div class="flex justify-end mt-2">
+                          <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ update.updated_at|date:'d.m.Y H:i' }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {% if update.project_status %}
-                    <div class="mb-2">
-                      <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs rounded-full">
-                        <i class="fas fa-info-circle"></i>
-                        {{ update.project_status }}
-                      </span>
-                    </div>
-                  {% endif %}
-                  <div class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{{ update.note|linebreaks }}</div>
                 </div>
               {% empty %}
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <i class="fas fa-clock text-4xl mb-3 opacity-50"></i>
+                <div class="text-center py-8 text-gray-400">
                   <p class="text-lg">Henüz güncelleme yok.</p>
                   <p class="text-sm mt-1">Proje geliştikçe burada güncellemeler görünecek.</p>
                 </div>
@@ -472,71 +460,405 @@
       </div>
     </div>
   </div>
+
+  <!-- Güncelleme Modalı -->
+  <div id="updateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-2xl mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-700">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <h3 class="text-xl font-semibold text-white">Proje Güncellemesi Ekle</h3>
+        </div>
+        <button onclick="closeUpdateModal()" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="updateForm" class="p-6">
+        {% csrf_token %}
+        <div class="space-y-4">
+          <div>
+            <label for="updateTitle" class="block text-sm font-medium text-gray-300 mb-2">
+              Güncelleme Başlığı
+            </label>
+            <input type="text" id="updateTitle" name="title" required
+                   class="w-full p-3 project-form-input border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition-all"
+                   placeholder="Güncelleme başlığı...">
+          </div>
+          
+          <div>
+            <label for="updateNote" class="block text-sm font-medium text-gray-300 mb-2">
+              Güncelleme Notu <span class="text-red-400">*</span>
+            </label>
+            <textarea id="updateNote" name="note" rows="4" required
+                      class="w-full p-3 project-form-input border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition-all resize-none"
+                      placeholder="Güncelleme detaylarını buraya yazın..."></textarea>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex gap-3 mt-6 pt-6 border-t border-gray-700">
+          <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i>
+            Güncellemeyi Kaydet
+          </button>
+          <button type="button" onclick="closeUpdateModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-times"></i>
+            İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Yorum Düzenle Modalı -->
+  <div id="editCommentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-2xl mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-700">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <h3 class="text-xl font-semibold text-white">Yorumu Düzenle</h3>
+        </div>
+        <button onclick="closeEditCommentModal()" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="editCommentForm" class="p-6">
+        {% csrf_token %}
+        <input type="hidden" id="editCommentId" name="comment_id">
+        <div class="space-y-4">
+          <div>
+            <label for="editCommentContent" class="block text-sm font-medium text-gray-300 mb-2">
+              Yorum İçeriği <span class="text-red-400">*</span>
+            </label>
+            <textarea id="editCommentContent" name="content" rows="4" required
+                      class="w-full p-3 project-form-input border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
+                      placeholder="Yorumunuzu buraya yazın..."></textarea>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex gap-3 mt-6 pt-6 border-t border-gray-700">
+          <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i>
+            Değişiklikleri Kaydet
+          </button>
+          <button type="button" onclick="closeEditCommentModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+            <i class="fas fa-times"></i>
+            İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
   <script>
+    // Modal functions - Global scope
+    function openUpdateModal() {
+      const modal = document.getElementById('updateModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeUpdateModal() {
+      const modal = document.getElementById('updateModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+      document.getElementById('updateForm').reset();
+    }
+
+    // Edit Comment Modal Functions - Global scope
+    function openEditCommentModal(commentId, content) {
+      document.getElementById('editCommentId').value = commentId;
+      document.getElementById('editCommentContent').value = content;
+      const modal = document.getElementById('editCommentModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditCommentModal() {
+      const modal = document.getElementById('editCommentModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+      document.getElementById('editCommentForm').reset();
+    }
+
+    // Delete Comment Function - Global scope
+    function deleteComment(commentId) {
+      if (confirm('Bu yorumu silmek istediğinizden emin misiniz?')) {
+        fetch(`/projects/comment/${commentId}/delete/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            showNotification('Yorum başarıyla silindi!', 'success');
+            
+            // Remove the comment element from the DOM
+            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+              commentElement.remove();
+            } else {
+              // Refresh the page if we can't find the element
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }
+          } else {
+            throw new Error(data.error || 'Silme işlemi başarısız');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Yorum silinirken bir hata oluştu.', 'error');
+        });
+      }
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+      }`;
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => {
+        notification.classList.add('translate-x-0');
+      }, 100);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => {
+          notification.remove();
+        }, 300);
+      }, 3000);
+    }
+
     // Enhanced category tag functionality
     document.addEventListener('DOMContentLoaded', function () {
-      const categoryTags = document.querySelectorAll('.category-tag[data-category-color]')
-    
+      const categoryTags = document.querySelectorAll('.category-tag[data-category-color]');
+      
       categoryTags.forEach((tag) => {
-        const color = tag.dataset.categoryColor
-    
+        const color = tag.dataset.categoryColor;
+        
         // Apply dynamic colors
-        tag.style.setProperty('--category-bg', color + '20')
-        tag.style.setProperty('--category-color', color)
-        tag.style.setProperty('--category-border', color + '40')
-    
+        tag.style.setProperty('--category-bg', color + '20');
+        tag.style.setProperty('--category-color', color);
+        tag.style.setProperty('--category-border', color + '40');
+        
         // Add hover effect
         tag.addEventListener('mouseenter', function () {
-          this.style.transform = 'translateY(-1px)'
-          this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
-        })
-    
+          this.style.transform = 'translateY(-1px)';
+          this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
         tag.addEventListener('mouseleave', function () {
-          this.style.transform = 'translateY(0)'
-          this.style.boxShadow = ''
-        })
-      })
-    
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '';
+        });
+      });
+      
+      // Enhanced technology tag functionality
+      const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');
+      
+      technologyTags.forEach((tag) => {
+        const color = tag.dataset.technologyColor;
+        
+        // Apply dynamic colors
+        tag.style.setProperty('--technology-bg', color + '20');
+        tag.style.setProperty('--technology-color', color);
+        tag.style.setProperty('--technology-border', color + '40');
+        
+        // Add hover effect
+        tag.addEventListener('mouseenter', function () {
+          this.style.transform = 'translateY(-1px)';
+          this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        tag.addEventListener('mouseleave', function () {
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '';
+        });
+      });
+      
       // Enhanced form styling
-      const formElements = document.querySelectorAll('textarea, input, select')
+      const formElements = document.querySelectorAll('textarea, input, select');
       formElements.forEach((element) => {
-        element.classList.add('project-comment-input')
-      })
-    
+        element.classList.add('project-comment-input');
+      });
+      
       // Style the comment form textarea specifically
-      const commentTextarea = document.querySelector('textarea[name="content"]')
+      const commentTextarea = document.querySelector('textarea[name="content"]');
       if (commentTextarea) {
-        commentTextarea.classList.add('w-full', 'p-4', 'bg-[#232a36]', 'border', 'border-gray-600', 'rounded-lg', 'text-white', 'placeholder-gray-500', 'focus:ring-2', 'focus:ring-blue-500', 'focus:border-blue-500', 'focus:outline-none', 'transition-all', 'resize-none', 'min-h-[100px]')
-        commentTextarea.placeholder = 'Yorumunuzu buraya yazın...'
+        commentTextarea.classList.add('w-full', 'p-4', 'bg-[#232a36]', 'border', 'border-gray-600', 'rounded-lg', 'text-white', 'placeholder-gray-500', 'focus:ring-2', 'focus:ring-blue-500', 'focus:border-blue-500', 'focus:outline-none', 'transition-all', 'resize-none', 'min-h-[100px]');
+        commentTextarea.placeholder = 'Yorumunuzu buraya yazın...';
       }
-    
-
-
+      
       // Add ripple effect to buttons
-      const buttons = document.querySelectorAll('.btn-enhanced')
+      const buttons = document.querySelectorAll('.btn-enhanced');
       buttons.forEach((button) => {
         button.addEventListener('click', function (e) {
-          const ripple = document.createElement('span')
-          const rect = this.getBoundingClientRect()
-          const size = Math.max(rect.width, rect.height)
-          const x = e.clientX - rect.left - size / 2
-          const y = e.clientY - rect.top - size / 2
-    
-          ripple.style.width = ripple.style.height = size + 'px'
-          ripple.style.left = x + 'px'
-          ripple.style.top = y + 'px'
-          ripple.classList.add('ripple')
-    
-          this.appendChild(ripple)
-    
+          const ripple = document.createElement('span');
+          const rect = this.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          const x = e.clientX - rect.left - size / 2;
+          const y = e.clientY - rect.top - size / 2;
+          
+          ripple.style.width = ripple.style.height = size + 'px';
+          ripple.style.left = x + 'px';
+          ripple.style.top = y + 'px';
+          ripple.classList.add('ripple');
+          
+          this.appendChild(ripple);
+          
           setTimeout(() => {
-            ripple.remove()
-          }, 600)
+            ripple.remove();
+          }, 600);
+        });
+      });
+
+      // Form submission via AJAX
+      document.getElementById('updateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+        fetch(`/projects/{{ project.id }}/add-update/`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+          }
         })
-      })
-    })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            throw new Error('Form submission failed');
+          }
+        })
+        .then(data => {
+          if (data.success) {
+            // Close modal
+            closeUpdateModal();
+            
+            // Show success message
+            showNotification('Proje güncellemesi başarıyla eklendi!', 'success');
+            
+            // Refresh the page to show the new update
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else {
+            throw new Error(data.error || 'Form validation failed');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Güncelleme eklenirken bir hata oluştu.', 'error');
+        })
+        .finally(() => {
+          // Restore button state
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        });
+      });
+
+      // Close modal when clicking outside
+      document.getElementById('updateModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeUpdateModal();
+        }
+      });
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeUpdateModal();
+          closeEditCommentModal();
+        }
+      });
+
+      // Edit Comment Form Submission
+      document.getElementById('editCommentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const commentId = document.getElementById('editCommentId').value;
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+        fetch(`/projects/comment/${commentId}/edit/`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Close modal
+            closeEditCommentModal();
+            
+            // Show success message
+            showNotification('Yorum başarıyla güncellendi!', 'success');
+            
+            // Refresh the page to show the updated comment
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else {
+            throw new Error(data.error || 'Form doğrulama hatası');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Yorum güncellenirken bir hata oluştu.', 'error');
+        })
+        .finally(() => {
+          // Restore button state
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        });
+      });
+    });
   </script>
 {% endblock %}

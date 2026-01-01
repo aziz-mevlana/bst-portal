@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Respons, Request, ProjectCategory, Technology
+from django.http import JsonResponse
+from .models import Respons, Request, ProjectCategory, Technology, ResponsUpdate, Comment
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
 import json
@@ -132,6 +133,8 @@ def project_update(request, project_id):
 def add_project_update(request, project_id):
     project = get_object_or_404(Respons, id=project_id)
     if request.user != project.created_by and request.user != project.advisor:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Proje güncellemesi ekleme yetkiniz yok.'})
         messages.error(request, 'Proje güncellemesi ekleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
     
@@ -139,15 +142,27 @@ def add_project_update(request, project_id):
         form = ProjectUpdateForm(request.POST)
         if form.is_valid():
             update = form.save(commit=False)
-            update.project = project
+            update.respons = project
             update.created_by = request.user
             update.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+            
             messages.success(request, 'Proje güncellemesi başarıyla eklendi.')
             return redirect('projects:project_detail', project_id=project.id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                errors = {}
+                if form.errors:
+                    for field, field_errors in form.errors.items():
+                        errors[field] = field_errors[0] if field_errors else 'Bu alan geçersiz.'
+                return JsonResponse({'success': False, 'error': 'Form doğrulama hatası', 'errors': errors})
     else:
-        form = ProjectUpdateForm()
-    
-    return render(request, 'projects/project_update_form.html', {'form': form})
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})
+        
+        return JsonResponse({'success': False, 'error': 'Bu sayfa artık kullanılmamaktadır. Modal formu kullanın.'})
 
 @login_required
 def add_comment(request, project_id):
@@ -161,3 +176,57 @@ def add_comment(request, project_id):
             comment.save()
             messages.success(request, 'Yorumunuz başarıyla eklendi.')
     return redirect('projects:project_detail', project_id=project.id)
+
+
+@login_required
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    
+    # Check if user can edit this comment
+    if request.user != comment.author and not request.user.is_staff:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Bu yorumu düzenleme yetkiniz yok.'})
+        messages.error(request, 'Bu yorumu düzenleme yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=comment.respons.id)
+    
+    if request.method == 'POST':
+        form = ProjectCommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'content': comment.content})
+            messages.success(request, 'Yorumunuz başarıyla güncellendi.')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                errors = {}
+                for field, field_errors in form.errors.items():
+                    errors[field] = field_errors[0] if field_errors else 'Bu alan geçersiz.'
+                return JsonResponse({'success': False, 'error': 'Form doğrulama hatası', 'errors': errors})
+    else:
+        form = ProjectCommentForm(instance=comment)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'content': comment.content})
+    
+    return redirect('projects:project_detail', project_id=comment.respons.id)
+
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    project_id = comment.respons.id
+    
+    # Check if user can delete this comment
+    if request.user != comment.author and not request.user.is_staff:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Bu yorumu silme yetkiniz yok.'})
+        messages.error(request, 'Bu yorumu silme yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project_id)
+    
+    if request.method == 'POST':
+        comment.delete()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+        messages.success(request, 'Yorumunuz başarıyla silindi.')
+    
+    return redirect('projects:project_detail', project_id=project_id)

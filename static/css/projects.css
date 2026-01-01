@@ -242,6 +242,19 @@
     opacity: 1;
 }
 
+/* Technology Tag Dynamic Styling */
+.technology-tag {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.9;
+}
+
+.technology-tag:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
 /* Enhanced form styling for dark mode */
 .project-detail-item textarea,
 .project-detail-item input,

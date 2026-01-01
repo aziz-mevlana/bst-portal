@@ -17,23 +17,23 @@ class ProjectCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Technology)
 class TechnologyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'icon', 'created_at')
+    list_display = ('name', 'color', 'icon', 'created_at')
     search_fields = ('name',)
     list_filter = ('created_at',)
 
 
 @admin.register(Respons)
 class ResponsAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_by', 'advisor', 'status', 'created_at')
+    list_display = ('title', 'created_by', 'advisor', 'created_at', 'status')
     search_fields = ('title', 'created_by__username', 'advisor__username')
-    list_filter = ('status', 'categories', 'technologies')
+    list_filter = ('categories', 'technologies', 'created_at')
     filter_horizontal = ('categories', 'technologies', 'team')
 
 
 @admin.register(ResponsUpdate)
 class ResponsUpdateAdmin(admin.ModelAdmin):
-    list_display = ('respons', 'which_respons', 'updated_at')
-    search_fields = ('which_respons', 'note')
+    list_display = ('respons', 'title', 'updated_at')
+    search_fields = ('title', 'note')
 
 
 @admin.register(Comment)

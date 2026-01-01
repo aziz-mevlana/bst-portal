@@ -22,6 +22,7 @@ class Technology(models.Model):
     """Kullanılan teknolojiler (hangi teknolojileri içerdiğini)"""
     name = models.CharField(max_length=100, unique=True)
     icon = models.CharField(max_length=50, blank=True, help_text='Font Awesome icon class')
+    color = models.CharField(max_length=7, default='#10B981', help_text='Hex renk kodu')
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -55,23 +56,22 @@ class Request(models.Model):
 
 
 class Respons(models.Model):
+
     STATUS_CHOICES = [
         ('draft', 'Taslak'),
-        ('approved', 'Onaylandı'),
-        ('rejected', 'Reddedildi'),
         ('completed', 'Tamamlandı'),
     ]
-
     request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='responses')
     title = models.CharField(max_length=200)
     advisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='advised_responses')
     description = models.TextField(blank=True, null=True)
     team = models.ManyToManyField(User, related_name='responses', blank=True)
     project_link = models.URLField(blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_responses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+
     
     # Etiket ilişkileri
     categories = models.ManyToManyField(ProjectCategory, related_name='projects', blank=True)
@@ -88,13 +88,13 @@ class Respons(models.Model):
 
 
 class ResponsUpdate(models.Model):
+    
     respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='updates')
-    which_respons = models.CharField(max_length=200, blank=True, null=True)
-    when = models.DateTimeField(blank=True, null=True)
-    project_status = models.CharField(max_length=100, blank=True, null=True)
-    notify_teacher = models.BooleanField(default=False)
+    title = models.CharField(max_length=200 , blank=True, null=True)
     note = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='respons_updates')
     updated_at = models.DateTimeField(auto_now_add=True)
+
 
     class Meta:
         ordering = ['-updated_at']

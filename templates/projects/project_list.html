@@ -7,6 +7,40 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+<style>
+/* Technology tag styling */
+.technology-tag {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.technology-tag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.technology-tag:hover::before {
+  left: 100%;
+}
+
+/* Apply dynamic colors to technology tags */
+.technology-tag[data-technology-color] {
+  background-color: var(--technology-bg);
+  color: var(--technology-color);
+  border: 1px solid var(--technology-border);
+}
+
+.technology-tag:hover {
+  transform: translateY(-1px);
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -66,12 +100,14 @@
                 <!-- Etiketler -->
                 <div class="flex flex-wrap gap-2 mb-4">
                     {% for category in project.categories.all %}
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }}">
+                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }}">
                         {{ category.name }}
                     </span>
                     {% endfor %}
                     {% for technology in project.technologies.all %}
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold project-tag-gray">
+                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--technology-bg: {{ technology.color }}20; --technology-color: {{ technology.color }}; --technology-border: {{ technology.color }}40;" 
+                          data-technology-color="{{ technology.color }}">
                         {% if technology.icon %}<i class="{{ technology.icon }} mr-1"></i>{% endif %}
                         {{ technology.name }}
                     </span>
@@ -91,4 +127,20 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+// Enhanced technology tag functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');
+  
+  technologyTags.forEach((tag) => {
+    const color = tag.dataset.technologyColor;
+    
+    // Apply dynamic colors
+    tag.style.setProperty('--technology-bg', color + '20');
+    tag.style.setProperty('--technology-color', color);
+    tag.style.setProperty('--technology-border', color + '40');
+  });
+});
+</script>
 {% endblock %} 
