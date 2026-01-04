@@ -180,29 +180,73 @@
     </div>
   </div>
 
-  {% block extra_js %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const swiper = new Swiper('.hero-carousel', {
-        // Otomatik geçiş ve döngü
-        rewind: true, // Sona gelince başa, baştayken sona döner. Loop'a göre daha stabil.
-        
-        autoplay: {
-          delay: 5000, // 5 saniyede bir sonraki habere geçer
-          disableOnInteraction: false, // Kullanıcı etkileşiminden sonra da devam et
-        },
-        // Geçiş efekti
-        effect: 'fade',
-        fadeEffect: {
-          crossFade: true
-        },
-        // İleri/Geri butonları
-        navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev',
-        },
-      });
-    });
-  </script>
-  {% endblock %}
+   {% block extra_js %}
+   <script>
+     document.addEventListener('DOMContentLoaded', function () {
+       // Mobil cihaz kontrolü
+       const isMobile = window.innerWidth <= 767;
+
+       const swiper = new Swiper('.hero-carousel', {
+         // Otomatik geçiş ve döngü
+         rewind: true,
+
+         autoplay: {
+           delay: isMobile ? 3000 : 5000, // Mobil'de daha hızlı geçiş
+           disableOnInteraction: false,
+         },
+
+         // Geçiş efekti - mobil'de slide efekti daha iyi
+         effect: isMobile ? 'slide' : 'fade',
+         fadeEffect: {
+           crossFade: true
+         },
+
+         // İleri/Geri butonları - mobil'de gizli
+         navigation: {
+           nextEl: '.swiper-button-next',
+           prevEl: '.swiper-button-prev',
+         },
+
+         // Nokta göstergeleri
+         pagination: {
+           el: '.swiper-pagination',
+           clickable: true,
+         },
+
+         // Mobil dostu ayarlar
+         touchRatio: 1.5,
+         touchAngle: 45,
+         grabCursor: true,
+
+         // Responsive ayarlar
+         breakpoints: {
+           // Mobil
+           0: {
+             slidesPerView: 1,
+             spaceBetween: 0,
+           },
+           // Tablet ve üstü
+           768: {
+             slidesPerView: 1,
+             spaceBetween: 0,
+           }
+         }
+       });
+
+       // Mobil'de daha iyi performans için
+       if (isMobile) {
+         swiper.on('slideChange', function () {
+           // Geçiş sırasında performans optimizasyonu
+           const activeSlide = swiper.slides[swiper.activeIndex];
+           const images = activeSlide.querySelectorAll('img');
+           images.forEach(img => {
+             if (img.complete) {
+               img.style.transform = 'scale(1.05)';
+             }
+           });
+         });
+       }
+     });
+   </script>
+   {% endblock %}
 {% endblock %}

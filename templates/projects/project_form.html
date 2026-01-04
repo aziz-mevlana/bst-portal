@@ -33,7 +33,6 @@
     }
     .checkbox-group input[type='checkbox']:checked + span {
       color: #60a5fa !important;
-      font-weight: 500 !important;
     }
     .checkbox-group span {
       color: #e5e7eb !important;
@@ -79,7 +78,7 @@
                 <!-- Temel Alanlar -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {% for field in form %}
-                    {% if field.name in 'title description project_link status request advisor' %}
+                    {% if field.name in 'title description project_link status project_request advisor' %}
                       <div class="space-y-2 {% if field.name == 'description' %}md:col-span-2{% endif %}">
                         <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
                           {% if field.name == 'title' %}
@@ -90,7 +89,7 @@
                             Proje Linki
                           {% elif field.name == 'status' %}
                             Proje Durumu
-                          {% elif field.name == 'request' %}
+                          {% elif field.name == 'project_request' %}
                             Proje Türü
                           {% elif field.name == 'advisor' %}
                             Danışman
@@ -220,7 +219,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-      const requestField = findFieldByName('request');
+      const requestField = findFieldByName('project_request');
       const advisorField = findFieldByName('advisor');
 
       if (!requestField || !advisorField) return;

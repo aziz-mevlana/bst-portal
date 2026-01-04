@@ -32,10 +32,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (mobileMenuButton && mobileMenu) {
         mobileMenuButton.addEventListener('click', () => {
+            console.log('Mobile menu button clicked'); // Debug log
             const isActive = mobileMenu.classList.contains('active');
+            console.log('Current active state:', isActive); // Debug log
+            
             mobileMenu.classList.toggle('active');
             menuIcon.classList.toggle('hidden');
             closeIcon.classList.toggle('hidden');
+            
+            console.log('New active state:', mobileMenu.classList.contains('active')); // Debug log
             
             // Close dropdown when mobile menu is opened
             if (!isActive && dropdownMenu) {
@@ -68,6 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 menuIcon.classList.remove('hidden');
                 closeIcon.classList.add('hidden');
             }
+        });
+    } else {
+        console.error('Mobile menu elements not found:', {
+            button: mobileMenuButton,
+            menu: mobileMenu
         });
     }
 

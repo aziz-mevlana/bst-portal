@@ -3,7 +3,48 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
+class Profile(models.Model):
+    """User profile information"""
+    USER_TYPE_CHOICES = [
+        ('student', 'Student'),
+        ('teacher', 'Faculty Member'),
+        ('alumni', 'Alumni'),
+        ('staff_student', 'Staff Student')
+    ]
+    
+    CLASS_CHOICES = [
+        ('1', '1st Year'),
+        ('2', '2nd Year'),
+        ('3', '3rd Year'),
+        ('4', '4th Year'),
+        ('continuing', 'Continuing'),
+        ('graduated', 'Graduated')
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user_type = models.CharField(max_length=15, choices=USER_TYPE_CHOICES, default='student')
+    username = models.CharField(max_length=150, unique=True, blank=True, null=True)
+    first_name = models.CharField(max_length=30, blank=True, null=True)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
+    student_number = models.CharField(max_length=20, blank=True, null=True)
+    class_level = models.CharField(max_length=20, choices=CLASS_CHOICES, default='1')
+    department = models.CharField(max_length=100, blank=True, null=True, default='Information Systems and Technologies')
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Profile"
+        verbose_name_plural = "Profiles"
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.get_user_type_display()}"
+
+# Keep old model for backward compatibility during migration
 class UserProfile(models.Model):
+    """Deprecated: Use Profile instead"""
     USER_TYPE_CHOICES = [
         ('student', 'Öğrenci'),
         ('teacher', 'Öğretim Üyesi'),
@@ -20,7 +61,7 @@ class UserProfile(models.Model):
         ('bitir', 'Bitirdi')
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='old_profile')
     user_type = models.CharField(max_length=15, choices=USER_TYPE_CHOICES, default='student')
     username = models.CharField(max_length=150, unique=True, blank=True, null=True)
     first_name = models.CharField(max_length=30, blank=True, null=True)
@@ -36,10 +77,11 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.get_user_type_display()}"
 
+# Signal handlers
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        Profile.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

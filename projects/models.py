@@ -3,15 +3,15 @@ from django.contrib.auth.models import User
 
 
 class ProjectCategory(models.Model):
-    """Proje türü/kategorisi (ne projesi olduğunu)"""
+    """Project category/type (what kind of project it is)"""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    color = models.CharField(max_length=7, default='#3B82F6', help_text='Hex renk kodu')
+    color = models.CharField(max_length=7, default='#3B82F6', help_text='Hex color code')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = "Proje Kategorisi"
-        verbose_name_plural = "Proje Kategorileri"
+        verbose_name = "Project Category"
+        verbose_name_plural = "Project Categories"
         ordering = ['name']
     
     def __str__(self):
@@ -19,23 +19,110 @@ class ProjectCategory(models.Model):
 
 
 class Technology(models.Model):
-    """Kullanılan teknolojiler (hangi teknolojileri içerdiğini)"""
+    """Technologies used in projects"""
     name = models.CharField(max_length=100, unique=True)
     icon = models.CharField(max_length=50, blank=True, help_text='Font Awesome icon class')
-    color = models.CharField(max_length=7, default='#10B981', help_text='Hex renk kodu')
+    color = models.CharField(max_length=7, default='#10B981', help_text='Hex color code')
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = "Teknoloji"
-        verbose_name_plural = "Teknolojiler"
+        verbose_name = "Technology"
+        verbose_name_plural = "Technologies"
         ordering = ['name']
     
     def __str__(self):
         return self.name
 
 
+class ProjectRequest(models.Model):
+    """Project requests/proposals"""
+    title = models.CharField(max_length=200)
+    course = models.CharField(max_length=200, blank=True, null=True)
+    duration = models.CharField(max_length=100, blank=True, null=True)
+    team_size = models.PositiveSmallIntegerField(blank=True, null=True)
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='project_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Project Request"
+        verbose_name_plural = "Project Requests"
+
+    def __str__(self):
+        if self.teacher:
+            return f"{self.title} - {self.teacher.get_full_name()}"
+        else:
+            return self.title
+
+
+class Project(models.Model):
+    """Main project model"""
+    STATUS_CHOICES = [
+        ('draft', 'Taslak'),
+        ('completed', 'Tamamlandı'),
+    ]
+    project_request = models.ForeignKey(ProjectRequest, on_delete=models.CASCADE, related_name='projects')
+    title = models.CharField(max_length=200)
+    advisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='advised_projects')
+    description = models.TextField(blank=True, null=True)
+    team = models.ManyToManyField(User, related_name='projects', blank=True)
+    project_link = models.URLField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+
+    # Tag relationships
+    categories = models.ManyToManyField(ProjectCategory, related_name='projects', blank=True)
+    technologies = models.ManyToManyField(Technology, related_name='projects', blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Project"
+        verbose_name_plural = "Projects"
+
+    def __str__(self):
+        return f"{self.title} - {self.created_by.get_full_name()}"
+
+
+class ProjectUpdate(models.Model):
+    """Updates for projects"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='updates')
+    title = models.CharField(max_length=200, blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='project_updates')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Project Update"
+        verbose_name_plural = "Project Updates"
+
+    def __str__(self):
+        return f"Update for {self.project.title} at {self.created_at}"
+
+
+class ProjectComment(models.Model):
+    """Comments on projects"""
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = "Project Comment"
+        verbose_name_plural = "Project Comments"
+
+    def __str__(self):
+        return f"Comment by {self.author.get_full_name()} on {self.project.title}"
+
+
+# Keep old models for backward compatibility during migration
 class Request(models.Model):
+    """Deprecated: Use ProjectRequest instead"""
     title = models.CharField(max_length=200)
     course = models.CharField(max_length=200, blank=True, null=True)
     duration = models.CharField(max_length=100, blank=True, null=True)
@@ -52,11 +139,10 @@ class Request(models.Model):
             return f"{self.title} - {self.teacher.get_full_name()}"
         else:
             return self.title
-        
 
 
 class Respons(models.Model):
-
+    """Deprecated: Use Project instead"""
     STATUS_CHOICES = [
         ('draft', 'Taslak'),
         ('completed', 'Tamamlandı'),
@@ -71,14 +157,8 @@ class Respons(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-
-    
-    # Etiket ilişkileri
-    categories = models.ManyToManyField(ProjectCategory, related_name='projects', blank=True)
-    technologies = models.ManyToManyField(Technology, related_name='projects', blank=True)
-
-
-
+    categories = models.ManyToManyField(ProjectCategory, related_name='old_projects', blank=True)
+    technologies = models.ManyToManyField(Technology, related_name='old_projects', blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -88,13 +168,12 @@ class Respons(models.Model):
 
 
 class ResponsUpdate(models.Model):
-    
+    """Deprecated: Use ProjectUpdate instead"""
     respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='updates')
-    title = models.CharField(max_length=200 , blank=True, null=True)
+    title = models.CharField(max_length=200, blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='respons_updates')
     updated_at = models.DateTimeField(auto_now_add=True)
-
 
     class Meta:
         ordering = ['-updated_at']
@@ -104,6 +183,7 @@ class ResponsUpdate(models.Model):
 
 
 class Comment(models.Model):
+    """Deprecated: Use ProjectComment instead"""
     respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='respons_comments')
     content = models.TextField()

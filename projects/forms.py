@@ -1,11 +1,12 @@
 from django import forms
-from .models import Respons, ResponsUpdate, Comment, ProjectCategory, Technology, Request
+from django.db.models import Q
+from .models import Project, ProjectUpdate, ProjectComment, ProjectCategory, Technology, ProjectRequest
 from django.contrib.auth.models import User
 
 
 class RequestForm(forms.ModelForm):
     class Meta:
-        model = Request
+        model = ProjectRequest
         fields = ['title', 'course', 'duration', 'team_size']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'project-form-input'}),
@@ -16,12 +17,12 @@ class RequestForm(forms.ModelForm):
 
 
 class ProjectForm(forms.ModelForm):
-    """Form used by views but mapped to new Respons model."""
+    """Form used by views but mapped to new Project model."""
     class Meta:
-        model = Respons
-        fields = ['request', 'advisor', 'title', 'description', 'project_link', 'team', 'categories', 'technologies']
+        model = Project
+        fields = ['project_request', 'advisor', 'title', 'description', 'project_link', 'team', 'categories', 'technologies']
         widgets = {
-            'request': forms.Select(attrs={'class': 'project-form-input'}),
+            'project_request': forms.Select(attrs={'class': 'project-form-input'}),
             'advisor': forms.Select(attrs={'class': 'project-form-input'}),
             'title': forms.TextInput(attrs={'class': 'project-form-input'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input'}),
@@ -33,13 +34,15 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['advisor'].queryset = User.objects.filter(profile__user_type='teacher')
-        self.fields['team'].queryset = User.objects.filter(profile__user_type='student')
+        self.fields['advisor'].queryset = User.objects.filter(Q(profile__user_type='teacher') | Q(old_profile__user_type='teacher')).distinct()
+        self.fields['team'].queryset = User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
+        # Rename field for better user experience
+        self.fields['project_request'].label = 'Project Request'
 
 
 class ProjectUpdateForm(forms.ModelForm):
     class Meta:
-        model = ResponsUpdate
+        model = ProjectUpdate
         fields = ['title', 'note']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'project-form-input', 'placeholder': 'Güncelleme başlığı...'}),
@@ -49,7 +52,7 @@ class ProjectUpdateForm(forms.ModelForm):
 
 class ProjectCommentForm(forms.ModelForm):
     class Meta:
-        model = Comment
+        model = ProjectComment
         fields = ['content']
         widgets = {
             'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...', 'class': 'project-form-input'}),

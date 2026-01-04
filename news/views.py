@@ -1,18 +1,18 @@
 from django.shortcuts import render, get_object_or_404
-from .models import News
+from .models import Article
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 def news_list(request):
-    news = News.objects.all()
+    news = Article.objects.all()
     return render(request, 'news/news_list.html', {'news': news})
 
 def news_detail(request, pk):
     try:
-        news = News.objects.get(pk=pk)
+        news = Article.objects.get(pk=pk)
         return render(request, 'news/news_detail.html', {'news': news})
-    except News.DoesNotExist:
+    except Article.DoesNotExist:
         messages.error(request, 'Haber bulunamadı.')
         return redirect('news:news_list')
 
@@ -20,7 +20,7 @@ def news_detail(request, pk):
 def create_news(request):
     if request.user.profile.user_type != 'staff_student' and request.user.profile.user_type != 'teacher':
         return redirect('news:news_list')
-    
+
     if request.method == 'POST':
         title = request.POST.get('title')
         summary = request.POST.get('summary')
@@ -28,9 +28,10 @@ def create_news(request):
         source = request.POST.get('source')
         url = request.POST.get('url')
         image = request.FILES.get('image')
-        news_type = request.POST.get('news_type')
-        news_category = request.POST.get('news_category')
-        news = News.objects.create(
+        article_type = request.POST.get('article_type')
+        article_category = request.POST.get('article_category')
+        is_homepage = request.POST.get('is_homepage') == 'on'
+        news = Article.objects.create(
             title=title,
             summary=summary,
             content=content,
@@ -38,8 +39,9 @@ def create_news(request):
             url=url,
             image=image,
             created_by=request.user,
-            news_type=news_type,
-            news_category=news_category
+            article_type=article_type,
+            article_category=article_category,
+            is_homepage=is_homepage
         )
         messages.success(request, 'Haber başarıyla oluşturuldu.')
         return redirect('news:news_list')

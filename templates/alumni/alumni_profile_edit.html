@@ -208,8 +208,8 @@
             </div>
 
             <!-- Yetenekler ve Mentorluk -->
-            <div class="color-page dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold  dark:text-white mb-6">Seçenekler</h2>
+            <div class="color-page bg-gray-800 rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-white mb-6">Seçenekler</h2>
                 
                 <!-- Mentorluk ve Görünüm -->
                 <div class="mb-6">
@@ -243,8 +243,12 @@
                             <input type="checkbox" 
                                    name="tags" 
                                    value="{{ tag.id }}" 
-                                   {% if tag in profile.tags.all %}checked{% endif %}>
-                            <span>{{ tag.name }}</span>
+                                    {% if tag in profile.skills.all %}checked{% endif %}>
+                            <span class="alumni-skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-2" 
+                                  style="--skill-bg: {{ tag.color }}20; --skill-color: {{ tag.color }}; --skill-border: {{ tag.color }}40;" 
+                                  data-skill-color="{{ tag.color }}">
+                                {{ tag.name }}
+                            </span>
                         </label>
                         {% endfor %}
                     </div>
@@ -258,9 +262,9 @@
                 <!-- Mevcut Deneyimler -->
                 <div class="mb-6">
                     <h3 class="text-lg font-medium mb-4">Mevcut Deneyimler</h3>
-                    {% if profile.experiences.all %}
+                    {% if profile.work_experiences.all %}
                         <div class="space-y-4">
-                            {% for exp in profile.experiences.all %}
+                            {% for exp in profile.work_experiences.all %}
                                 <div id="experience-{{ exp.id }}" class="border  project-form-input rounded-lg p-4">
                                      <div class="flex justify-between items-start">
                                          <div>
@@ -628,6 +632,22 @@ function cancelEdit(expId) {
     }
     expCard.style.display = 'block';
 }
+</script>
+
+<script>
+// Enhanced alumni skill tag functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const skillTags = document.querySelectorAll('.alumni-skill-tag[data-skill-color]');
+  
+  skillTags.forEach((tag) => {
+    const color = tag.dataset.skillColor;
+    
+    // Apply dynamic colors
+    tag.style.setProperty('--skill-bg', color + '20');
+    tag.style.setProperty('--skill-color', color);
+    tag.style.setProperty('--skill-border', color + '40');
+  });
+});
 </script>
 
 {% endblock %}

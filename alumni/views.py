@@ -1,15 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import AlumniProfile, AlumniExperience, Tag
+from .models import AlumniProfile, AlumniExperience, Tag, SkillTag, Alumni, WorkExperience
 from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_protect
 
 @login_required
 def alumni_list(request):
-    alumni_list = AlumniProfile.objects.filter(is_show_in_alumni_list=True)
-    tags = Tag.objects.all()
+    alumni_list = Alumni.objects.filter(is_show_in_alumni_list=True)
+    tags = SkillTag.objects.all()
 
     # Arama ve filtreleme parametreleri
     query = request.GET.get('q', '')
@@ -31,10 +31,10 @@ def alumni_list(request):
     if graduation_year:
         alumni_list = alumni_list.filter(graduation_year=graduation_year)
     if tag_id:
-        alumni_list = alumni_list.filter(tags__id=tag_id)
+        alumni_list = alumni_list.filter(skills__id=tag_id)
 
     # Mezuniyet yıllarını unique olarak al
-    graduation_years = AlumniProfile.objects.values_list('graduation_year', flat=True).distinct().order_by('-graduation_year')
+    graduation_years = Alumni.objects.values_list('graduation_year', flat=True).distinct().order_by('-graduation_year')
 
     return render(request, 'alumni/alumni_list.html', {
         'alumni_list': alumni_list,
@@ -47,8 +47,8 @@ def alumni_list(request):
     })
 
 def alumni_detail(request, username):
-    alumni = get_object_or_404(AlumniProfile, user__username=username)
-    experiences = alumni.experiences.all()
+    alumni = get_object_or_404(Alumni, user__username=username)
+    experiences = alumni.work_experiences.all()
     if alumni.user.username == request.user.username:
         return redirect('alumni:alumni_profile')
     return render(request, 'alumni/alumni_detail.html', {
@@ -59,12 +59,12 @@ def alumni_detail(request, username):
 @login_required
 def alumni_profile(request):
     try:
-        profile = request.user.alumni_profile
-    except AlumniProfile.DoesNotExist:
+        profile = request.user.alumni
+    except Alumni.DoesNotExist:
         messages.error(request, 'Mezun profiliniz bulunamadı.')
         return redirect('accounts:profile')
     
-    experiences = profile.experiences.all()
+    experiences = profile.work_experiences.all()
     return render(request, 'alumni/alumni_profile.html', {
         'profile': profile,
         'experiences': experiences
@@ -73,9 +73,9 @@ def alumni_profile(request):
 @login_required
 def alumni_profile_edit(request):
     try:
-        profile = request.user.alumni_profile
-    except AlumniProfile.DoesNotExist:
-        profile = AlumniProfile(user=request.user)
+        profile = request.user.alumni
+    except Alumni.DoesNotExist:
+        profile = Alumni(user=request.user)
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -103,13 +103,13 @@ def alumni_profile_edit(request):
             
             # Etiketleri güncelle
             tag_ids = request.POST.getlist('tags')
-            profile.tags.set(tag_ids)
+            profile.skills.set(tag_ids)
             
             profile.save()
             messages.success(request, 'Profiliniz başarıyla güncellendi.')
             return redirect('alumni:alumni_profile')
     
-    tags = Tag.objects.all()
+    tags = SkillTag.objects.all()
     return render(request, 'alumni/alumni_profile_edit.html', {
         'profile': profile,
         'tags': tags
@@ -127,8 +127,8 @@ def add_experience(request, profile):
         if not company or not position or not start_date:
             return JsonResponse({'success': False, 'error': 'Zorunlu alanlar eksik'})
         
-        experience = AlumniExperience.objects.create(
-            alumni=profile,
+        experience = WorkExperience.objects.create(
+            person=profile,
             company=company,
             position=position,
             start_date=start_date,
@@ -144,10 +144,10 @@ def add_experience(request, profile):
 def delete_experience(request, profile):
     try:
         experience_id = request.POST.get('experience_id')
-        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        experience = WorkExperience.objects.get(id=experience_id, person=profile)
         experience.delete()
         return JsonResponse({'success': True})
-    except AlumniExperience.DoesNotExist:
+    except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -155,7 +155,7 @@ def delete_experience(request, profile):
 def get_experience(request, profile):
     try:
         experience_id = request.POST.get('experience_id')
-        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        experience = WorkExperience.objects.get(id=experience_id, person=profile)
         
         experience_data = {
             'id': experience.id,
@@ -168,7 +168,7 @@ def get_experience(request, profile):
         }
         
         return JsonResponse({'success': True, 'experience': experience_data})
-    except AlumniExperience.DoesNotExist:
+    except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -176,7 +176,7 @@ def get_experience(request, profile):
 def edit_experience(request, profile):
     try:
         experience_id = request.POST.get('experience_id')
-        experience = AlumniExperience.objects.get(id=experience_id, alumni=profile)
+        experience = WorkExperience.objects.get(id=experience_id, person=profile)
         
         company = request.POST.get('company')
         position = request.POST.get('position')
@@ -197,11 +197,11 @@ def edit_experience(request, profile):
         experience.save()
         
         return JsonResponse({'success': True})
-    except AlumniExperience.DoesNotExist:
+    except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
 def tag_list(request):
-    tags = Tag.objects.all()
+    tags = SkillTag.objects.all()
     return render(request, 'alumni/tag_list.html', {'tags': tags})

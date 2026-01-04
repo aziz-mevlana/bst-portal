@@ -11,71 +11,87 @@
 {% endblock %}
 
 {% block content %}
-<div class="profile-page page-container">
-    <div class="profile-page__header">
-        <h1 class="profile-page__title">Profilim</h1>
-    </div>
-
-    <div class="profile-page__card">
-        <div class="profile-page__card-header">
-            <div class="profile-page__avatar-container">
-                {% if user.profile.profile_picture %}
-                <img src="{{ user.profile.profile_picture.url }}" alt="Profil Fotoğrafı" class="profile-page__avatar">
-                {% else %}
-                <img src="{% static "images/icons/profile.svg" %}" alt="Profil Fotoğrafı" class="profile-page__avatar">
-                {% endif %}
-            </div>
-            <div class="profile-page__info">
-                <h2 class="profile-page__name">{{ user.get_full_name|default:user.username }}</h2>
-                <p class="profile-page__username">@{{ user.username }}</p>
-            </div>
+<div class="container mx-auto px-4 py-3 alumni-detail-page-container">
+    <div class="max-w-4xl mx-auto">
+        <!-- Başlık -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold">Profilim</h1>
         </div>
 
-        <div class="profile-page__content">
-            <form method="post" enctype="multipart/form-data" class="profile-page__form" id="profileForm">
+        <div class="color-page rounded-lg shadow-lg p-6">
+            <div class="mb-6">
+                <div class="flex items-center gap-4">
+                    {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="Profil Fotoğrafı" class="w-20 h-20 rounded-full border-3 border-blue-500 shadow-lg">
+                    {% else %}
+                    <div class="w-20 h-20 rounded-full bg-gray-300 border-3 border-blue-500 shadow-lg flex items-center justify-center">
+                        <img src="{% static 'images/icons/profile.svg' %}" alt="Profil Fotoğrafı" class="w-12 h-12">
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h2 class="text-2xl font-bold">{{ user.get_full_name|default:user.username }}</h2>
+                        <p class="text-gray-400">@{{ user.username }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="space-y-6" id="profileForm">
                 {% csrf_token %}
                 
-                <div class="profile-page__form-group">
-                    <label for="id_username" class="profile-page__label">Kullanıcı Adı</label>
-                    <input type="text" name="username" id="id_username" value="{{ user.username }}" class="profile-page__input project-form-input" readonly disabled>
-                </div>
+                <!-- Temel Bilgiler -->
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="id_username" class="block text-sm font-medium mb-2">Kullanıcı Adı</label>
+                            <input type="text" name="username" id="id_username" value="{{ user.username }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " readonly disabled>
+                        </div>
 
-                <div class="profile-page__form-group">
-                    <label for="id_email" class="profile-page__label">E-posta</label>
-                    <input type="email" name="email" id="id_email" value="{{ user.email }}" class="profile-page__input project-form-input" readonly disabled>
-                </div>
-
-                <div class="profile-page__form-row">
-                    <div class="profile-page__form-group">
-                        <label for="id_first_name" class="profile-page__label">Ad</label>
-                        <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="profile-page__input project-form-input">
+                        <div>
+                            <label for="id_email" class="block text-sm font-medium mb-2">E-posta</label>
+                            <input type="email" name="email" id="id_email" value="{{ user.email }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " readonly disabled>
+                        </div>
                     </div>
 
-                    <div class="profile-page__form-group">
-                        <label for="id_last_name" class="profile-page__label">Soyad</label>
-                        <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="profile-page__input project-form-input">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="id_first_name" class="block text-sm font-medium mb-2">Ad</label>
+                            <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm ">
+                        </div>
+
+                        <div>
+                            <label for="id_last_name" class="block text-sm font-medium mb-2">Soyad</label>
+                            <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm ">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="id_profile_picture" class="block text-sm font-medium mb-2">Profil Fotoğrafı</label>
+                        <div class="space-y-4">
+                            <input type="file" name="profile_picture_file" id="id_profile_picture" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " accept="image/*">
+                            <input type="hidden" name="profile_picture" id="croppedImageData">
+                            <p class="text-sm text-gray-400">Önerilen boyut: 400x400 piksel</p>
+                            
+                            <!-- Kırpılmış resim önizlemesi -->
+                            <div id="croppedPreview" class="relative inline-block" style="display: none;">
+                                <img id="croppedImage" alt="Kırpılmış resim" class="w-24 h-24 rounded-full border-3 border-blue-500 shadow-lg">
+                                <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors" onclick="removeCroppedImage()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="profile-page__form-group">
-                    <label for="id_profile_picture" class="profile-page__label">Profil Fotoğrafı</label>
-                    <input type="file" name="profile_picture_file" id="id_profile_picture" class="profile-page__input project-form-input" accept="image/*">
-                    <input type="hidden" name="profile_picture" id="croppedImageData">
-                    <small class="profile-page__help-text">Önerilen boyut: 400x400 piksel</small>
-                    
-                    <!-- Kırpılmış resim önizlemesi -->
-                    <div id="croppedPreview" class="profile-page__cropped-preview" style="display: none;">
-                        <img id="croppedImage" alt="Kırpılmış resim">
-                        <button type="button" class="profile-page__remove-btn" onclick="removeCroppedImage()">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="profile-page__form-actions">
-                    <button type="submit" class="profile-page__button">Değişiklikleri Kaydet</button>
+                <!-- Form Aksiyonları -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-end pt-6">
+                    <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Değişiklikleri Kaydet
+                    </button>
                 </div>
             </form>
         </div>
@@ -83,22 +99,26 @@
 </div>
 
 <!-- Fotoğraf Kırpma Modal -->
-<div id="cropperModal" class="cropper-modal opacity-9" style="display: none;">
-    <div class="cropper-modal__content">
-        <div class="cropper-modal__header">
-            <h3 class="cropper-modal__title">Profil Fotoğrafını Kırp</h3>
-            <button type="button" class="cropper-modal__close" onclick="closeCropperModal()">
+<div id="cropperModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" style="display: none;">
+    <div class="bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 class="text-xl font-semibold text-white">Profil Fotoğrafını Kırp</h3>
+            <button type="button" onclick="closeCropperModal()" class="text-gray-400 hover:text-white transition-colors p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div class="cropper-modal__body">
-            <img id="cropperImage" alt="Kırpılacak resim">
+        <div class="p-4 max-h-[60vh] overflow-auto">
+            <img id="cropperImage" alt="Kırpılacak resim" class="max-w-full">
         </div>
-        <div class="cropper-modal__footer">
-            <button type="button" class="cropper-modal__btn cropper-modal__btn--cancel" onclick="closeCropperModal()">İptal</button>
-            <button type="button" class="cropper-modal__btn cropper-modal__btn--primary" onclick="cropImage()">Kırp ve Kaydet</button>
+        <div class="flex justify-end gap-3 p-4 border-t border-gray-700">
+            <button type="button" onclick="closeCropperModal()" class="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                İptal
+            </button>
+            <button type="button" onclick="cropImage()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                Kırp ve Kaydet
+            </button>
         </div>
     </div>
 </div>

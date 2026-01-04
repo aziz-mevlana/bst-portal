@@ -3,6 +3,76 @@
 
 {% block title %}BST Portal | Mezunlar{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Alumni skill tag styling */
+.alumni-skill-tag {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.alumni-skill-tag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.alumni-skill-tag:hover::before {
+  left: 100%;
+}
+
+/* Apply dynamic colors to alumni skill tags */
+.alumni-skill-tag[data-skill-color] {
+  background-color: var(--skill-bg);
+  color: var(--skill-color);
+  border: 1px solid var(--skill-border);
+}
+
+.alumni-skill-tag:hover {
+  transform: translateY(-1px);
+}
+
+/* Alumni badge styling */
+.alumni-badge {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.alumni-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.alumni-badge:hover::before {
+  left: 100%;
+}
+
+/* Apply dynamic colors to alumni badges */
+.alumni-badge[data-badge-color] {
+  background-color: var(--badge-bg);
+  color: var(--badge-color);
+  border: 1px solid var(--badge-border);
+}
+
+.alumni-badge:hover {
+  transform: translateY(-1px);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-2 page-container-large">
     <!-- Arama ve Filtreleme -->
@@ -41,13 +111,29 @@
                     <div>
                         <h3 class="text-xl font-bold mb-1">{{ alumni.user.get_full_name }}</h3>
                         <div class="flex flex-wrap gap-2 mb-1">
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-blue">{{ alumni.experience_level }}</span>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-gray">{{ alumni.graduation_year }}</span>
+                          <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                                style="--badge-bg: #FFFFFF20; --badge-color: #FFFFFF; --badge-border: #FFFFFF40;" 
+                                data-badge-color="#FFFFFF">
+                              {{ alumni.graduation_year }}
+                          </span>
+                            <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                                  style="--badge-bg: #3B82F620; --badge-color: #3B82F6; --badge-border: #3B82F640;" 
+                                  data-badge-color="#3B82F6">
+                                {{ alumni.experience_level|capfirst }}
+                            </span>
                             {% if alumni.is_available_for_mentoring %}
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-green">Mentor</span>
+                            <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                                  style="--badge-bg: #10B98120; --badge-color: #10B981; --badge-border: #10B98140;" 
+                                  data-badge-color="#10B981">
+                                Mentor
+                            </span>
                             {% endif %}
-                            {% for tag in alumni.tags.all %}
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold alumni-tag-yellow">{{ tag.name }}</span>
+                            {% for tag in alumni.skills.all %}
+                            <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                                  style="--skill-bg: {{ tag.color }}20; --skill-color: {{ tag.color }}; --skill-border: {{ tag.color }}40;" 
+                                  data-skill-color="{{ tag.color }}">
+                                {{ tag.name }}
+                            </span>
                             {% endfor %}
                         </div>
                     </div>
@@ -73,4 +159,30 @@
 </div>
 
 
-{% endblock %} 
+<script>
+// Enhanced alumni skill tag functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const skillTags = document.querySelectorAll('.alumni-skill-tag[data-skill-color]');
+  
+  skillTags.forEach((tag) => {
+    const color = tag.dataset.skillColor;
+    
+    // Apply dynamic colors
+    tag.style.setProperty('--skill-bg', color + '20');
+    tag.style.setProperty('--skill-color', color);
+    tag.style.setProperty('--skill-border', color + '40');
+  });
+
+  const alumniBadges = document.querySelectorAll('.alumni-badge[data-badge-color]');
+  
+  alumniBadges.forEach((badge) => {
+    const color = badge.dataset.badgeColor;
+    
+    // Apply dynamic colors
+    badge.style.setProperty('--badge-bg', color + '20');
+    badge.style.setProperty('--badge-color', color);
+    badge.style.setProperty('--badge-border', color + '40');
+  });
+});
+</script>
+{% endblock %}

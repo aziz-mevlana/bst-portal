@@ -94,13 +94,18 @@
         {% for project in projects %}
         <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
             <div>
-                <h3 class="text-xl font-bold mb-2">{{ project.title }}</h3>
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-xl font-bold flex-1 mr-2">{{ project.title }}</h3>
+                    <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full whitespace-nowrap">{{ project.get_status_display }}</span>
+                </div>
                 <p class="mb-4 line-clamp-3">{{ project.description|truncatewords:30 }}</p>
                 
                 <!-- Etiketler -->
                 <div class="flex flex-wrap gap-2 mb-4">
                     {% for category in project.categories.all %}
-                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }}">
+                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--technology-bg: {{ category.color }}20; --technology-color: {{ category.color }}; --technology-border: {{ category.color }}40;" 
+                          data-technology-color="{{ category.color }}">
                         {{ category.name }}
                     </span>
                     {% endfor %}
@@ -114,9 +119,22 @@
                     {% endfor %}
                 </div>
             </div>
-            <div class="flex items-center justify-between text-sm mb-4">
-                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ project.created_by.get_full_name }}</span>
-                <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><circle cx="12" cy="12" r="9" stroke="currentColor"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12V7"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12l4 2" /></svg>{{ project.created_at|date:"d.m.Y" }}</span>
+            <div class="flex flex-col gap-2 text-sm mb-4">
+                <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ project.created_by.get_full_name }}</span>
+                    <span class="flex items-center gap-1 text-xs text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3"><circle cx="12" cy="12" r="9" stroke="currentColor"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12V7"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12l4 2" /></svg>{{ project.created_at|date:"d.m.Y" }}
+                    </span>
+                </div>
+                {% if project.project_request %}
+                <div class="flex items-center gap-1 text-xs text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                    </svg>
+                    {{ project.project_request.title|truncatewords:5 }}
+                </div>
+                {% endif %}
+
             </div>
             <a href="{% url 'projects:project_detail' project.id %}" class="mt-auto inline-block px-4 py-2 rounded-lg font-semibold transition text-center w-full hover:bg-blue-700 bg-blue-600 text-white ransition">Detayları Gör</a>
         </div>

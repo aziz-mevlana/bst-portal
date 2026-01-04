@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
-from .models import Respons, Request, ProjectCategory, Technology, ResponsUpdate, Comment
+from .models import Project, ProjectRequest, ProjectCategory, Technology, ProjectUpdate, ProjectComment
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
 import json
@@ -18,7 +18,7 @@ def project_list(request):
     technology_id = request.GET.get('technology', '')
     status = request.GET.get('status', '')
     
-    projects = Respons.objects.prefetch_related('categories', 'technologies').all()
+    projects = Project.objects.prefetch_related('categories', 'technologies').all()
     
     if request.user.profile.user_type == 'teacher':
         projects = projects.filter(advisor=request.user)
@@ -38,7 +38,7 @@ def project_list(request):
         'projects': projects.distinct(),
         'categories': ProjectCategory.objects.all(),
         'technologies': Technology.objects.all(),
-        'statuses': Respons.STATUS_CHOICES,
+        'statuses': Project.STATUS_CHOICES,
         'selected_category': category_id,
         'selected_technology': technology_id,
         'selected_status': status,
@@ -50,9 +50,9 @@ def project_list(request):
 def request_list(request):
     # teachers see their own requests, students see all
     if request.user.profile.user_type == 'teacher':
-        requests = Request.objects.filter(teacher=request.user)
+        requests = ProjectRequest.objects.filter(teacher=request.user)
     else:
-        requests = Request.objects.all()
+        requests = ProjectRequest.objects.all()
     return render(request, 'projects/request_list.html', {'requests': requests})
 
 
@@ -72,8 +72,8 @@ def request_create(request):
 
 @login_required
 def project_detail(request, project_id):
-    project = get_object_or_404(Respons, id=project_id)
-    # access control: if your Respons model has visibility controls implement them here
+    project = get_object_or_404(Project, id=project_id)
+    # access control: if your Project model has visibility controls implement them here
     updates = project.updates.all()
     comments = project.comments.all()
     comment_form = ProjectCommentForm()
@@ -91,12 +91,12 @@ def project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES)
         if form.is_valid():
-            # create a Respons instead of old Project
+            # create a Project instead of old Respons
             # keep using the same form instance shape for now; form should be updated later
 
             project = form.save(commit=False)
             project.created_by = request.user
-            project.advisor = project.request.teacher  # assign teacher from selected Request
+            project.advisor = project.project_request.teacher  # assign teacher from selected ProjectRequest
             project.save()
             form.save_m2m()
 
@@ -106,14 +106,14 @@ def project_create(request):
         form = ProjectForm()
 
     
-    # prepare mapping of Request.id -> teacher_id for template JS
-    requests = Request.objects.all().values('id', 'teacher_id')
+    # prepare mapping of ProjectRequest.id -> teacher_id for template JS
+    requests = ProjectRequest.objects.all().values('id', 'teacher_id')
     request_teacher_map = {str(r['id']): r['teacher_id'] for r in requests}
     return render(request, 'projects/project_form.html', {'form': form, 'action': 'create', 'request_teacher_map': json.dumps(request_teacher_map)})
 
 @login_required
 def project_update(request, project_id):
-    project = get_object_or_404(Respons, id=project_id)
+    project = get_object_or_404(Project, id=project_id)
     if request.user != project.created_by and request.user != project.advisor:
         messages.error(request, 'Bu projeyi düzenleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
@@ -121,7 +121,7 @@ def project_update(request, project_id):
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES, instance=project)
         if form.is_valid():
-            form.save()
+            updated_project = form.save()
             messages.success(request, 'Proje başarıyla güncellendi.')
             return redirect('projects:project_detail', project_id=project.id)
     else:
@@ -131,7 +131,7 @@ def project_update(request, project_id):
 
 @login_required
 def add_project_update(request, project_id):
-    project = get_object_or_404(Respons, id=project_id)
+    project = get_object_or_404(Project, id=project_id)
     if request.user != project.created_by and request.user != project.advisor:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Proje güncellemesi ekleme yetkiniz yok.'})
@@ -142,7 +142,7 @@ def add_project_update(request, project_id):
         form = ProjectUpdateForm(request.POST)
         if form.is_valid():
             update = form.save(commit=False)
-            update.respons = project
+            update.project = project
             update.created_by = request.user
             update.save()
             
@@ -166,12 +166,12 @@ def add_project_update(request, project_id):
 
 @login_required
 def add_comment(request, project_id):
-    project = get_object_or_404(Respons, id=project_id)
+    project = get_object_or_404(Project, id=project_id)
     if request.method == 'POST':
         form = ProjectCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
-            comment.respons = project
+            comment.project = project
             comment.author = request.user
             comment.save()
             messages.success(request, 'Yorumunuz başarıyla eklendi.')
@@ -180,14 +180,14 @@ def add_comment(request, project_id):
 
 @login_required
 def edit_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id)
+    comment = get_object_or_404(ProjectComment, id=comment_id)
     
     # Check if user can edit this comment
     if request.user != comment.author and not request.user.is_staff:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Bu yorumu düzenleme yetkiniz yok.'})
         messages.error(request, 'Bu yorumu düzenleme yetkiniz yok.')
-        return redirect('projects:project_detail', project_id=comment.respons.id)
+        return redirect('projects:project_detail', project_id=comment.project.id)
     
     if request.method == 'POST':
         form = ProjectCommentForm(request.POST, instance=comment)
@@ -208,13 +208,13 @@ def edit_comment(request, comment_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'content': comment.content})
     
-    return redirect('projects:project_detail', project_id=comment.respons.id)
+    return redirect('projects:project_detail', project_id=comment.project.id)
 
 
 @login_required
 def delete_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id)
-    project_id = comment.respons.id
+    comment = get_object_or_404(ProjectComment, id=comment_id)
+    project_id = comment.project.id
     
     # Check if user can delete this comment
     if request.user != comment.author and not request.user.is_staff:
