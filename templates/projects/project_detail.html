@@ -119,7 +119,7 @@
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div class="flex-1">
             <div class="flex items-start justify-between mb-4">
-              <h1 class="text-3xl lg:text-4xl font-bold text-blue-800 text-blue-300 leading-tight mr-4">{{ project.title }}</h1>
+              <h1 class="text-3xl lg:text-4xl font-bold  text-blue-300 leading-tight mr-4">{{ project.title }}</h1>
               {% if project.project_link %}
             <div class="flex-shrink-0">
               <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform ">
@@ -129,7 +129,7 @@
             </div>
           {% endif %}
             </div>
-            <p class="text-gray-700 text-gray-300 text-lg leading-relaxed">{{ project.description }}</p>
+            <p class="text-lg leading-relaxed">{{ project.description }}</p>
           </div>
           
         </div>
@@ -141,8 +141,7 @@
           <!-- Proje Detayları Kartı -->
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 border-gray-700 pb-4 mb-6">
-              <h2 class="text-2xl font-bold text-blue-700 text-blue-400 flex items-center gap-2">
-                <i class="fas fa-info-circle"></i>
+              <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
                 Proje Detayları
               </h2>
             </div>
@@ -153,7 +152,7 @@
               <!-- Proje Kategorileri ve Teknolojiler -->
               <div class="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 class="text-blue-600 text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                  <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
                     <i class="fas fa-tags"></i>
                     Proje Kategorileri
                   </h4>
@@ -161,13 +160,13 @@
                     {% for category in project.categories.all %}
                       <span class="category-tag px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md transition-shadow" style="--category-bg: {{ category.color }}20; --category-color: {{ category.color }}; --category-border: {{ category.color }}40;" data-category-color="{{ category.color }}">{{ category.name }}</span>
                     {% empty %}
-                      <span class="text-gray-500 italic bg-gray-100 bg-gray-800 px-3 py-1.5 rounded-full">Kategori belirtilmemiş</span>
+                      <span class=" italic bg-gray-100 bg-gray-800 px-3 py-1.5 rounded-full">Kategori belirtilmemiş</span>
                     {% endfor %}
                   </div>
                 </div>
 
                 <div>
-                  <h4 class="text-blue-600 text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                  <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
                     Kullanılan Teknolojiler
                   </h4>
                   <div class="flex flex-wrap gap-2">
@@ -181,7 +180,7 @@
                         {{ technology.name }}
                       </span>
                     {% empty %}
-                      <span class="text-gray-500 italic bg-gray-100 bg-gray-800 px-3 py-1.5 rounded-full">Teknoloji belirtilmemiş</span>
+                      <span class=" italic bg-gray-100 bg-gray-800 px-3 py-1.5 rounded-full">Teknoloji belirtilmemiş</span>
                     {% endfor %}
                   </div>
                 </div>
@@ -192,7 +191,7 @@
           <!-- Proje Bilgileri ve Takım Kartı -->
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 border-gray-700 pb-4 mb-6">
-              <h2 class="text-2xl font-bold text-blue-700 text-blue-400 flex items-center gap-2">
+              <h2 class="text-2xl font-bold  text-blue-400 flex items-center gap-2">
                 Proje Ekibi ve Bilgileri
               </h2>
             </div>
@@ -200,55 +199,55 @@
             <div class="grid md:grid-cols-2 gap-6">
               <!-- Proje Bilgileri -->
               <div class="space-y-4">
-                <h4 class="text-blue-600 text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
                   Proje Bilgileri
                 </h4>
                 <div class="space-y-3">
                   <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium text-gray-600 text-gray-400">Oluşturan</span>
-                    <span class="text-gray-800 text-gray-200 font-semibold">{{ project.created_by.get_full_name }}</span>
+                    <span class="font-medium  ">Oluşturan</span>
+                    <span class="  font-semibold">{{ project.created_by.get_full_name }}</span>
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium text-gray-600 text-gray-400">Danışman</span>
-                    <span class="text-gray-800 text-gray-200 font-semibold">
+                    <span class="font-medium  ">Danışman</span>
+                    <span class="  font-semibold">
                       {% if project.advisor %}
                         {{ project.advisor.get_full_name }}
                       {% else %}
-                        <span class="text-gray-500 text-gray-400">Yok</span>
+                        <span class=" ">Yok</span>
                       {% endif %}
                     </span>
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium text-gray-600 text-gray-400">Proje İsteği</span>
-                    <span class="font-semibold text-gray-800 text-gray-200">
+                    <span class="font-medium  ">Proje İsteği</span>
+                    <span class="font-semibold  ">
                       {% if project.project_request %}
                         {{ project.project_request.title }}
                       {% else %}
-                        <span class="text-gray-500 text-gray-400">Yok</span>
+                        <span class=" ">Yok</span>
                       {% endif %}
                     </span>
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium text-gray-600 text-gray-400">Durum</span>
-                    <span class="font-semibold text-gray-800 text-gray-200">{{ project.get_status_display }}</span>
+                    <span class="font-medium  ">Durum</span>
+                    <span class="font-semibold  ">{{ project.get_status_display }}</span>
                   </div>
                   <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium text-gray-600 text-gray-400">Eklenme</span>
-                    <span class="text-gray-800 text-gray-200 font-semibold">{{ project.created_at|date:'d.m.Y' }}</span>
+                    <span class="font-medium  ">Eklenme</span>
+                    <span class="  font-semibold">{{ project.created_at|date:'d.m.Y' }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Takım Üyeleri -->
               <div>
-                <h4 class="text-blue-600 text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
                   Takım Üyeleri
-                  <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900 text-blue-600 text-blue-300 text-xs rounded-full">{{ project.team.count }}</span>
+                  <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900  text-blue-300 text-xs rounded-full">{{ project.team.count }}</span>
                 </h4>
                 {% if project.team.all %}
                   <div class="team-members-scrollable max-h-64 overflow-y-auto space-y-2 pr-2 border border-gray-200 border-gray-700 rounded-lg p-3 bg-gray-50 bg-gray-800">
                     {% for member in project.team.all %}
-                      <div class="flex items-center gap-3 p-3 bg-white bg-gray-700 rounded-lg border border-gray-200 border-gray-600">
+                      <div class="flex items-center gap-3 p-3  bg-gray-700 rounded-lg border border-gray-200 border-gray-600">
                         <div class="bg-blue-500 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm team-avatar flex-shrink-0">
                           <img src="{% if member.profile.profile_picture %}
                               {{ member.profile.profile_picture.url }}
@@ -258,16 +257,16 @@
                             alt="Profil Fotoğrafı"
                             class="profile-avatar" />
                         </div>
-                        <span class="text-gray-800 text-gray-200 font-medium truncate">{{ member.get_full_name }}</span>
+                        <span class="  font-medium truncate">{{ member.get_full_name }}</span>
                       </div>
                     {% endfor %}
                   </div>
                   {% if project.team.count > 4 %}
-                    <div class="text-xs text-gray-500 text-gray-400 mt-2 text-center flex items-center justify-center gap-1">
+                    <div class="text-xs   mt-2 text-center flex items-center justify-center gap-1">
                     </div>
                   {% endif %}
                 {% else %}
-                  <div class="text-gray-500 italic bg-gray-100 bg-gray-800 p-4 rounded-lg text-center">
+                  <div class=" italic bg-gray-100 bg-gray-800 p-4 rounded-lg text-center">
                     Henüz takım üyesi yok
                   </div>
                 {% endif %}
@@ -289,9 +288,9 @@
           <!-- Yorumlar Bölümü -->
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 border-gray-700 pb-4 mb-6">
-              <h2 class="text-2xl font-bold text-blue-700 text-blue-400 flex items-center gap-2">
+              <h2 class="text-2xl font-bold  text-blue-400 flex items-center gap-2">
                 Yorumlar
-                <span class="ml-2 px-3 py-1 bg-blue-100 bg-blue-900 text-blue-600 text-blue-300 text-sm rounded-full">{{ comments.count }} yorum</span>
+                <span class="ml-2 px-3 py-1 bg-blue-100 bg-blue-900  text-blue-300 text-sm rounded-full">{{ comments.count }} yorum</span>
               </h2>
             </div>
 
@@ -309,8 +308,8 @@
                       class="profile-avatar" />
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-200">Yorum Yap</h3>
-                    <p class="text-gray-400 text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
+                    <h3 class="text-lg font-semibold ">Yorum Yap</h3>
+                    <p class=" text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
                   </div>
                 </div>
                 <form method="post" action="{% url 'projects:add_comment' project.id %}">
@@ -342,8 +341,8 @@
                               class="profile-avatar" />
                           </div>
                           <div>
-                            <span class="font-semibold text-gray-200">{{ comment.author.get_full_name }}</span>
-                            <div class="text-xs text-gray-400 flex items-center gap-1">
+                            <span class="font-semibold ">{{ comment.author.get_full_name }}</span>
+                            <div class="text-xs  flex items-center gap-1">
                               {{ comment.created_at|date:'d F Y' }} • {{ comment.created_at|date:'H:i' }}
                             </div>
                           </div>
@@ -351,10 +350,10 @@
                         <!-- Yorum İşlemleri -->
                         {% if user == comment.author or user.is_staff %}
                           <div class="flex items-center gap-1">
-                            <button onclick="openEditCommentModal({{ comment.id }}, '{{ comment.content|escapejs }}')" class="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors" title="Düzenle">
+                            <button onclick="openEditCommentModal({{ comment.id }}, '{{ comment.content|escapejs }}')" class="p-2  hover:text-blue-400 hover:bg-blue-900/20 rounded-lg transition-colors" title="Düzenle">
                               Düzenle
                             </button>
-                            <button onclick="deleteComment({{ comment.id }})" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors" title="Sil">
+                            <button onclick="deleteComment({{ comment.id }})" class="p-2  hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors" title="Sil">
                               Sil
                             </button>
                           </div>
@@ -369,8 +368,8 @@
                   </div>
                 {% empty %}
                   <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-400 mb-2">Henüz yorum yapılmamış</h3>
-                    <p class="text-gray-500 text-sm">Bu proje hakkında ilk yorumu siz yapın!</p>
+                    <h3 class="text-lg font-semibold  mb-2">Henüz yorum yapılmamış</h3>
+                    <p class=" text-sm">Bu proje hakkında ilk yorumu siz yapın!</p>
                   </div>
                 {% endfor %}
               </div>
@@ -378,7 +377,7 @@
               <!-- Yorumları Kaydır -->
               {% if comments.count > 5 %}
                 <div class="text-center pt-4 border-t border-gray-200 border-gray-700">
-                  <button class="text-blue-600 text-blue-400 hover:text-blue-700 hover:text-blue-300 text-sm font-medium transition-colors flex items-center gap-2 mx-auto">
+                  <button class=" text-blue-400 hover: hover:text-blue-300 text-sm font-medium transition-colors flex items-center gap-2 mx-auto">
                     Tüm yorumları görüntüle
                   </button>
                 </div>
@@ -392,74 +391,65 @@
           <!-- Proje Güncellemeleri Kartı -->
           <div class="project-detail-item rounded-xl shadow-lg p-6">
             <div class="border-b border-gray-200 border-gray-700 pb-4 mb-6">
-              <h3 class="text-xl font-bold text-blue-700 text-blue-400 flex items-center gap-2">
+              <h3 class="text-xl font-bold  text-blue-400 flex items-center gap-2">
                 Proje Güncellemeleri
-                <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900 text-blue-600 text-blue-300 text-sm rounded-full">{{ updates.count }}</span>
+                <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900  text-blue-300 text-sm rounded-full">{{ updates.count }}</span>
               </h3>
             </div>
 
             <div class="space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {% for update in updates %}
-                <div class="bg-thema border border-gray-700 rounded-xl p-4 hover:shadow-md hover:bg-gray-800 transition-all duration-200">
-                  <div class="flex gap-3">
-                    <!-- Profile Picture Section -->
-                    <div class="flex-shrink-0">
-                      {% if update.created_by %}
-                        {% if update.created_by.profile.profile_picture %}
-                          <img src="{{ update.created_by.profile.profile_picture.url }}" alt="Profil" class="w-10 h-10 rounded-full object-cover border-2 border-gray-600">
-                        {% else %}
-                          <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-gray-300"></i>
-                          </div>
-                        {% endif %}
-                      {% else %}
-                        <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                          <i class="fas fa-user text-gray-300"></i>
-                        </div>
-                      {% endif %}
-                    </div>
-                    
-                    <!-- Content Section -->
-                    <div class="flex-1 min-w-0">
-                      <div class="flex flex-col gap-2">
-                        <div class="flex flex-col gap-1">
-                          {% if update.created_by %}
-                            <div class="text-sm font-medium text-gray-200">
-                              {{ update.created_by.get_full_name|default:update.created_by.username }}
-                            </div>
-                          {% endif %}
-                          <div class="flex items-center gap-2">
-                            <span class="font-semibold text-blue-400 text-sm">
-                              {% if update.title %}
-                                {{ update.title }}
-                              {% else %}
-                                Güncelleme
-                              {% endif %}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {% if update.project_status %}
-                          <div class="mb-1">
-                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 bg-blue-900 text-blue-600 text-blue-300 text-xs rounded-full">
-                              <i class="fas fa-info-circle"></i>
-                              {{ update.project_status }}
-                            </span>
-                          </div>
-                        {% endif %}
-                        
-                        <div class="text-gray-300 text-sm leading-relaxed">{{ update.note|linebreaks }}</div>
-                        
-                        <!-- Date at bottom right -->
-                        <div class="flex justify-end mt-2">
-                          <span class="text-xs text-gray-500 text-gray-400 whitespace-nowrap">{{ update.updated_at|date:'d.m.Y H:i' }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                   <div class="bg-thema border border-gray-700 rounded-xl p-3 hover:shadow-md hover:bg-gray-800 transition-all duration-200 cursor-pointer" onclick="openUpdateDetailModal(this)" data-update-id="{{ update.id }}" data-title="{{ update.title|default:'Güncelleme' }}" data-note="{{ update.note }}" data-created-by="{{ update.created_by.get_full_name|default:update.created_by.username }}" data-created-at="{{ update.created_at|date:'d.m.Y H:i' }}" data-status="{{ update.project_status }}" data-profile-picture="{% if update.created_by and update.created_by.profile.profile_picture %}{{ update.created_by.profile.profile_picture.url }}{% endif %}">
+                   <div class="flex flex-col gap-2">
+                     <!-- Profile Picture and Name Row -->
+                     <div class="flex items-center gap-2">
+                       <div class="flex-shrink-0">
+                         {% if update.created_by %}
+                           {% if update.created_by.profile.profile_picture %}
+                             <img src="{{ update.created_by.profile.profile_picture.url }}" alt="Profil" class="w-8 h-8 rounded-full object-cover border-2 border-gray-600">
+                           {% else %}
+                             <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                               <i class="fas fa-user text-xs"></i>
+                             </div>
+                           {% endif %}
+                         {% else %}
+                           <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                             <i class="fas fa-user text-xs"></i>
+                           </div>
+                         {% endif %}
+                       </div>
+                       {% if update.created_by %}
+                         <div class="text-sm font-medium truncate">
+                           {{ update.created_by.get_full_name|default:update.created_by.username }}
+                         </div>
+                       {% endif %}
+                     </div>
+
+                     <!-- Title Section -->
+                     <div class="flex items-center justify-between">
+                       <span class="font-semibold text-blue-400 text-sm truncate">
+                         {% if update.title %}
+                           {{ update.title }}
+                         {% else %}
+                           Güncelleme
+                         {% endif %}
+                       </span>
+                       {% if update.project_status %}
+                         <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 bg-blue-900 text-blue-300 text-xs rounded-full">
+                           <i class="fas fa-info-circle"></i>
+                           {{ update.project_status }}
+                         </span>
+                       {% endif %}
+                     </div>
+
+                     <!-- Date at bottom right -->
+                     <div class="flex justify-end">
+                       <span class="text-xs text-gray-400 whitespace-nowrap">{{ update.created_at|date:'d.m.Y H:i' }}</span>
+                     </div>
+                   </div>
+                 </div>
               {% empty %}
-                <div class="text-center py-8 text-gray-400">
+                <div class="text-center py-8 ">
                   <p class="text-lg">Henüz güncelleme yok.</p>
                   <p class="text-sm mt-1">Proje geliştikçe burada güncellemeler görünecek.</p>
                 </div>
@@ -480,7 +470,7 @@
           <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <h3 class="text-xl font-semibold text-white">Proje Güncellemesi Ekle</h3>
         </div>
-        <button onclick="closeUpdateModal()" class="text-gray-400 hover:text-white transition-colors">
+        <button onclick="closeUpdateModal()" class=" hover:text-white transition-colors">
           <i class="fas fa-times text-xl"></i>
         </button>
       </div>
@@ -490,7 +480,7 @@
         {% csrf_token %}
         <div class="space-y-4">
           <div>
-            <label for="updateTitle" class="block text-sm font-medium text-gray-300 mb-2">
+            <label for="updateTitle" class="block text-sm font-medium  mb-2">
               Güncelleme Başlığı
             </label>
             <input type="text" id="updateTitle" name="title" required
@@ -499,7 +489,7 @@
           </div>
           
           <div>
-            <label for="updateNote" class="block text-sm font-medium text-gray-300 mb-2">
+            <label for="updateNote" class="block text-sm font-medium  mb-2">
               Güncelleme Notu <span class="text-red-400">*</span>
             </label>
             <textarea id="updateNote" name="note" rows="4" required
@@ -523,8 +513,66 @@
     </div>
   </div>
 
-  <!-- Yorum Düzenle Modalı -->
-  <div id="editCommentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+   <!-- Güncelleme Detay Modalı -->
+   <div id="updateDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+     <div class="relative w-full max-w-2xl mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+       <!-- Modal Header -->
+       <div class="flex items-center justify-between p-6 border-b border-gray-700">
+         <div class="flex items-center gap-3">
+           <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+           <h3 class="text-xl font-semibold text-white" id="updateDetailTitle">Güncelleme Detayları</h3>
+         </div>
+         <button onclick="closeUpdateDetailModal()" class=" hover:text-white transition-colors">
+           <i class="fas fa-times text-xl"></i>
+         </button>
+       </div>
+
+       <!-- Modal Body -->
+       <div class="p-6">
+         <div class="space-y-4">
+           <!-- Title -->
+           <div>
+             <h4 class="text-xl font-semibold text-white" id="updateDetailTitleText">Title</h4>
+           </div>
+
+           <!-- Status -->
+           <div id="updateDetailStatus" class="hidden">
+             <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 bg-blue-900 text-blue-300 text-xs rounded-full">
+               <i class="fas fa-info-circle"></i>
+               <span id="updateDetailStatusText"></span>
+             </span>
+           </div>
+
+           <!-- Note -->
+           <div>
+             <div class="text-sm leading-relaxed text-gray-300" id="updateDetailNote">Note</div>
+           </div>
+
+           <!-- Profile and Date at bottom right -->
+           <div class="flex justify-end items-center gap-3 mt-4">
+             <div class="flex items-center gap-2">
+               <div id="updateDetailAvatar" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                 <i class="fas fa-user text-xs"></i>
+               </div>
+               <div class="text-sm text-gray-400" id="updateDetailCreator">Creator</div>
+             </div>
+             <div class="text-sm text-gray-400" id="updateDetailDate">Date</div>
+           </div>
+         </div>
+
+         <!-- Modal Footer -->
+         <div class="flex justify-end mt-6 pt-6 border-t border-gray-700">
+           <button type="button" onclick="closeUpdateDetailModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+             <i class="fas fa-times"></i>
+             Kapat
+           </button>
+         </div>
+       </div>
+     </div>
+   </div>
+
+   <!-- Yorum Düzenle Modalı -->
+   <div id="editCommentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
     <div class="relative w-full max-w-2xl mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-700">
@@ -532,7 +580,7 @@
           <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
           <h3 class="text-xl font-semibold text-white">Yorumu Düzenle</h3>
         </div>
-        <button onclick="closeEditCommentModal()" class="text-gray-400 hover:text-white transition-colors">
+        <button onclick="closeEditCommentModal()" class=" hover:text-white transition-colors">
           <i class="fas fa-times text-xl"></i>
         </button>
       </div>
@@ -543,7 +591,7 @@
         <input type="hidden" id="editCommentId" name="comment_id">
         <div class="space-y-4">
           <div>
-            <label for="editCommentContent" class="block text-sm font-medium text-gray-300 mb-2">
+            <label for="editCommentContent" class="block text-sm font-medium  mb-2">
               Yorum İçeriği <span class="text-red-400">*</span>
             </label>
             <textarea id="editCommentContent" name="content" rows="4" required
@@ -584,6 +632,43 @@
       modal.classList.remove('flex');
       document.body.style.overflow = 'auto';
       document.getElementById('updateForm').reset();
+    }
+
+    // Update Detail Modal Functions
+    function openUpdateDetailModal(element) {
+      const data = element.dataset;
+      document.getElementById('updateDetailTitleText').textContent = data.title;
+      document.getElementById('updateDetailCreator').textContent = data.createdBy;
+      document.getElementById('updateDetailDate').textContent = data.createdAt;
+      document.getElementById('updateDetailNote').innerHTML = data.note ? data.note.replace(/\n/g, '<br>') : 'Açıklama yok';
+
+      const statusDiv = document.getElementById('updateDetailStatus');
+      if (data.status) {
+        document.getElementById('updateDetailStatusText').textContent = data.status;
+        statusDiv.classList.remove('hidden');
+      } else {
+        statusDiv.classList.add('hidden');
+      }
+
+      // Set avatar
+      const avatarDiv = document.getElementById('updateDetailAvatar');
+      if (data.profilePicture) {
+        avatarDiv.innerHTML = `<img src="${data.profilePicture}" alt="Profil" class="w-8 h-8 rounded-full object-cover">`;
+      } else {
+        avatarDiv.innerHTML = '<i class="fas fa-user text-xs"></i>';
+      }
+
+      const modal = document.getElementById('updateDetailModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeUpdateDetailModal() {
+      const modal = document.getElementById('updateDetailModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
     }
 
     // Edit Comment Modal Functions - Global scope
@@ -806,20 +891,28 @@
         });
       });
 
-      // Close modal when clicking outside
-      document.getElementById('updateModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-          closeUpdateModal();
-        }
-      });
+       // Close modal when clicking outside
+       document.getElementById('updateModal').addEventListener('click', function(e) {
+         if (e.target === this) {
+           closeUpdateModal();
+         }
+       });
 
-      // Close modal with Escape key
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-          closeUpdateModal();
-          closeEditCommentModal();
-        }
-      });
+       // Close update detail modal when clicking outside
+       document.getElementById('updateDetailModal').addEventListener('click', function(e) {
+         if (e.target === this) {
+           closeUpdateDetailModal();
+         }
+       });
+
+       // Close modal with Escape key
+       document.addEventListener('keydown', function(e) {
+         if (e.key === 'Escape') {
+           closeUpdateModal();
+           closeEditCommentModal();
+           closeUpdateDetailModal();
+         }
+       });
 
       // Edit Comment Form Submission
       document.getElementById('editCommentForm').addEventListener('submit', function(e) {
