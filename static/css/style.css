@@ -1378,11 +1378,14 @@ a:active {
     position: relative;
     width: 100%;
     height: 450px;
-    /* Yüksekliği ayarlayabilirsiniz */
     border-radius: 1rem;
     overflow: hidden;
     background-color: #1f2937;
-    /* Resim yüklenene kadar arka plan rengi */
+}
+
+.hero-carousel .swiper-wrapper {
+    width: 100%;
+    height: 100%;
 }
 
 .hero-carousel .swiper-slide {
@@ -1455,44 +1458,45 @@ a:active {
 
 @media (max-width: 768px) {
     .hero-carousel {
-        height: 350px;
+        height: 350px !important;
         border-radius: 0.75rem;
-        width: calc(100% + 2rem);
-        margin-left: -1rem;
-        margin-right: -1rem;
-        max-width: calc(100vw + 2rem);
+        width: 100% !important;
+        max-width: 100vw;
     }
-    
+
     .hero-container {
         padding: 0;
         margin: 1rem 0 1.5rem 0;
         width: 100%;
+        max-width: 100%;
         overflow: hidden;
     }
-    
-    .hero-carousel .slide-content {
-        padding: 1.5rem 1rem;
-    }
-    
-    .hero-carousel .slide-title {
-        font-size: 1.5rem;
-        line-height: 1.3;
-    }
-    
-    .hero-carousel .slide-description {
-        font-size: 0.875rem;
+
+    .hero-carousel .swiper-wrapper {
+        width: 100% !important;
+        height: 100% !important;
     }
 
-    
+    .hero-carousel .swiper-slide {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .hero-carousel .slide-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
     .hero-carousel .slide-content {
         padding: 1.5rem 1rem;
     }
-    
+
     .hero-carousel .slide-title {
         font-size: 1.5rem;
         line-height: 1.3;
     }
-    
+
     .hero-carousel .slide-description {
         font-size: 0.875rem;
     }
@@ -1745,18 +1749,34 @@ a:active {
 /* Mobile carousel styles - like news websites */
 @media (max-width: 767px) {
     .hero-carousel {
-        height: 240px !important;
-        border-radius: 0.5rem !important;
+        height: 260px !important;
+        border-radius: 0.5rem;
         width: 100% !important;
-        margin: 0 !important;
-        max-width: 100% !important;
+        max-width: 100vw;
     }
 
     .hero-container {
         padding: 0 1rem;
         margin: 0.5rem 0 1.5rem 0;
         width: 100%;
+        max-width: 100%;
         overflow: hidden;
+    }
+
+    .hero-carousel .swiper-wrapper {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .hero-carousel .swiper-slide {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .hero-carousel .slide-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .hero-carousel .swiper-button-prev,
@@ -1779,11 +1799,11 @@ a:active {
 
     .hero-carousel .slide-description {
         font-size: 0.875rem;
-        display: none; /* Mobile'da açıklamayı gizle */
+        display: none;
     }
 
     .hero-carousel .swiper-pagination {
-        bottom: 8px !important;
+        bottom: 8px;
     }
 
     .hero-carousel .swiper-pagination-bullet {

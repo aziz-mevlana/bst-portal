@@ -8,8 +8,7 @@
     <link rel="icon" type="image/x-icon" href="{% static 'images/logo.svg' %}">
     <script src="{% static 'js/tailwind.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <!-- Swiper.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="{% static 'css/swiper-bundle.min.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -24,8 +23,7 @@
     </main>
 
     {% include 'includes/footer.html' %}
-    <!-- Swiper.js JS -->
-    <script src="{% static 'js/swiper.js' %}"></script>
+    <script src="{% static 'js/swiper-bundle.min.js' %}"></script>
     
     <!-- Toast Notification System -->
     <script>
