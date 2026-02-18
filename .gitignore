@@ -73,4 +73,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Production
-/media/ 
+/media/
+
+
+todo.md

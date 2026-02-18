@@ -224,8 +224,6 @@ header.scrolled {
     flex-shrink: 0;
     /* Prevent shrinking */
     min-width: 0;
-    /* Allow flex item to shrink */
-    width: 250px;
     /* Fixed width to prevent expansion */
     justify-content: flex-end;
 }
@@ -1689,9 +1687,6 @@ a:active {
 
 /* Responsive adjustments for profile button */
 @media (max-width: 1024px) {
-    .nav-actions {
-        width: 220px;
-    }
 
     .profile-button {
         max-width: 160px;
@@ -1703,9 +1698,6 @@ a:active {
 }
 
 @media (max-width: 768px) {
-    .nav-actions {
-        width: 200px;
-    }
 
     .profile-button {
         max-width: 140px;
