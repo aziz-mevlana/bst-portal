@@ -20,10 +20,9 @@ class ProjectForm(forms.ModelForm):
     """Form used by views but mapped to new Project model."""
     class Meta:
         model = Project
-        fields = ['project_request', 'advisor', 'title', 'description', 'project_link', 'team', 'categories', 'technologies']
+        fields = ['project_request', 'title', 'description', 'project_link', 'team', 'categories', 'technologies']
         widgets = {
             'project_request': forms.Select(attrs={'class': 'project-form-input'}),
-            'advisor': forms.Select(attrs={'class': 'project-form-input'}),
             'title': forms.TextInput(attrs={'class': 'project-form-input'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input'}),
             'project_link': forms.TextInput(attrs={'class': 'project-form-input'}),
@@ -34,7 +33,6 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['advisor'].queryset = User.objects.filter(Q(profile__user_type='teacher') | Q(old_profile__user_type='teacher')).distinct()
         self.fields['team'].queryset = User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
         # Rename field for better user experience
         self.fields['project_request'].label = 'Project Request'

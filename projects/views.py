@@ -9,6 +9,9 @@ from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
 import json
 
+def get_student_users():
+    return User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
+
 # Create your views here.
 
 @login_required
@@ -105,11 +108,12 @@ def project_create(request):
     else:
         form = ProjectForm()
 
-    
-    # prepare mapping of ProjectRequest.id -> teacher_id for template JS
-    requests = ProjectRequest.objects.all().values('id', 'teacher_id')
-    request_teacher_map = {str(r['id']): r['teacher_id'] for r in requests}
-    return render(request, 'projects/project_form.html', {'form': form, 'action': 'create', 'request_teacher_map': json.dumps(request_teacher_map)})
+    requests = ProjectRequest.objects.all().values('id', 'teacher_id', 'teacher__first_name', 'teacher__last_name')
+    request_teacher_map = {str(r['id']): {'id': r['teacher_id'], 'name': f"{r['teacher__first_name']} {r['teacher__last_name']}".strip() or 'Belirtilmemiş'} for r in requests}
+    team_members = get_student_users()
+    categories = ProjectCategory.objects.all()
+    technologies = Technology.objects.all()
+    return render(request, 'projects/project_form.html', {'form': form, 'action': 'create', 'request_teacher_map': json.dumps(request_teacher_map), 'team_members': team_members, 'categories': categories, 'technologies': technologies})
 
 @login_required
 def project_update(request, project_id):
@@ -121,13 +125,21 @@ def project_update(request, project_id):
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES, instance=project)
         if form.is_valid():
-            updated_project = form.save()
+            updated_project = form.save(commit=False)
+            if updated_project.project_request:
+                updated_project.advisor = updated_project.project_request.teacher
+            updated_project.save()
+            form.save_m2m()
             messages.success(request, 'Proje başarıyla güncellendi.')
             return redirect('projects:project_detail', project_id=project.id)
     else:
         form = ProjectForm(instance=project)
     
-    return render(request, 'projects/project_form.html', {'form': form, 'action': 'update'})
+    requests = ProjectRequest.objects.all().values('id', 'teacher_id', 'teacher__first_name', 'teacher__last_name')
+    request_teacher_map = {str(r['id']): {'id': r['teacher_id'], 'name': f"{r['teacher__first_name']} {r['teacher__last_name']}".strip() or 'Belirtilmemiş'} for r in requests}
+    categories = ProjectCategory.objects.all()
+    technologies = Technology.objects.all()
+    return render(request, 'projects/project_form.html', {'form': form, 'action': 'update', 'request_teacher_map': json.dumps(request_teacher_map), 'team_members': get_student_users(), 'categories': categories, 'technologies': technologies})
 
 @login_required
 def add_project_update(request, project_id):

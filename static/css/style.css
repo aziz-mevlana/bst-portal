@@ -305,8 +305,6 @@ header.scrolled {
     border: none;
     cursor: pointer;
     transition: background-color 0.2s;
-    width: 180px;
-    /* Fixed width */
     height: 48px;
     /* Fixed height to prevent shifts */
     flex-shrink: 0;

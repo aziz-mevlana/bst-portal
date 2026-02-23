@@ -14,8 +14,8 @@
       align-items: center !important;
       gap: 0.75rem !important;
       padding: 0.75rem 1rem !important;
-      background: #232a36 !important;
-      border: 1px solid #4b5563 !important;
+      background: #1f2937 !important;
+      border: 1px solid #374151 !important;
       border-radius: 0.5rem !important;
       cursor: pointer !important;
       transition: all 0.2s ease !important;
@@ -43,42 +43,42 @@
 {% endblock %}
 
 {% block content %}
-  <div class="min-h-screen bg-[#181e29] py-2 px-4">
-    <div class="max-w-6xl mx-auto">
-      <!-- Header -->
-      <div class="mb-8">
-        <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          {% if form.instance.pk %}
-            Projeyi Düzenle
-          {% else %}
-            Yeni Proje Ekle
-          {% endif %}
-        </h2>
-      </div>
+  <div class="min-h-screen bg-[#181e29] py-8 px-4">
+    <div class="w-full max-w-6xl mx-auto px-4">
+      <div class="p-6 lg:px-12">
+        <!-- Header -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            {% if form.instance.pk %}
+              Projeyi Düzenle
+            {% else %}
+              Yeni Proje Ekle
+            {% endif %}
+          </h2>
+        </div>
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Sol Kolon - Temel Bilgiler -->
-          <div class="lg:col-span-2 space-y-6">
-            <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
-              <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h3 class="text-white font-semibold flex items-center gap-2">
+          <div class="lg:col-span-2 flex flex-col gap-8">
+            <div class="project-detail-item rounded-xl shadow-lg p-6">
+              <div class="border-b border-gray-700 pb-4 mb-6">
+                <h3 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                   </svg>Temel Bilgiler
                 </h3>
               </div>
-
-              <div class="p-6 space-y-4">
+              <div class="space-y-6">
                 <!-- Temel Alanlar -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {% for field in form %}
-                    {% if field.name in 'title description project_link status project_request advisor' %}
+                    {% if field.name in 'title description project_link status project_request' %}
                       <div class="space-y-2 {% if field.name == 'description' %}md:col-span-2{% endif %}">
                         <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
                           {% if field.name == 'title' %}
@@ -91,8 +91,6 @@
                             Proje Durumu
                           {% elif field.name == 'project_request' %}
                             Proje Türü
-                          {% elif field.name == 'advisor' %}
-                            Danışman
                           {% else %}
                             {{ field.label }}
                           {% endif %}
@@ -118,6 +116,11 @@
                               </svg>
                             </div>
                           </div>
+                        {% elif field.name == 'project_link' %}
+                          <input type="text" name="project_link" id="id_project_link" 
+                            class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                            value="{{ form.project_link.value|default:'' }}"
+                            placeholder="Proje linki giriniz">
                         {% else %}
                           {{ field|add_class:'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
                         {% endif %}
@@ -130,77 +133,60 @@
                   {% endfor %}
                 </div>
 
+                <!-- Selection Buttons -->
+                <div class="flex flex-wrap gap-3 pt-4">
+                  <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                    </svg>
+                    Ekip Üyeleri
+                  </button>
+                  <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                    </svg>
+                    Kategoriler
+                  </button>
+                  <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                    </svg>
+                    Teknolojiler
+                  </button>
+                </div>
+
                 <!-- Form Actions -->
                 <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-700">
-                  <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-600/25">
+                  <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
                     {% if form.instance.pk %}
                       Projeyi Düzenle
                     {% else %}
                       Yeni Proje Ekle
                     {% endif %}
                   </button>
-                  <a href="{% url 'projects:project_list' %}" class="px-8 py-3 bg-gray-700 text-gray-300 rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center justify-center gap-2">İptal</a>
+                  <a href="{% url 'projects:project_list' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">İptal</a>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Sağ Kolon - Seçimler -->
-          <div class="lg:col-span-1 space-y-6">
+          <div class="lg:col-span-1 flex flex-col gap-8">
             {% for field in form %}
               {% if field.name == 'team' %}
-                <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
-                  <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-                    <h3 class="text-white font-semibold">Takım</h3>
+                <div class="project-detail-item rounded-xl shadow-lg p-6">
+                  <div class="border-b border-gray-700 pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-blue-400 flex items-center gap-2">Takım</h3>
                   </div>
-                  <div class="p-6">
-                    <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                      {% for choice in field.field.queryset %}
-                        <label>
-                          <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}" 
-                            {% if choice.id in field.value %}checked{% endif %} />
-                          <span>{{ choice.username }}</span>
-                        </label>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
-
-              {% if field.name == 'categories' %}
-                <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
-                  <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
-                    <h3 class="text-white font-semibold">Kategoriler</h3>
-                  </div>
-                  <div class="p-6">
-                    <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                      {% for choice in field.field.queryset %}
-                        <label>
-                          <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}" 
-                            {% if choice.id in field.value %}checked{% endif %} />
-                          <span>{{ choice.name }}</span>
-                        </label>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
-
-              {% if field.name == 'technologies' %}
-                <div class="color-page rounded-xl shadow-xl border border-gray-700 overflow-hidden">
-                  <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
-                    <h3 class="text-white font-semibold">Teknolojiler</h3>
-                  </div>
-                  <div class="p-6">
-                    <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                      {% for choice in field.field.queryset %}
-                        <label>
-                          <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}" 
-                            {% if choice.id in field.value %}checked{% endif %} />
-                          <span>{{ choice.name }}</span>
-                        </label>
-                      {% endfor %}
-                    </div>
+                  <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                    {% for choice in field.field.queryset %}
+                      <label>
+                        <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}" 
+                          {% if choice.id in field.value %}checked{% endif %} />
+                        <span>{{ choice.username }}</span>
+                      </label>
+                    {% endfor %}
                   </div>
                 </div>
               {% endif %}
@@ -218,29 +204,431 @@
       return document.querySelector('[name="' + name + '"]');
     }
 
+    function openTeamModal() {
+      const modal = document.getElementById('teamMemberModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('teamSearchInput').focus();
+    }
+
+    function closeTeamModal() {
+      const modal = document.getElementById('teamMemberModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+      document.getElementById('teamSearchInput').value = '';
+      const allItems = document.querySelectorAll('.team-member-item');
+      allItems.forEach(item => item.style.display = 'flex');
+    }
+
+    function searchTeamMembers() {
+      const searchValue = document.getElementById('teamSearchInput').value.toLowerCase();
+      const allItems = document.querySelectorAll('.team-member-item');
+      allItems.forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        if (name.includes(searchValue)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function toggleTeamMember(userId, checkbox) {
+      const teamCheckboxes = document.querySelectorAll('input[name="team"][value="' + userId + '"]');
+      teamCheckboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checkedCount = document.querySelectorAll('input[name="team"]:checked').length;
+      const countElement = document.getElementById('selectedMemberCount');
+      if (countElement) {
+        countElement.textContent = checkedCount + ' üye seçildi';
+      }
+    }
+
+    // Category Modal Functions
+    function openCategoryModal() {
+      const modal = document.getElementById('categoryModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('categorySearchInput').focus();
+    }
+
+    function closeCategoryModal() {
+      const modal = document.getElementById('categoryModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+      document.getElementById('categorySearchInput').value = '';
+      const allItems = document.querySelectorAll('.category-item');
+      allItems.forEach(item => item.style.display = 'flex');
+    }
+
+    function searchCategories() {
+      const searchValue = document.getElementById('categorySearchInput').value.toLowerCase();
+      const allItems = document.querySelectorAll('.category-item');
+      allItems.forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        if (name.includes(searchValue)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    let selectedCategories = [];
+
+    function toggleCategory(id, name, checkbox) {
+      const idStr = String(id);
+      if (checkbox.checked) {
+        if (!selectedCategories.includes(idStr)) {
+          selectedCategories.push(idStr);
+        }
+      } else {
+        selectedCategories = selectedCategories.filter(catId => catId !== idStr);
+      }
+      updateCategoryDisplay();
+    }
+
+    function removeCategory(id) {
+      selectedCategories = selectedCategories.filter(catId => String(catId) !== String(id));
+      const hiddenInput = document.getElementById('id_categories');
+      if (hiddenInput) hiddenInput.value = selectedCategories.join(',');
+      
+      const modalCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
+      modalCheckboxes.forEach(cb => {
+        if (cb.onchange && String(cb.onchange.toString().match(/'([^']+)'/)?.[1]) === String(id)) {
+          cb.checked = false;
+        }
+      });
+      updateCategoryDisplay();
+    }
+
+    function updateCategoryDisplay() {
+      const container = document.getElementById('selectedCategories');
+      const hiddenInput = document.getElementById('id_categories');
+      if (!container) return;
+      
+      if (hiddenInput) hiddenInput.value = selectedCategories.join(',');
+      
+      container.innerHTML = selectedCategories.map(catId => {
+        const allCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
+        let catName = '';
+        allCheckboxes.forEach(cb => {
+          if (cb.onchange) {
+            const match = cb.onchange.toString().match(/toggleCategory\('([^']+)'/);
+            if (match && match[1] === catId) {
+              const label = cb.closest('label');
+              if (label) catName = label.querySelector('span')?.textContent || '';
+            }
+          }
+        });
+        return catName ? `
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-600/30 text-blue-300 text-sm rounded-md">
+            ${catName}
+            <button type="button" onclick="removeCategory('${catId}')" class="hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
+        ` : '';
+      }).join('') || '<span class="text-gray-500">Kategori seçiniz</span>';
+    }
+
+    // Technology Modal Functions
+    function openTechnologyModal() {
+      const modal = document.getElementById('technologyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('technologySearchInput').focus();
+    }
+
+    function closeTechnologyModal() {
+      const modal = document.getElementById('technologyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = 'auto';
+      document.getElementById('technologySearchInput').value = '';
+      const allItems = document.querySelectorAll('.technology-item');
+      allItems.forEach(item => item.style.display = 'flex');
+    }
+
+    function searchTechnologies() {
+      const searchValue = document.getElementById('technologySearchInput').value.toLowerCase();
+      const allItems = document.querySelectorAll('.technology-item');
+      allItems.forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        if (name.includes(searchValue)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    let selectedTechnologies = [];
+
+    function toggleTechnology(id, name, checkbox) {
+      const idStr = String(id);
+      if (checkbox.checked) {
+        if (!selectedTechnologies.includes(idStr)) {
+          selectedTechnologies.push(idStr);
+        }
+      } else {
+        selectedTechnologies = selectedTechnologies.filter(techId => techId !== idStr);
+      }
+      updateTechnologyDisplay();
+    }
+
+    function removeTechnology(id) {
+      selectedTechnologies = selectedTechnologies.filter(techId => String(techId) !== String(id));
+      const hiddenInput = document.getElementById('id_technologies');
+      if (hiddenInput) hiddenInput.value = selectedTechnologies.join(',');
+      
+      const modalCheckboxes = document.querySelectorAll('#technologyModal input[type="checkbox"]');
+      modalCheckboxes.forEach(cb => {
+        if (cb.onchange && String(cb.onchange.toString().match(/'([^']+)'/)?.[1]) === String(id)) {
+          cb.checked = false;
+        }
+      });
+      updateTechnologyDisplay();
+    }
+
+    function updateTechnologyDisplay() {
+      const container = document.getElementById('selectedTechnologies');
+      const hiddenInput = document.getElementById('id_technologies');
+      if (!container) return;
+      
+      if (hiddenInput) hiddenInput.value = selectedTechnologies.join(',');
+      
+      container.innerHTML = selectedTechnologies.map(techId => {
+        const allCheckboxes = document.querySelectorAll('#technologyModal input[type="checkbox"]');
+        let techName = '';
+        allCheckboxes.forEach(cb => {
+          if (cb.onchange) {
+            const match = cb.onchange.toString().match(/toggleTechnology\('([^']+)'/);
+            if (match && match[1] === techId) {
+              const label = cb.closest('label');
+              if (label) techName = label.querySelector('span')?.textContent || '';
+            }
+          }
+        });
+        return techName ? `
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-600/30 text-green-300 text-sm rounded-md">
+            ${techName}
+            <button type="button" onclick="removeTechnology('${techId}')" class="hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
+        ` : '';
+      }).join('') || '<span class="text-gray-500">Teknoloji seçiniz</span>';
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       const requestField = findFieldByName('project_request');
-      const advisorField = findFieldByName('advisor');
 
-      if (!requestField || !advisorField) return;
-
-      function applyAdvisorForRequest(requestId) {
-        const teacherId = requestTeacherMap[requestId] ?? null;
-        if (teacherId) {
-          advisorField.value = String(teacherId);
-          advisorField.disabled = true;
-          advisorField.classList.add('opacity-60', 'pointer-events-none');
-        } else {
-          advisorField.disabled = false;
-          advisorField.classList.remove('opacity-60', 'pointer-events-none');
-        }
+      // Initialize categories from hidden input
+      const categoriesInput = document.getElementById('id_categories');
+      if (categoriesInput && categoriesInput.value) {
+        selectedCategories = categoriesInput.value.split(',').filter(v => v);
+        updateCategoryDisplay();
       }
 
-      applyAdvisorForRequest(requestField.value || '');
-      requestField.addEventListener('change', function (e) {
-        applyAdvisorForRequest(e.target.value);
+      // Initialize technologies from hidden input
+      const technologiesInput = document.getElementById('id_technologies');
+      if (technologiesInput && technologiesInput.value) {
+        selectedTechnologies = technologiesInput.value.split(',').filter(v => v);
+        updateTechnologyDisplay();
+      }
+
+      // Initialize selected count
+      updateSelectedCount();
+      
+      // Sync modal checkboxes with form checkboxes
+      const teamCheckboxes = document.querySelectorAll('input[name="team"]');
+      teamCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
       });
     });
   </script>
+
+  <!-- Team Member Modal -->
+  <div id="teamMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <h3 class="text-lg font-semibold text-white">Ekip Üyeleri</h3>
+        </div>
+        <button onclick="closeTeamModal()" class="text-gray-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="p-4 border-b border-gray-700 shrink-0">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input type="text" id="teamSearchInput" onkeyup="searchTeamMembers()" 
+                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                 placeholder="Üye ara...">
+        </div>
+        <div id="selectedMemberCount" class="text-sm text-gray-400 mt-2 text-center">0 üye seçildi</div>
+      </div>
+
+      <!-- Team Members List -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        {% for member in team_members %}
+          <label class="team-member-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ member.get_full_name|default:member.username }}">
+            <input type="checkbox" 
+                   onchange="toggleTeamMember('{{ member.id }}', this)"
+                   {% if member.id in form.team.value|default:'' %}checked{% endif %}
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+              {% if member.profile.profile_picture %}
+                <img src="{{ member.profile.profile_picture.url }}" alt="{{ member.username }}" class="w-8 h-8 rounded-full object-cover border border-gray-600">
+              {% else %}
+                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center border border-gray-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                  </svg>
+                </div>
+              {% endif %}
+              <div class="flex flex-col min-w-0">
+                <span class="text-white font-medium text-sm truncate">{{ member.get_full_name|default:member.username }}</span>
+                <span class="text-gray-500 text-xs truncate">@{{ member.username }}</span>
+              </div>
+            </div>
+          </label>
+        {% empty %}
+          <div class="text-center text-gray-400 py-8">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto mb-2 text-gray-600">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+            </svg>
+            <p>Henüz öğrenci üye bulunmuyor</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-gray-700 shrink-0">
+        <button type="button" onclick="closeTeamModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+          </svg>
+          Tamam
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div id="categoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <h3 class="text-lg font-semibold text-white">Kategoriler</h3>
+        </div>
+        <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-4 border-b border-gray-700 shrink-0">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input type="text" id="categorySearchInput" onkeyup="searchCategories()" 
+                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                 placeholder="Kategori ara...">
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        {% for category in categories %}
+          <label class="category-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
+            <input type="checkbox" 
+                   onchange="toggleCategory('{{ category.id }}', '{{ category.name }}', this)"
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ category.name }}</span>
+          </label>
+        {% empty %}
+          <div class="text-center text-gray-400 py-8">
+            <p>Henüz kategori bulunmuyor</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="p-4 border-t border-gray-700 shrink-0">
+        <button type="button" onclick="closeCategoryModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+          Tamam
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technology Modal -->
+  <div id="technologyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <h3 class="text-lg font-semibold text-white">Teknolojiler</h3>
+        </div>
+        <button onclick="closeTechnologyModal()" class="text-gray-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-4 border-b border-gray-700 shrink-0">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input type="text" id="technologySearchInput" onkeyup="searchTechnologies()" 
+                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                 placeholder="Teknoloji ara...">
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        {% for tech in technologies %}
+          <label class="technology-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-green-500 transition-all" data-name="{{ tech.name }}">
+            <input type="checkbox" 
+                   onchange="toggleTechnology('{{ tech.id }}', '{{ tech.name }}', this)"
+                   class="w-5 h-5 accent-green-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ tech.name }}</span>
+          </label>
+        {% empty %}
+          <div class="text-center text-gray-400 py-8">
+            <p>Henüz teknoloji bulunmuyor</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="p-4 border-t border-gray-700 shrink-0">
+        <button type="button" onclick="closeTechnologyModal()" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+          Tamam
+        </button>
+      </div>
+    </div>
+  </div>
   
 {% endblock %}

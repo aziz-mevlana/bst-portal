@@ -46,8 +46,53 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-2 page-container-large"> 
     <div class="mb-8">    
-        <!-- Arama ve Filtreleme -->
-        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <!-- Mobilde Açılır Filtre Bölümü -->
+        <div class="md:hidden">
+            <button type="button" onclick="toggleFilters()" class="w-full flex items-center justify-between px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700">
+                <span class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                    </svg>
+                    Filtreleme Araçları
+                </span>
+                <svg id="filterToggleIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 transition-transform">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+            <div id="filterContent" class="hidden mt-4">
+                <form method="get" class="grid grid-cols-1 gap-4">
+                    <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
+                    <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                        <option value="">Tüm Kategoriler</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="technology" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                        <option value="">Tüm Teknolojiler</option>
+                        {% for technology in technologies %}
+                        <option value="{{ technology.id }}" {% if selected_technology == technology.id|stringformat:"s" %}selected{% endif %}>
+                            {{ technology.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="status" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                        <option value="">Tüm Durumlar</option>
+                        {% for status_value, status_label in statuses %}
+                        <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button> 
+                </form>
+            </div>
+        </div>
+
+        <!-- Desktop Filtreleme -->
+        <form method="get" class="sm:hidden md:grid grid-cols-5 gap-4">
             <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
             <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 <option value="">Tüm Kategoriler</option>
@@ -147,6 +192,13 @@
 </div>
 
 <script>
+function toggleFilters() {
+    const filterContent = document.getElementById('filterContent');
+    const filterIcon = document.getElementById('filterToggleIcon');
+    filterContent.classList.toggle('hidden');
+    filterIcon.classList.toggle('rotate-180');
+}
+
 // Enhanced technology tag functionality
 document.addEventListener('DOMContentLoaded', function() {
   const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');

@@ -75,8 +75,47 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-2 page-container-large">
-    <!-- Arama ve Filtreleme -->
-    <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+    <!-- Mobilde Açılır Filtre Bölümü -->
+    <div class="md:hidden mb-8">
+        <button type="button" onclick="toggleFilters()" class="w-full flex items-center justify-between px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700">
+            <span class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                </svg>
+                Filtreleme Araçları
+            </span>
+            <svg id="filterToggleIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 transition-transform">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+        </button>
+        <div id="filterContent" class="hidden mt-4">
+            <form method="get" class="grid grid-cols-1 gap-4">
+                <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
+                <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                    <option value="">Deneyim Seviyesi</option>
+                    {% for value, label in alumni_list.model.EXPERIENCE_LEVEL_CHOICES %}
+                    <option value="{{ value }}" {% if selected_experience_level == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="graduation_year" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                    <option value="">Mezuniyet Yılı</option>
+                    {% for year in graduation_years %}
+                    <option value="{{ year }}" {% if selected_graduation_year|add:"" == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+                <select name="tag" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                    <option value="">Etiket Seçin</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}" {% if selected_tag|add:"" == tag.id|stringformat:"s" %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Desktop Filtreleme -->
+    <form method="get" class="sm:hidden md:grid grid-cols-5 gap-4 mb-8">
         <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
         <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
             <option value="">Deneyim Seviyesi</option>
@@ -160,6 +199,13 @@
 
 
 <script>
+function toggleFilters() {
+    const filterContent = document.getElementById('filterContent');
+    const filterIcon = document.getElementById('filterToggleIcon');
+    filterContent.classList.toggle('hidden');
+    filterIcon.classList.toggle('rotate-180');
+}
+
 // Enhanced alumni skill tag functionality
 document.addEventListener('DOMContentLoaded', function() {
   const skillTags = document.querySelectorAll('.alumni-skill-tag[data-skill-color]');
