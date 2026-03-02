@@ -44,7 +44,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-2 page-container-large"> 
+<div class="max-w-7xl mx-auto px-4 py-6 page-container-large"> 
     <div class="mb-8">    
         <!-- Mobilde Açılır Filtre Bölümü -->
         <div class="md:hidden">
@@ -92,7 +92,7 @@
         </div>
 
         <!-- Desktop Filtreleme -->
-        <form method="get" class="sm:hidden md:grid grid-cols-5 gap-4">
+        <form method="get" class=" md:block hidden md:grid grid-cols-5 gap-4">
             <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
             <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 <option value="">Tüm Kategoriler</option>
@@ -137,7 +137,8 @@
         </a>
         
         {% for project in projects %}
-        <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
+        <a href="{% url 'projects:project_detail' project.id %}">
+           <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
             <div>
                 <div class="flex items-start justify-between mb-2">
                     <h3 class="text-xl font-bold flex-1 mr-2">{{ project.title }}</h3>
@@ -181,8 +182,9 @@
                 {% endif %}
 
             </div>
-            <a href="{% url 'projects:project_detail' project.id %}" class="mt-auto inline-block px-4 py-2 rounded-lg font-semibold transition text-center w-full hover:bg-blue-700 bg-blue-600 text-white ransition">Detayları Gör</a>
-        </div>
+        </div> 
+        </a>
+        
         {% empty %}
         <div class="col-span-full">
             <div class="text-center font-semibold">Henüz proje bulunmuyor.</div>

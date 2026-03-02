@@ -3,8 +3,44 @@
 
 {% block title %}BST Portal | Haberler{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/projects.css' %}">
+<style>
+.technology-tag {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.technology-tag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.technology-tag:hover::before {
+  left: 100%;
+}
+
+.technology-tag[data-technology-color] {
+  background-color: var(--technology-bg);
+  color: var(--technology-color);
+  border: 1px solid var(--technology-border);
+}
+
+.technology-tag:hover {
+  transform: translateY(-1px);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 py-8 page-container-large">
+<div class="max-w-7xl mx-auto px-4 py-6 page-container-large">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
         <h2 class="text-3xl font-bold">Haberler</h2>
 
@@ -24,30 +60,31 @@
         {% endif %}
         
         {% for news in news %}
-        <div class="rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full color-page">
+        <a href="{% url 'news:news_detail' news.id %}" class="rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full color-page">
             <div>
                 <div class="flex items-center gap-2 mb-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold project-tag-gray">
+                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--technology-bg: #6b728020; --technology-color: #6b7280; --technology-border: #6b728040;" 
+                          data-technology-color="#6b7280">
                         {{ news.date|date:"d.m.Y" }}
                     </span>
                     {% if news.source %}
-                    <a href="{{ news.source }}" target="_blank" class="px-3 py-1 rounded-full text-xs font-semibold project-tag-blue transition">
+                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                       style="--technology-bg: #3b82f620; --technology-color: #3b82f6; --technology-border: #3b82f640;" 
+                       data-technology-color="#3b82f6">
                         Kaynak
-                    </a>
+                    </span>
                     {% endif %}
                 </div>
                 <h3 class="text-xl font-bold mb-2">{{ news.title }}</h3>
                 <p class="mb-4 line-clamp-3">{{ news.content|truncatewords:25 }}</p>
             </div>
-            <div class="flex items-center justify-between text-sm mb-4">
+            <div class="flex items-center justify-between text-sm">
                 <span class="flex items-center gap-1">
                     <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ news.created_by.get_full_name|default:news.created_by.username }}</span>
                 </span>
             </div>
-            <a href="{% url 'news:news_detail' news.id %}" class="mt-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-600/25 text-center w-full">
-                Devamını Oku
-            </a>
-        </div>
+        </a>
         {% empty %}
         <div class="col-span-full">
             <div class="p-6 text-center font-semibold">Henüz haber bulunmuyor.</div>
@@ -55,4 +92,18 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');
+  
+  technologyTags.forEach((tag) => {
+    const color = tag.dataset.technologyColor;
+    
+    tag.style.setProperty('--technology-bg', color + '20');
+    tag.style.setProperty('--technology-color', color);
+    tag.style.setProperty('--technology-border', color + '40');
+  });
+});
+</script>
 {% endblock %}

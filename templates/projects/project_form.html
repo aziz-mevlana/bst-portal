@@ -43,15 +43,12 @@
 {% endblock %}
 
 {% block content %}
-  <div class="min-h-screen bg-[#181e29] py-8 px-4">
+  <div class="min-h-screen px-4">
     <div class="w-full max-w-6xl mx-auto px-4">
       <div class="p-6 lg:px-12">
         <!-- Header -->
         <div class="mb-8">
           <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
             {% if form.instance.pk %}
               Projeyi Düzenle
             {% else %}
@@ -63,15 +60,13 @@
         {% csrf_token %}
 
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Sol Kolon - Temel Bilgiler -->
-          <div class="lg:col-span-2 flex flex-col gap-8">
+        <div class="gap-8">
+          <!-- Temel Bilgiler -->
+          <div class="flex flex-col gap-8">
             <div class="project-detail-item rounded-xl shadow-lg p-6">
               <div class="border-b border-gray-700 pb-4 mb-6">
                 <h3 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                  </svg>Temel Bilgiler
+                  Temel Bilgiler
                 </h3>
               </div>
               <div class="space-y-6">
@@ -80,7 +75,7 @@
                   {% for field in form %}
                     {% if field.name in 'title description project_link status project_request' %}
                       <div class="space-y-2 {% if field.name == 'description' %}md:col-span-2{% endif %}">
-                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
+                        <label for="{{ field.id_for_label }}" class="text-sm font-medium text-gray-300 flex items-center gap-2">
                           {% if field.name == 'title' %}
                             Başlık
                           {% elif field.name == 'description' %}
@@ -133,28 +128,54 @@
                   {% endfor %}
                 </div>
 
-                <!-- Selection Buttons -->
-                <div class="flex flex-wrap gap-3 pt-4">
-                  <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                    </svg>
-                    Ekip Üyeleri
-                  </button>
-                  <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
-                    </svg>
-                    Kategoriler
-                  </button>
-                  <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                    </svg>
-                    Teknolojiler
-                  </button>
+                <!-- Selection Sections -->
+                <div class="space-y-6 pt-4">
+                  <!-- Ekip Üyeleri -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Ekip Üyeleri</label>
+                    <div id="selectedTeamMembers" class="min-h-[60px] flex flex-wrap gap-2 p-3 bg-[#181e29] border border-gray-600 rounded-lg items-center">
+                      <span class="text-gray-500 text-sm">Üye seçiniz</span>
+                      <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Ekle
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Kategoriler -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Kategoriler</label>
+                    <div id="selectedCategories" class="min-h-[60px] flex flex-wrap gap-2 p-3 bg-[#181e29] border border-gray-600 rounded-lg items-center">
+                      <span class="text-gray-500 text-sm">Kategori seçiniz</span>
+                      <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Ekle
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Teknolojiler -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Teknolojiler</label>
+                    <div id="selectedTechnologies" class="min-h-[60px] flex flex-wrap gap-2 p-3 bg-[#181e29] border border-gray-600 rounded-lg items-center">
+                      <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
+                      <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Ekle
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                <div id="teamHiddenInputs"></div>
+                <div id="categoriesHiddenInputs"></div>
+                <div id="technologiesHiddenInputs"></div>
 
                 <!-- Form Actions -->
                 <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-700">
@@ -169,28 +190,6 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Sağ Kolon - Seçimler -->
-          <div class="lg:col-span-1 flex flex-col gap-8">
-            {% for field in form %}
-              {% if field.name == 'team' %}
-                <div class="project-detail-item rounded-xl shadow-lg p-6">
-                  <div class="border-b border-gray-700 pb-4 mb-6">
-                    <h3 class="text-xl font-bold text-blue-400 flex items-center gap-2">Takım</h3>
-                  </div>
-                  <div class="checkbox-group space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                    {% for choice in field.field.queryset %}
-                      <label>
-                        <input type="checkbox" name="{{ field.name }}" value="{{ choice.id }}" 
-                          {% if choice.id in field.value %}checked{% endif %} />
-                        <span>{{ choice.username }}</span>
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-              {% endif %}
-            {% endfor %}
           </div>
         </div>
       </form>
@@ -250,6 +249,7 @@
       if (countElement) {
         countElement.textContent = checkedCount + ' üye seçildi';
       }
+      updateTeamDisplay();
     }
 
     // Category Modal Functions
@@ -284,28 +284,84 @@
       });
     }
 
-    let selectedCategories = [];
+    let selectedTeamMembers = [];
+
+    function updateTeamDisplay() {
+      const container = document.getElementById('selectedTeamMembers');
+      const hiddenContainer = document.getElementById('teamHiddenInputs');
+      if (!container) return;
+
+      const checkedMembers = document.querySelectorAll('input[name="team"]:checked');
+      
+      // Create multiple hidden inputs for Django SelectMultiple
+      if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+        checkedMembers.forEach(cb => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'team';
+          input.value = cb.value;
+          hiddenContainer.appendChild(input);
+        });
+      }
+      
+      if (checkedMembers.length === 0) {
+        container.innerHTML = `
+          <span class="text-gray-500 text-sm">Üye seçiniz</span>
+          <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Ekle
+          </button>
+        `;
+        return;
+      }
+
+      let html = Array.from(checkedMembers).map(cb => {
+        const memberId = cb.value;
+        const name = cb.dataset.name || '';
+        return name ? `
+          <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-600/30 text-blue-300 text-sm rounded-md">
+            ${name}
+            <button type="button" onclick="removeTeamMember('${memberId}')" class="hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
+        ` : '';
+      }).join('');
+      
+      html += `
+        <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Ekle
+        </button>
+      `;
+      
+      container.innerHTML = html;
+    }
+
+    function removeTeamMember(memberId) {
+      const teamCheckboxes = document.querySelectorAll('input[name="team"][value="' + memberId + '"]');
+      teamCheckboxes.forEach(cb => {
+        cb.checked = false;
+        cb.dispatchEvent(new Event('change'));
+      });
+      updateTeamDisplay();
+    }
 
     function toggleCategory(id, name, checkbox) {
-      const idStr = String(id);
-      if (checkbox.checked) {
-        if (!selectedCategories.includes(idStr)) {
-          selectedCategories.push(idStr);
-        }
-      } else {
-        selectedCategories = selectedCategories.filter(catId => catId !== idStr);
-      }
       updateCategoryDisplay();
     }
 
     function removeCategory(id) {
-      selectedCategories = selectedCategories.filter(catId => String(catId) !== String(id));
-      const hiddenInput = document.getElementById('id_categories');
-      if (hiddenInput) hiddenInput.value = selectedCategories.join(',');
-      
       const modalCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
       modalCheckboxes.forEach(cb => {
-        if (cb.onchange && String(cb.onchange.toString().match(/'([^']+)'/)?.[1]) === String(id)) {
+        if (cb.dataset.id === String(id)) {
           cb.checked = false;
         }
       });
@@ -314,23 +370,38 @@
 
     function updateCategoryDisplay() {
       const container = document.getElementById('selectedCategories');
-      const hiddenInput = document.getElementById('id_categories');
+      const hiddenContainer = document.getElementById('categoriesHiddenInputs');
       if (!container) return;
       
-      if (hiddenInput) hiddenInput.value = selectedCategories.join(',');
+      const checkedBoxes = document.querySelectorAll('#categoryModal input[type="checkbox"]:checked');
       
-      container.innerHTML = selectedCategories.map(catId => {
-        const allCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
-        let catName = '';
-        allCheckboxes.forEach(cb => {
-          if (cb.onchange) {
-            const match = cb.onchange.toString().match(/toggleCategory\('([^']+)'/);
-            if (match && match[1] === catId) {
-              const label = cb.closest('label');
-              if (label) catName = label.querySelector('span')?.textContent || '';
-            }
-          }
+      if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+        checkedBoxes.forEach(cb => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'categories';
+          input.value = cb.dataset.id;
+          hiddenContainer.appendChild(input);
         });
+      }
+      
+      if (checkedBoxes.length === 0) {
+        container.innerHTML = `
+          <span class="text-gray-500 text-sm">Kategori seçiniz</span>
+          <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Ekle
+          </button>
+        `;
+        return;
+      }
+
+      let html = Array.from(checkedBoxes).map(cb => {
+        const catId = cb.dataset.id;
+        const catName = cb.dataset.name || '';
         return catName ? `
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-600/30 text-blue-300 text-sm rounded-md">
             ${catName}
@@ -341,7 +412,18 @@
             </button>
           </span>
         ` : '';
-      }).join('') || '<span class="text-gray-500">Kategori seçiniz</span>';
+      }).join('');
+
+      html += `
+        <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Ekle
+        </button>
+      `;
+
+      container.innerHTML = html;
     }
 
     // Technology Modal Functions
@@ -376,28 +458,14 @@
       });
     }
 
-    let selectedTechnologies = [];
-
     function toggleTechnology(id, name, checkbox) {
-      const idStr = String(id);
-      if (checkbox.checked) {
-        if (!selectedTechnologies.includes(idStr)) {
-          selectedTechnologies.push(idStr);
-        }
-      } else {
-        selectedTechnologies = selectedTechnologies.filter(techId => techId !== idStr);
-      }
       updateTechnologyDisplay();
     }
 
     function removeTechnology(id) {
-      selectedTechnologies = selectedTechnologies.filter(techId => String(techId) !== String(id));
-      const hiddenInput = document.getElementById('id_technologies');
-      if (hiddenInput) hiddenInput.value = selectedTechnologies.join(',');
-      
       const modalCheckboxes = document.querySelectorAll('#technologyModal input[type="checkbox"]');
       modalCheckboxes.forEach(cb => {
-        if (cb.onchange && String(cb.onchange.toString().match(/'([^']+)'/)?.[1]) === String(id)) {
+        if (cb.dataset.id === String(id)) {
           cb.checked = false;
         }
       });
@@ -406,23 +474,38 @@
 
     function updateTechnologyDisplay() {
       const container = document.getElementById('selectedTechnologies');
-      const hiddenInput = document.getElementById('id_technologies');
+      const hiddenContainer = document.getElementById('technologiesHiddenInputs');
       if (!container) return;
       
-      if (hiddenInput) hiddenInput.value = selectedTechnologies.join(',');
+      const checkedBoxes = document.querySelectorAll('#technologyModal input[type="checkbox"]:checked');
       
-      container.innerHTML = selectedTechnologies.map(techId => {
-        const allCheckboxes = document.querySelectorAll('#technologyModal input[type="checkbox"]');
-        let techName = '';
-        allCheckboxes.forEach(cb => {
-          if (cb.onchange) {
-            const match = cb.onchange.toString().match(/toggleTechnology\('([^']+)'/);
-            if (match && match[1] === techId) {
-              const label = cb.closest('label');
-              if (label) techName = label.querySelector('span')?.textContent || '';
-            }
-          }
+      if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+        checkedBoxes.forEach(cb => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'technologies';
+          input.value = cb.dataset.id;
+          hiddenContainer.appendChild(input);
         });
+      }
+      
+      if (checkedBoxes.length === 0) {
+        container.innerHTML = `
+          <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
+          <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Ekle
+          </button>
+        `;
+        return;
+      }
+
+      let html = Array.from(checkedBoxes).map(cb => {
+        const techId = cb.dataset.id;
+        const techName = cb.dataset.name || '';
         return techName ? `
           <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-600/30 text-green-300 text-sm rounded-md">
             ${techName}
@@ -433,28 +516,27 @@
             </button>
           </span>
         ` : '';
-      }).join('') || '<span class="text-gray-500">Teknoloji seçiniz</span>';
+      }).join('');
+
+      html += `
+        <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Ekle
+        </button>
+      `;
+
+      container.innerHTML = html;
     }
 
     document.addEventListener('DOMContentLoaded', function () {
       const requestField = findFieldByName('project_request');
 
-      // Initialize categories from hidden input
-      const categoriesInput = document.getElementById('id_categories');
-      if (categoriesInput && categoriesInput.value) {
-        selectedCategories = categoriesInput.value.split(',').filter(v => v);
-        updateCategoryDisplay();
-      }
-
-      // Initialize technologies from hidden input
-      const technologiesInput = document.getElementById('id_technologies');
-      if (technologiesInput && technologiesInput.value) {
-        selectedTechnologies = technologiesInput.value.split(',').filter(v => v);
-        updateTechnologyDisplay();
-      }
-
-      // Initialize selected count
-      updateSelectedCount();
+      // Initialize displays
+      updateTeamDisplay();
+      updateCategoryDisplay();
+      updateTechnologyDisplay();
       
       // Sync modal checkboxes with form checkboxes
       const teamCheckboxes = document.querySelectorAll('input[name="team"]');
@@ -498,8 +580,12 @@
         {% for member in team_members %}
           <label class="team-member-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ member.get_full_name|default:member.username }}">
             <input type="checkbox" 
+                   name="team"
+                   value="{{ member.id }}"
+                   data-id="{{ member.id }}"
+                   data-name="{{ member.get_full_name|default:member.username }}"
                    onchange="toggleTeamMember('{{ member.id }}', this)"
-                   {% if member.id in form.team.value|default:'' %}checked{% endif %}
+                   {% if form.instance.pk and member in form.instance.team.all %}checked{% endif %}
                    class="w-5 h-5 accent-blue-500 cursor-pointer">
             <div class="flex items-center gap-3 flex-1 min-w-0">
               {% if member.profile.profile_picture %}
@@ -530,9 +616,6 @@
       <!-- Modal Footer -->
       <div class="p-4 border-t border-gray-700 shrink-0">
         <button type="button" onclick="closeTeamModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
-          </svg>
           Tamam
         </button>
       </div>
@@ -567,7 +650,10 @@
         {% for category in categories %}
           <label class="category-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
             <input type="checkbox" 
+                   data-id="{{ category.id }}"
+                   data-name="{{ category.name }}"
                    onchange="toggleCategory('{{ category.id }}', '{{ category.name }}', this)"
+                   {% if form.instance.pk and category in form.instance.categories.all %}checked{% endif %}
                    class="w-5 h-5 accent-blue-500 cursor-pointer">
             <span class="text-white font-medium text-sm">{{ category.name }}</span>
           </label>
@@ -613,7 +699,10 @@
         {% for tech in technologies %}
           <label class="technology-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-green-500 transition-all" data-name="{{ tech.name }}">
             <input type="checkbox" 
+                   data-id="{{ tech.id }}"
+                   data-name="{{ tech.name }}"
                    onchange="toggleTechnology('{{ tech.id }}', '{{ tech.name }}', this)"
+                   {% if form.instance.pk and tech in form.instance.technologies.all %}checked{% endif %}
                    class="w-5 h-5 accent-green-500 cursor-pointer">
             <span class="text-white font-medium text-sm">{{ tech.name }}</span>
           </label>

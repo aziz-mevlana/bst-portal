@@ -259,7 +259,6 @@
 .project-detail-item textarea,
 .project-detail-item input,
 .project-detail-item select {
-    background-color: #374151 !important;
     border-color: #4b5563 !important;
     color: #f3f4f6 !important;
 }
@@ -267,7 +266,7 @@
 .project-detail-item textarea:focus,
 .project-detail-item input:focus,
 .project-detail-item select:focus {
-    background-color: #374151 !important;
+
     border-color: #60a5fa !important;
     color: #f3f4f6 !important;
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
