@@ -11,8 +11,15 @@ class IndexView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Son 3 etkinliği al - start_date kullanarak
-        context['events'] = Event.objects.all().order_by('start_date')[:3]
+        context['events'] = Event.objects.all().order_by('start_date')[:4]
 
-        # Article modelini kullan - son 3 haberi al
-        context['news'] = Article.objects.all().order_by('-date')[:3]
+        # Optimize: Only fetch news that should appear on homepage for slider, limited to 5 items
+        # This is more efficient than fetching all news and filtering in template
+        context['homepage_news'] = Article.objects.filter(
+            is_homepage=True
+        ).order_by('-date')
+        
+        # Fetch all news for the news section (not just homepage)
+        context['all_news'] = Article.objects.all().order_by('-date')[:4]
+        
         return context 

@@ -1,21 +1,27 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import AlumniProfile, AlumniExperience, Tag, SkillTag, Alumni, WorkExperience
 from django.db import models
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_protect
+
+from projects.models import ProjectCategory, Technology
+
+from .models import Alumni, WorkExperience
 
 @login_required
 def alumni_list(request):
-    alumni_list = Alumni.objects.filter(is_show_in_alumni_list=True)
-    tags = SkillTag.objects.all()
+    alumni_list = Alumni.objects.filter(is_show_in_alumni_list=True).prefetch_related(
+        'categories', 'technologies', 'user__profile'
+    )
+    categories = ProjectCategory.objects.all()
+    technologies = Technology.objects.all()
 
     # Arama ve filtreleme parametreleri
     query = request.GET.get('q', '')
     experience_level = request.GET.get('experience_level', '')
     graduation_year = request.GET.get('graduation_year', '')
-    tag_id = request.GET.get('tag', '')
+    category_id = request.GET.get('category', '')
+    technology_id = request.GET.get('technology', '')
 
     if query:
         alumni_list = alumni_list.filter(
@@ -30,19 +36,25 @@ def alumni_list(request):
         alumni_list = alumni_list.filter(experience_level=experience_level)
     if graduation_year:
         alumni_list = alumni_list.filter(graduation_year=graduation_year)
-    if tag_id:
-        alumni_list = alumni_list.filter(skills__id=tag_id)
+    if category_id:
+        alumni_list = alumni_list.filter(categories__id=category_id)
+    if technology_id:
+        alumni_list = alumni_list.filter(technologies__id=technology_id)
+
+    alumni_list = alumni_list.distinct()
 
     # Mezuniyet yıllarını unique olarak al
     graduation_years = Alumni.objects.values_list('graduation_year', flat=True).distinct().order_by('-graduation_year')
 
     return render(request, 'alumni/alumni_list.html', {
         'alumni_list': alumni_list,
-        'tags': tags,
+        'categories': categories,
+        'technologies': technologies,
         'graduation_years': graduation_years,
         'selected_experience_level': experience_level,
         'selected_graduation_year': graduation_year,
-        'selected_tag': tag_id,
+        'selected_category': category_id,
+        'selected_technology': technology_id,
         'query': query,
     })
 
@@ -88,6 +100,10 @@ def alumni_profile_edit(request):
             return edit_experience(request, profile)
         elif action == 'get_experience':
             return get_experience(request, profile)
+        elif action == 'delete_profile':
+            profile.delete()
+            messages.success(request, 'Mezun profiliniz silindi.')
+            return redirect('alumni:alumni_list')
         else:
             # Normal profile update
             profile.graduation_year = request.POST.get('graduation_year')
@@ -101,18 +117,22 @@ def alumni_profile_edit(request):
             profile.is_available_for_mentoring = request.POST.get('is_available_for_mentoring') == 'on'
             profile.is_show_in_alumni_list = request.POST.get('is_show_in_alumni_list') == 'on'
             
-            # Etiketleri güncelle
-            tag_ids = request.POST.getlist('tags')
-            profile.skills.set(tag_ids)
-            
+            category_ids = request.POST.getlist('categories')
+            technology_ids = request.POST.getlist('technologies')
+
             profile.save()
+            profile.categories.set(category_ids)
+            profile.technologies.set(technology_ids)
+
             messages.success(request, 'Profiliniz başarıyla güncellendi.')
             return redirect('alumni:alumni_profile')
     
-    tags = SkillTag.objects.all()
+    categories = ProjectCategory.objects.all()
+    technologies = Technology.objects.all()
     return render(request, 'alumni/alumni_profile_edit.html', {
         'profile': profile,
-        'tags': tags
+        'categories': categories,
+        'technologies': technologies,
     })
 
 def add_experience(request, profile):
@@ -201,7 +221,3 @@ def edit_experience(request, profile):
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
-def tag_list(request):
-    tags = SkillTag.objects.all()
-    return render(request, 'alumni/tag_list.html', {'tags': tags})

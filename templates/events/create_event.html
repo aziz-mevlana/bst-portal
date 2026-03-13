@@ -4,51 +4,140 @@
 {% block title %}BST Portal | Yeni Etkinlik Oluştur{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-8 page-container color-page rounded-lg shadow-lg">
-    <h2 class="text-2xl font-bold mb-8 text-center">Yeni Etkinlik Oluştur</h2>
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
-        {% csrf_token %}
-        <div>
-            <label class="block mb-2 font-semibold" for="title">Başlık</label>
-            <input type="text" id="title" name="title" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
-        </div>
-        <div>
-            <label class="block mb-2 font-semibold" for="description">Açıklama</label>
-            <textarea id="description" name="description" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="4" required></textarea>
-        </div>
-        <div class="flex flex-col md:flex-row md:gap-4">
-            <div class="flex-1 mb-4 md:mb-0">
-                <label class="block mb-2 font-semibold" for="event_type">Etkinlik Türü</label>
-                <select id="event_type" name="event_type" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
-                    <option value="seminar">Seminer</option>
-                    <option value="workshop">Atölye</option>
-                    <option value="conference">Konferans</option>
-                    <option value="social">Sosyal Etkinlik</option>
-                    <option value="other">Diğer</option>
-                </select>
-            </div>
-            <div class="flex-1">
-                <label class="block mb-2 font-semibold" for="location">Konum</label>
-                <input type="text" id="location" name="location" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+<div class="min-h-screen px-4 py-8">
+    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4">
+        <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-center sm:text-left">
+                <h2 class="text-3xl font-bold text-white">{{ page_title|default:'Yeni Etkinlik Oluştur' }}</h2>
             </div>
         </div>
-        <div class="flex flex-col md:flex-row md:gap-4">
-            <div class="flex-1 mb-4 md:mb-0">
-                <label class="block mb-2 font-semibold" for="start_date">Başlangıç Tarihi</label>
-                <input type="datetime-local" id="start_date" name="start_date" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+            {% csrf_token %}
+
+            <div class="project-detail-item rounded-2xl shadow-2xl border border-gray-700/70 p-6 lg:p-10">
+                <div class="border-b border-gray-700 pb-4 mb-8">
+                    <h3 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+                        Etkinlik Detayları
+                    </h3>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-300" for="title">Başlık <span class="text-blue-400">*</span></label>
+                            <input type="text" id="title" name="title" value="{{ event_obj.title|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-300" for="description">Açıklama <span class="text-blue-400">*</span></label>
+                            <textarea id="description" name="description" rows="4" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ event_obj.description|default_if_none:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="event_type">Etkinlik Türü</label>
+                            <div class="relative">
+                                <select id="event_type" name="event_type" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none cursor-pointer" required>
+                                    <option value="seminar" {% if event_obj.event_type == 'seminar' %}selected{% endif %}>Seminer</option>
+                                    <option value="workshop" {% if event_obj.event_type == 'workshop' %}selected{% endif %}>Atölye</option>
+                                    <option value="conference" {% if event_obj.event_type == 'conference' %}selected{% endif %}>Konferans</option>
+                                    <option value="social" {% if event_obj.event_type == 'social' %}selected{% endif %}>Sosyal Etkinlik</option>
+                                    <option value="other" {% if event_obj.event_type == 'other' %}selected{% endif %}>Diğer</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="location">Konum</label>
+                            <input type="text" id="location" name="location" value="{{ event_obj.location|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="start_date">Başlangıç Tarihi</label>
+                            <input type="datetime-local" id="start_date" name="start_date" value="{{ event_obj.start_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="end_date">Bitiş Tarihi</label>
+                            <input type="datetime-local" id="end_date" name="end_date" value="{{ event_obj.end_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-sm font-medium text-gray-300" for="image">Görsel</label>
+                        <div class="rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-5 space-y-4">
+                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
+                            <div id="event-image-preview" class="w-full rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
+                                <span class="text-sm text-gray-500 {% if event_obj.image %}hidden{% endif %}">Henüz bir görsel seçilmedi</span>
+                                <img src="{% if event_obj.image %}{{ event_obj.image.url }}{% endif %}" alt="Görsel ön izlemesi" class="{% if event_obj.image %}{% else %}hidden {% endif %}w-full h-full object-cover" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="flex-1">
-                <label class="block mb-2 font-semibold" for="end_date">Bitiş Tarihi</label>
-                <input type="datetime-local" id="end_date" name="end_date" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+                {% if event_obj %}
+                <button type="submit" form="delete-event-form" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition">
+                    Sil
+                </button>
+                {% endif %}
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+                    {{ submit_label|default:'Oluştur' }}
+                </button>
             </div>
-        </div>
-        <div>
-            <label class="block mb-2 font-semibold" for="image">Görsel</label>
-            <input type="file" id="image" name="image" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
-        </div>
-        <div class="flex justify-end">
-            <button type="submit" class="px-8 py-2 project-list-button hover:bg-blue-100 rounded font-semibold transition">Oluştur</button>
-        </div>
-    </form>
+        </form>
+        {% if event_obj %}
+        <form id="delete-event-form" method="post" action="{% url 'events:delete_event' event_obj.id %}" class="hidden">
+            {% csrf_token %}
+        </form>
+        {% endif %}
+    </div>
 </div>
-{% endblock %} 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('image');
+    const previewWrapper = document.getElementById('event-image-preview');
+    if (!input || !previewWrapper) {
+        return;
+    }
+
+    const previewImage = previewWrapper.querySelector('img');
+    const placeholderText = previewWrapper.querySelector('span');
+
+    if (previewImage && previewImage.getAttribute('src')) {
+        previewImage.classList.remove('hidden');
+        if (placeholderText) {
+            placeholderText.classList.add('hidden');
+        }
+    }
+
+    input.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+
+        if (!file) {
+            previewImage.classList.add('hidden');
+            previewImage.removeAttribute('src');
+            if (placeholderText) {
+                placeholderText.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        previewImage.src = objectUrl;
+        previewImage.classList.remove('hidden');
+        if (placeholderText) {
+            placeholderText.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -20,7 +20,7 @@ class ProjectForm(forms.ModelForm):
     """Form used by views but mapped to new Project model."""
     class Meta:
         model = Project
-        fields = ['project_request', 'title', 'description', 'project_link', 'team', 'categories', 'technologies']
+        fields = ['project_request', 'title', 'description', 'project_link', 'team', 'categories', 'technologies', 'is_private']
         widgets = {
             'project_request': forms.Select(attrs={'class': 'project-form-input'}),
             'title': forms.TextInput(attrs={'class': 'project-form-input'}),
@@ -29,6 +29,7 @@ class ProjectForm(forms.ModelForm):
             'team': forms.SelectMultiple(attrs={'class': 'project-form-input'}),
             'categories': forms.CheckboxSelectMultiple(attrs={'class': 'space-y-2'}),
             'technologies': forms.CheckboxSelectMultiple(attrs={'class': 'space-y-2'}),
+            'is_private': forms.CheckboxInput(attrs={'class': 'w-5 h-5 accent-blue-500 cursor-pointer'}),
         }
 
     def __init__(self, *args, **kwargs):

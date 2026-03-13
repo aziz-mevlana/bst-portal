@@ -48,7 +48,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- Etkinlik Ekle Kartı -->
         {% if user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
-        <a href="{% url 'events:create_event' %}" class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-600 hover:border-blue-400 bg-gray-800 hover:bg-gray-750 group">
+        <a href="{% url 'events:create_event' %}" class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 hover:border-blue-400 bg-gray-800 hover:bg-gray-750 group">
             <div class="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center mb-4 group-hover:bg-blue-800 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -58,9 +58,10 @@
             <p class="text-center mt-2">Etkinlik eklemek için tıklayın</p>
         </a>
         {% endif %}
+
         
         {% for event in events %}
-        <a href="{% url 'events:event_detail' event.id %}" class="rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full color-page">
+        <a href="{% url 'events:event_detail' event.id %}" class="event-item project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between color-page">
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
@@ -92,6 +93,14 @@
         </div>
         {% endfor %}
     </div>
+    
+    {% if has_more %}
+    <div class="text-center mt-8">
+        <button id="load-more-events" data-offset="{{ next_offset }}" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg">
+            Daha Fazla Yükle
+        </button>
+    </div>
+    {% endif %}
 </div>
 
 <script>
@@ -105,6 +114,45 @@ document.addEventListener('DOMContentLoaded', function() {
     tag.style.setProperty('--technology-color', color);
     tag.style.setProperty('--technology-border', color + '40');
   });
+  
+  const loadMoreBtn = document.getElementById('load-more-events');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() {
+      const offset = this.dataset.offset;
+      const btn = this;
+      
+      btn.textContent = 'Yükleniyor...';
+      btn.disabled = true;
+      
+        fetch(`/events/load-more/?offset=${offset}`)
+        .then(response => response.json())
+        .then(data => {
+          const gridContainer = document.querySelector('.grid');
+          gridContainer.insertAdjacentHTML('beforeend', data.items);
+          
+          const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
+          newTags.forEach((tag) => {
+            const color = tag.dataset.technologyColor;
+            tag.style.setProperty('--technology-bg', color + '20');
+            tag.style.setProperty('--technology-color', color);
+            tag.style.setProperty('--technology-border', color + '40');
+          });
+          
+          if (data.has_more) {
+            btn.dataset.offset = data.next_offset;
+            btn.textContent = 'Daha Fazla Yükle';
+            btn.disabled = false;
+          } else {
+            btn.remove();
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          btn.textContent = 'Daha Fazla Yükle';
+          btn.disabled = false;
+        });
+    });
+  }
 });
 </script>
 {% endblock %} 

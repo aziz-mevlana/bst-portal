@@ -1,12 +1,14 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
-from .models import UserProfile
+from .models import Profile
 from django.contrib.auth.models import User
 import base64
 from django.core.files.base import ContentFile
+from django.http import Http404
+from projects.models import ProjectCategory, Technology
 
 def login_view(request):
     if request.method == 'POST':
@@ -36,7 +38,7 @@ def register_view(request):
         student_number = request.POST.get('student_number')
         password_1 = request.POST.get('password_1')
         password_2 = request.POST.get('password_2')
-        if UserProfile.objects.filter(student_number=student_number).exists():
+        if Profile.objects.filter(student_number=student_number).exists():
             messages.error(request, 'Bu öğrenci numarası zaten kayıtlı.')
             return redirect('accounts:register')
         if password_1 != password_2:
@@ -62,8 +64,8 @@ def register_view(request):
             last_name=last_name
         )
         # Profil zaten var mı kontrol et
-        if not UserProfile.objects.filter(user=user).exists():
-            UserProfile.objects.create(
+        if not Profile.objects.filter(user=user).exists():
+            Profile.objects.create(
                 user=user,
                 student_number=student_number
             )
@@ -72,8 +74,21 @@ def register_view(request):
     return render(request, 'accounts/register.html')
 
 @login_required
-def profile_view(request):
+def profile_view(request, user_id=None):
+    # Determine which user's profile to view
+    if user_id is not None:
+        view_user = get_object_or_404(User, id=user_id)
+        is_own_profile = (request.user == view_user)
+    else:
+        view_user = request.user
+        is_own_profile = True
+    
     if request.method == 'POST':
+        # Only allow editing if it's the user's own profile
+        if not is_own_profile:
+            return redirect('accounts:user_profile', user_id=view_user.id)
+        
+        # Update user information
         user = request.user
         user.email = request.POST.get('email', user.email)
         user.first_name = request.POST.get('first_name', user.first_name)
@@ -118,9 +133,26 @@ def profile_view(request):
                 messages.error(request, f'Dosya yüklenirken hata oluştu: {str(e)}')
         
         profile.save()
+        
+        # Save skills and technologies (only if editing own profile)
+        if is_own_profile:
+            category_ids = request.POST.getlist('categories')
+            technology_ids = request.POST.getlist('technologies')
+            profile.categories.set(category_ids)
+            profile.technologies.set(technology_ids)
+        
         return redirect('accounts:profile')
     
-    return render(request, 'accounts/profile.html')
+    # Get available categories and technologies for the form
+    categories = ProjectCategory.objects.all()
+    technologies = Technology.objects.all()
+    
+    return render(request, 'accounts/profile.html', {
+        'view_user': view_user,
+        'is_own_profile': is_own_profile,
+        'categories': categories,
+        'technologies': technologies,
+    })
 
 @login_required
 def profile_edit_view(request):

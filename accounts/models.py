@@ -2,24 +2,25 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from projects.models import ProjectCategory, Technology
 
 
 class Profile(models.Model):
     """User profile information"""
     USER_TYPE_CHOICES = [
-        ('student', 'Student'),
-        ('teacher', 'Faculty Member'),
-        ('alumni', 'Alumni'),
-        ('staff_student', 'Staff Student')
+        ('student', 'Öğrenci'),
+        ('teacher', 'Öğretim Üyesi'),
+        ('alumni', 'Mezun'),
+        ('staff_student', 'Görevli Öğrenci')
     ]
     
     CLASS_CHOICES = [
-        ('1', '1st Year'),
-        ('2', '2nd Year'),
-        ('3', '3rd Year'),
-        ('4', '4th Year'),
-        ('continuing', 'Continuing'),
-        ('graduated', 'Graduated')
+        ('1', '1. Sınıf'),
+        ('2', '2. Sınıf'),
+        ('3', '3. Sınıf'),
+        ('4', '4. Sınıf'),
+        ('alt', 'Altdan Devam Ediyor'),
+        ('bitir', 'Bitirdi')
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -29,9 +30,14 @@ class Profile(models.Model):
     last_name = models.CharField(max_length=30, blank=True, null=True)
     student_number = models.CharField(max_length=20, blank=True, null=True)
     class_level = models.CharField(max_length=20, choices=CLASS_CHOICES, default='1')
-    department = models.CharField(max_length=100, blank=True, null=True, default='Information Systems and Technologies')
+    department = models.CharField(max_length=100, blank=True, null=True, default='Bilişim Sistemleri ve Teknolojileri')
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    
+    # Skills and Technologies
+    categories = models.ManyToManyField(ProjectCategory, related_name='student_profiles', blank=True)
+    technologies = models.ManyToManyField(Technology, related_name='student_profiles', blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

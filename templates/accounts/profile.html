@@ -1,101 +1,381 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}BST Portal - Profilim{% endblock %}
+{% block title %}BST Portal - Profil{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+<style>
+  .profile-page-avatar {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 999px;
+    border: 2px solid #60a5fa;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+  }
+  .profile-badge {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  .profile-badge:hover::before {
+    left: 100%;
+  }
+  .profile-badge[data-badge-color] {
+    background-color: var(--badge-bg);
+    color: var(--badge-color);
+    border: 1px solid var(--badge-border);
+  }
+  
+  /* Alumni skill tag styles for student profiles */
+  .alumni-skill-tag {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .alumni-skill-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  .alumni-skill-tag:hover::before {
+    left: 100%;
+  }
+  
+  .alumni-skill-tag[data-skill-color] {
+    background-color: var(--skill-bg);
+    color: var(--skill-color);
+    border: 1px solid var(--skill-border);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-3 alumni-detail-page-container">
-    <div class="max-w-4xl mx-auto">
-        <!-- Başlık -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold">Profilim</h1>
-        </div>
+<div class="w-full max-w-6xl mx-auto px-4">
+  <div class="p-6 lg:px-12">
 
-        <div class="color-page rounded-lg shadow-lg p-6">
-            <div class="mb-6">
-                <div class="flex items-center gap-4">
-                    {% if user.profile.profile_picture %}
-                    <img src="{{ user.profile.profile_picture.url }}" alt="Profil Fotoğrafı" class="w-20 h-20 rounded-full border-3 border-blue-500 shadow-lg">
-                    {% else %}
-                    <div class="w-20 h-20 rounded-full bg-gray-300 border-3 border-blue-500 shadow-lg flex items-center justify-center">
-                        <img src="{% static 'images/icons/profile.svg' %}" alt="Profil Fotoğrafı" class="w-12 h-12">
-                    </div>
+    <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-2 flex items-center gap-6">
+          {% if view_user.profile.profile_picture %}
+            <img src="{{ view_user.profile.profile_picture.url }}" alt="{{ view_user.get_full_name }}" class="profile-page-avatar shadow-xl">
+          {% else %}
+            <div class="profile-page-avatar bg-slate-800 flex items-center justify-center shadow-xl">
+              <img src="{% static 'images/icons/profile.svg' %}" alt="Profil" class="w-12 h-12 opacity-70">
+            </div>
+          {% endif %}
+          <div class="space-y-3">
+            <h2 class="text-3xl lg:text-4xl font-bold text-blue-300 leading-tight">{{ view_user.get_full_name|default:view_user.username }}</h2>
+            <p class="text-sm text-gray-400">{{ view_user.username }}</p>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <span class="profile-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#ffffff20;--badge-color:#ffffff;--badge-border:#ffffff40;" data-badge-color="#ffffff">
+                {% if view_user.profile.user_type == 'student'%}
+                  Öğrenci
+                {% elif view_user.profile.user_type == 'staff_student' %}
+                  Görevli Öğrenci
+                {% elif view_user.profile.user_type == 'teacher' %}
+                  Öğretim Üyesi
+                {% elif view_user.profile.user_type == 'alumni' %}
+                  Mezun
+                {% endif %}
+              </span>
+              {% if view_user.profile.user_type == 'student' or view_user.profile.user_type == 'staff_student' %}
+              <span class="profile-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#3b82f620;--badge-color:#3b82f6;--badge-border:#3b82f640;" data-badge-color="#3b82f6">
+                {{ view_user.profile.class_level }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-3 md:ms-11 sm:ms-0 items-end">
+          <div class="text-sm text-gray-400 mt-3">{{ view_user.email }}</div>
+          {% if view_user.profile.phone_number %}
+          <div class="text-sm text-gray-400">{{ view_user.profile.phone_number }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 space-y-8">
+        <!-- User Type Specific Information -->
+        {% if view_user.profile.user_type == 'student' %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Öğrenci Bilgileri</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-400">Öğrenci Numarası</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.student_number|default:"Belirtilmemiş" }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Bölüm</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.department|default:"Belirtilmemiş" }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Sınıf</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.get_class_level_display|default:"Belirtilmemiş" }}</p>
+            </div>
+          </div>
+        </div>
+        {% elif view_user.profile.user_type == 'staff_student' %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Görevli Öğrenci Bilgileri</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-400">Öğrenci Numarası</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.student_number|default:"Belirtilmemiş" }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Bölüm</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.department|default:"Belirtilmemiş" }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Sınıf</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.get_class_level_display|default:"Belirtilmemiş" }}</p>
+            </div>
+          </div>
+        </div>
+        {% elif view_user.profile.user_type == 'teacher' %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Öğretim Üyesi Bilgileri</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-400">Bölüm</p>
+              <p class="text-lg font-semibold">{{ view_user.profile.department|default:"Belirtilmemiş" }}</p>
+            </div>
+          </div>
+        </div>
+        {% elif view_user.profile.user_type == 'alumni' %}
+        {% if view_user.alumni.exists %}
+        {% with alumni=view_user.alumni.first %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Mezun Bilgileri</h3>
+            {% if is_own_profile %}
+              <a href="{% url 'alumni:alumni_profile' alumni.id %}" class="text-sm text-blue-300 hover:text-blue-200">Mezun Profilini Düzenle</a>
+            {% else %}
+              <a href="{% url 'alumni:alumni_detail' view_user.username %}" class="text-sm text-blue-300 hover:text-blue-200">Mezun Profilini Görüntüle</a>
+            {% endif %}
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-400">Mezuniyet Yılı</p>
+              <p class="text-lg font-semibold">{{ alumni.graduation_year }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Mevcut Pozisyon</p>
+              <p class="text-lg font-semibold">{{ alumni.current_position }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Şirket</p>
+              <p class="text-lg font-semibold">{{ alumni.company }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-400">Deneyim Seviyesi</p>
+              <p class="text-lg font-semibold">{{ alumni.get_experience_level_display }}</p>
+            </div>
+          </div>
+          {% if alumni.bio %}
+          <div class="mt-4">
+            <p class="text-sm text-gray-400 mb-2">Hakkımda</p>
+            <p class="text-gray-200">{{ alumni.bio }}</p>
+          </div>
+          {% endif %}
+        </div>
+        {% endwith %}
+        {% endif %}
+        {% endif %}
+
+        
+
+        <!-- Skills and Technologies Section -->
+        {% if view_user.profile.categories.exists or view_user.profile.technologies.exists %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Yetkinlikler</h3>
+          </div>
+          <div class="space-y-4">
+            {% if view_user.profile.categories.exists %}
+            <div>
+              <h4 class="text-sm text-gray-400 mb-2">Proje Kategorileri</h4>
+              <div class="flex flex-wrap gap-2">
+                {% for category in view_user.profile.categories.all %}
+                  <span class="alumni-skill-tag px-3 py-1.5 rounded-full text-sm font-semibold" 
+                        style="--skill-bg:{{ category.color }}20;--skill-color:{{ category.color }};--skill-border:{{ category.color }}40;" 
+                        data-skill-color="{{ category.color }}">
+                    {{ category.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if view_user.profile.technologies.exists %}
+            <div>
+              <h4 class="text-sm text-gray-400 mb-2">Teknolojiler</h4>
+              <div class="flex flex-wrap gap-2">
+                {% for tech in view_user.profile.technologies.all %}
+                  <span class="alumni-skill-tag px-3 py-1.5 rounded-full text-sm font-semibold" 
+                        style="--skill-bg:{{ tech.color }}20;--skill-color:{{ tech.color }};--skill-border:{{ tech.color }}40;" 
+                        data-skill-color="{{ tech.color }}">
+                    {% if tech.icon %}
+                      <i class="{{ tech.icon }} mr-1"></i>
                     {% endif %}
-                    <div>
-                        <h2 class="text-2xl font-bold">{{ user.get_full_name|default:user.username }}</h2>
-                        <p class="text-gray-400">@{{ user.username }}</p>
-                    </div>
+                    {{ tech.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        <!-- Profil Ayarları (sadece kendi profilinde göster) -->
+        {% if is_own_profile %}
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-2xl font-semibold text-blue-400">Profil Ayarları</h3>
+          </div>
+          <form method="post" enctype="multipart/form-data" class="space-y-6" id="profileForm">
+            {% csrf_token %}
+            
+            <!-- Temel Bilgiler -->
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label for="id_first_name" class="block text-sm font-medium mb-2">Ad</label>
+                  <input type="text" name="first_name" id="id_first_name" value="{{ view_user.first_name }}" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">
                 </div>
+
+                <div>
+                  <label for="id_last_name" class="block text-sm font-medium mb-2">Soyad</label>
+                  <input type="text" name="last_name" id="id_last_name" value="{{ view_user.last_name }}" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">
+                </div>
+              </div>
+
+              <div>
+                <label for="id_profile_picture" class="block text-sm font-medium mb-2">Profil Fotoğrafı</label>
+                <div class="space-y-4">
+                  <input type="file" name="profile_picture_file" id="id_profile_picture" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm" accept="image/*">
+                  <input type="hidden" name="profile_picture" id="croppedImageData">
+                  
+                  <!-- Hidden inputs containers (will be populated by JavaScript) -->
+                  <div id="categoriesHiddenInputs">
+                    {% for category in view_user.profile.categories.all %}
+                    <input type="hidden" name="categories" value="{{ category.id }}">
+                    {% endfor %}
+                  </div>
+                  <div id="skillsHiddenInputs">
+                    {% for tech in view_user.profile.technologies.all %}
+                    <input type="hidden" name="technologies" value="{{ tech.id }}">
+                    {% endfor %}
+                  </div>
+                  <p class="text-sm text-gray-400">Önerilen boyut: 400x400 piksel</p>
+                  
+                  <!-- Kırpılmış resim önizlemesi -->
+                  <div id="croppedPreview" class="relative inline-block" style="display: none;">
+                    <img id="croppedImage" alt="Kırpılmış resim" class="w-24 h-24 rounded-full border-3 border-blue-500 shadow-lg">
+                    <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors" onclick="removeCroppedImage()">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <form method="post" enctype="multipart/form-data" class="space-y-6" id="profileForm">
-                {% csrf_token %}
-                
-                <!-- Temel Bilgiler -->
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="id_username" class="block text-sm font-medium mb-2">Kullanıcı Adı</label>
-                            <input type="text" name="username" id="id_username" value="{{ user.username }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " readonly disabled>
-                        </div>
-
-                        <div>
-                            <label for="id_email" class="block text-sm font-medium mb-2">E-posta</label>
-                            <input type="email" name="email" id="id_email" value="{{ user.email }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " readonly disabled>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="id_first_name" class="block text-sm font-medium mb-2">Ad</label>
-                            <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm ">
-                        </div>
-
-                        <div>
-                            <label for="id_last_name" class="block text-sm font-medium mb-2">Soyad</label>
-                            <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm ">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="id_profile_picture" class="block text-sm font-medium mb-2">Profil Fotoğrafı</label>
-                        <div class="space-y-4">
-                            <input type="file" name="profile_picture_file" id="id_profile_picture" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm " accept="image/*">
-                            <input type="hidden" name="profile_picture" id="croppedImageData">
-                            <p class="text-sm text-gray-400">Önerilen boyut: 400x400 piksel</p>
-                            
-                            <!-- Kırpılmış resim önizlemesi -->
-                            <div id="croppedPreview" class="relative inline-block" style="display: none;">
-                                <img id="croppedImage" alt="Kırpılmış resim" class="w-24 h-24 rounded-full border-3 border-blue-500 shadow-lg">
-                                <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors" onclick="removeCroppedImage()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Skills and Technologies Selection -->
+            <div class="space-y-6 pt-4">
+              <!-- Technologies Selection -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-300">Teknolojiler</label>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                  <div id="selectedSkillsList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                    <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
+                  </div>
+                  <button type="button" onclick="openSkillModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Ekle
+                  </button>
                 </div>
-
-                <!-- Form Aksiyonları -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-end pt-6">
-                    <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        Değişiklikleri Kaydet
-                    </button>
+              </div>
+              
+              <!-- Categories Selection -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-300">Kategoriler</label>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                  <div id="selectedCategoriesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                    <span class="text-gray-500 text-sm">Kategori seçiniz</span>
+                  </div>
+                  <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Ekle
+                  </button>
                 </div>
-            </form>
+              </div>
+            </div>
+
+            <!-- Form Aksiyonları -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-end pt-6">
+              <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Değişiklikleri Kaydet
+              </button>
+            </div>
+          </form>
         </div>
+        {% endif %}
+      </div>
+
+      <div class="space-y-8">
+        <div class="project-detail-item rounded-xl shadow-lg p-6">
+          <div class="border-b border-gray-700 pb-4 mb-4">
+            <h3 class="text-xl font-semibold text-blue-400">Profil Özeti</h3>
+          </div>
+          <dl class="space-y-4 text-gray-200">
+            <div class="flex items-center justify-between">
+              <dt class="text-sm text-gray-400">Kullanıcı Türü</dt>
+              <dd class="text-base font-semibold">{{ view_user.profile.get_user_type_display }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+              <dt class="text-sm text-gray-400">Üyelik Tarihi</dt>
+              <dd class="text-base font-semibold">{{ view_user.date_joined|date:"d.m.Y" }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Fotoğraf Kırpma Modal -->
@@ -249,8 +529,302 @@ cropperModal.addEventListener('click', function(e) {
 });
 
 // Modal içindeki tıklamaların dışarı yayılmasını engelle
-document.querySelector('.cropper-modal__content').addEventListener('click', function(e) {
+document.querySelector('.cropper-modal__content')?.addEventListener('click', function(e) {
     e.stopPropagation();
 });
+
+// ==================== SKILL SELECTION FUNCTIONS (Alumni Style) ====================
+
+// Skill Modal Functions
+function openSkillModal() {
+  const modal = document.getElementById('skillModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('skillSearchInput').focus();
+}
+
+function closeSkillModal() {
+  const modal = document.getElementById('skillModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = 'auto';
+  document.getElementById('skillSearchInput').value = '';
+  const allItems = document.querySelectorAll('.skill-item');
+  allItems.forEach(item => item.style.display = 'flex');
+}
+
+function searchSkills() {
+  const searchValue = document.getElementById('skillSearchInput').value.toLowerCase();
+  const allItems = document.querySelectorAll('.skill-item');
+  allItems.forEach(item => {
+    const name = item.dataset.name.toLowerCase();
+    if (name.includes(searchValue)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function toggleSkill(id, name, color, checkbox) {
+  updateSkillDisplay();
+}
+
+function removeSkill(id) {
+  const modalCheckboxes = document.querySelectorAll('#skillModal input[type="checkbox"]');
+  modalCheckboxes.forEach(cb => {
+    if (cb.dataset.id === String(id)) {
+      cb.checked = false;
+    }
+  });
+  updateSkillDisplay();
+}
+
+function updateSkillDisplay() {
+  const list = document.getElementById('selectedSkillsList');
+  const hiddenContainer = document.getElementById('skillsHiddenInputs');
+  if (!list || !hiddenContainer) return;
+  
+  const checkedBoxes = document.querySelectorAll('#skillModal input[type="checkbox"]:checked');
+  
+  hiddenContainer.innerHTML = '';
+  checkedBoxes.forEach(cb => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'technologies';
+    input.value = cb.dataset.id;
+    hiddenContainer.appendChild(input);
+  });
+  
+  if (!checkedBoxes.length) {
+    list.innerHTML = `<span class="text-gray-500 text-sm">Teknoloji seçiniz</span>`;
+    return;
+  }
+
+  let html = '';
+  checkedBoxes.forEach(cb => {
+    const skillId = cb.dataset.id;
+    const skillName = cb.dataset.name || '';
+    const color = cb.dataset.color || '#3B82F6';
+    if (!skillName) return;
+    html += `
+      <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
+        ${skillName}
+        <button type="button" onclick="removeSkill('${skillId}')" class="hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </span>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
+// Category Modal Functions
+function openCategoryModal() {
+  const modal = document.getElementById('categoryModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('categorySearchInput').focus();
+}
+
+function closeCategoryModal() {
+  const modal = document.getElementById('categoryModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = 'auto';
+  document.getElementById('categorySearchInput').value = '';
+  const allItems = document.querySelectorAll('.category-item');
+  allItems.forEach(item => item.style.display = 'flex');
+}
+
+function searchCategories() {
+  const searchValue = document.getElementById('categorySearchInput').value.toLowerCase();
+  const allItems = document.querySelectorAll('.category-item');
+  allItems.forEach(item => {
+    const name = item.dataset.name.toLowerCase();
+    if (name.includes(searchValue)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function toggleCategory(id, name, color, checkbox) {
+  updateCategoryDisplay();
+}
+
+function removeCategory(id) {
+  const modalCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
+  modalCheckboxes.forEach(cb => {
+    if (cb.dataset.id === String(id)) {
+      cb.checked = false;
+    }
+  });
+  updateCategoryDisplay();
+}
+
+function updateCategoryDisplay() {
+  const list = document.getElementById('selectedCategoriesList');
+  const hiddenContainer = document.getElementById('categoriesHiddenInputs');
+  if (!list || !hiddenContainer) return;
+  
+  const checkedBoxes = document.querySelectorAll('#categoryModal input[type="checkbox"]:checked');
+  
+  hiddenContainer.innerHTML = '';
+  checkedBoxes.forEach(cb => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'categories';
+    input.value = cb.dataset.id;
+    hiddenContainer.appendChild(input);
+  });
+  
+  if (!checkedBoxes.length) {
+    list.innerHTML = `<span class="text-gray-500 text-sm">Kategori seçiniz</span>`;
+    return;
+  }
+
+  let html = '';
+  checkedBoxes.forEach(cb => {
+    const catId = cb.dataset.id;
+    const catName = cb.dataset.name || '';
+    const color = cb.dataset.color || '#3B82F6';
+    if (!catName) return;
+    html += `
+      <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
+        ${catName}
+        <button type="button" onclick="removeCategory('${catId}')" class="hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </span>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize displays
+  updateSkillDisplay();
+  updateCategoryDisplay();
+});
 </script>
-{% endblock %} 
+
+<!-- Category Modal -->
+<div id="categoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+  <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+        <h3 class="text-lg font-semibold text-white">Kategoriler</h3>
+      </div>
+      <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 border-b border-gray-700 shrink-0">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" id="categorySearchInput" onkeyup="searchCategories()" 
+               class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+               placeholder="Kategori ara...">
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+      {% for category in categories %}
+        <label class="category-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
+          <div class="flex items-center gap-3 text-white">
+            <input type="checkbox" 
+                   data-id="{{ category.id }}"
+                   data-name="{{ category.name }}"
+                   data-color="{{ category.color }}"
+                   onchange="toggleCategory('{{ category.id }}', '{{ category.name }}', '{{ category.color }}', this)"
+                   {% if category in view_user.profile.categories.all %}checked{% endif %}
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ category.name }}</span>
+          </div>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }};">
+            {{ category.name|slice:":1" }}
+          </span>
+        </label>
+      {% empty %}
+        <div class="text-center text-gray-400 py-8">
+          <p>Henüz kategori bulunmuyor</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="p-4 border-t border-gray-700 shrink-0">
+      <button type="button" onclick="closeCategoryModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+        Tamam
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Skill Modal -->
+<div id="skillModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+  <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+        <h3 class="text-lg font-semibold text-white">Teknolojiler</h3>
+      </div>
+      <button onclick="closeSkillModal()" class="text-gray-400 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 border-b border-gray-700 shrink-0">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" id="skillSearchInput" onkeyup="searchSkills()" 
+               class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+               placeholder="Yetenek ara...">
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+      {% for tech in technologies %}
+        <label class="skill-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ tech.name }}">
+          <div class="flex items-center gap-3 text-white">
+            <input type="checkbox" 
+                   data-id="{{ tech.id }}"
+                   data-name="{{ tech.name }}"
+                   data-color="{{ tech.color }}"
+                   onchange="toggleSkill('{{ tech.id }}', '{{ tech.name }}', '{{ tech.color }}', this)"
+                   {% if tech in view_user.profile.technologies.all %}checked{% endif %}
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ tech.name }}</span>
+          </div>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
+            {{ tech.name|slice:":1" }}
+          </span>
+        </label>
+      {% empty %}
+        <div class="text-center text-gray-400 py-8">
+          <p>Henüz teknoloji bulunmuyor</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="p-4 border-t border-gray-700 shrink-0">
+      <button type="button" onclick="closeSkillModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+        Tamam
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}

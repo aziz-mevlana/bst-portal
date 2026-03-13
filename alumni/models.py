@@ -1,20 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-
-
-class SkillTag(models.Model):
-    """Skills and technologies for alumni"""
-    name = models.CharField(max_length=50, unique=True)
-    color = models.CharField(max_length=7, default='#8B5CF6', help_text='Hex color code')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Skill Tag"
-        verbose_name_plural = "Skill Tags"
-
-    def __str__(self):
-        return self.name
+from projects.models import ProjectCategory, Technology
 
 
 class Alumni(models.Model):
@@ -34,7 +21,8 @@ class Alumni(models.Model):
     linkedin_url = models.URLField(blank=True, null=True)
     github_url = models.URLField(blank=True, null=True)
     personal_website = models.URLField(blank=True, null=True)
-    skills = models.ManyToManyField(SkillTag, related_name='alumni')
+    categories = models.ManyToManyField(ProjectCategory, related_name='alumni_members', blank=True)
+    technologies = models.ManyToManyField(Technology, related_name='alumni_members', blank=True)
     is_available_for_mentoring = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -5,6 +5,7 @@ app_name = 'projects'
 
 urlpatterns = [
     path('', views.project_list, name='project_list'),
+    path('load-more/', views.project_load_more, name='project_load_more'),
     path('requests/', views.request_list, name='request_list'),
     path('requests/create/', views.request_create, name='request_create'),
     path('create/', views.project_create, name='project_create'),

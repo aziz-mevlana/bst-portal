@@ -117,17 +117,22 @@
       <!-- Proje Başlık Hero Bölümü -->
       <div class="project-detail-item rounded-2xl shadow-xl p-8 mb-8 bg-gradient-to-br">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div class="flex-1">
+           <div class="flex-1">
             <div class="flex items-start justify-between mb-4">
-              <h1 class="text-3xl lg:text-4xl font-bold  text-blue-400 leading-tight mr-4">{{ project.title }}</h1>
-              {% if project.project_link %}
-            <div class="flex-shrink-0">
-              <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform ">
-                <i class="fas fa-external-link-alt"></i>
-                Projeyi Görüntüle
-              </a>
-            </div>
-          {% endif %}
+              <h1 class="text-3xl lg:text-4xl font-bold text-blue-400 leading-tight mr-4 flex items-center gap-3">
+                {{ project.title }}
+                {% if project.is_private %}
+                  <i class="fas fa-lock text-red-400 text-xl"></i>
+                {% endif %}
+              </h1>
+             {% if project.project_link %}
+                <div class="flex-shrink-0">
+                  <a href="{{ project.project_link }}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform ">
+                    <i class="fas fa-external-link-alt"></i>
+                    Projeyi Görüntüle
+                  </a>
+                </div>
+              {% endif %}
             </div>
             <p class="text-lg leading-relaxed">{{ project.description }}</p>
           </div>
@@ -203,22 +208,22 @@
                   Proje Bilgileri
                 </h4>
                 <div class="space-y-3">
-                  <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
+                  <div class="flex justify-between items-center p-3  bg-thema rounded-lg hover:bg-gray-700 transition-colors">
                     <span class="font-medium  ">Oluşturan</span>
-                    <span class="  font-semibold">{{ project.created_by.get_full_name }}</span>
+                    <a href="{% url 'accounts:user_profile' project.created_by.id %}" class="font-semibold text-blue-300 hover:text-blue-200 hover:underline transition-colors">{{ project.created_by.get_full_name }}</a>
                   </div>
-                  <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
+                  <div class="flex justify-between items-center p-3 bg-thema rounded-lg hover:bg-gray-700 transition-colors">
                     <span class="font-medium  ">Danışman</span>
                     <span class="  font-semibold">
                       {% if project.advisor %}
-                        {{ project.advisor.get_full_name }}
+                        <a href="{% url 'accounts:user_profile' project.advisor.id %}" class="text-blue-300 hover:text-blue-200 hover:underline transition-colors">{{ project.advisor.get_full_name }}</a>
                       {% else %}
                         <span class=" ">Yok</span>
                       {% endif %}
                     </span>
                   </div>
-                  <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
-                    <span class="font-medium  ">Proje İsteği</span>
+                  <div class="flex justify-between items-center p-3 bg-thema rounded-lg hover:bg-gray-700 transition-colors">
+                    <span class="font-medium">Proje İsteği</span>
                     <span class="font-semibold  ">
                       {% if project.project_request %}
                         {{ project.project_request.title }}
@@ -227,54 +232,54 @@
                       {% endif %}
                     </span>
                   </div>
-                  <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
+                  <div class="flex justify-between items-center p-3 bg-thema rounded-lg hover:bg-gray-700 transition-colors">
                     <span class="font-medium  ">Durum</span>
                     <span class="font-semibold  ">{{ project.get_status_display }}</span>
                   </div>
-                  <div class="flex justify-between items-center p-3 bg-gray-50 bg-gray-800 rounded-lg hover:bg-gray-100 hover:bg-gray-700 transition-colors">
+                  <div class="flex justify-between items-center p-3 bg-thema rounded-lg hover:bg-gray-700 transition-colors">
                     <span class="font-medium  ">Eklenme</span>
                     <span class="  font-semibold">{{ project.created_at|date:'d.m.Y' }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Takım Üyeleri -->
-              <div>
-                <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                  Takım Üyeleri
-                  <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900  text-blue-300 text-xs rounded-full">{{ project.team.count }}</span>
-                </h4>
-                {% if project.team.all %}
-                  <div class="team-members-scrollable max-h-64 overflow-y-auto space-y-2 pr-2 border border-gray-200 border-gray-700 rounded-lg p-3 bg-gray-50 bg-gray-800">
-                    {% for member in project.team.all %}
-                      <div class="flex items-center gap-3 p-3  bg-gray-700 rounded-lg border border-gray-200 border-gray-600">
-                        <div class="bg-blue-500 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm team-avatar flex-shrink-0">
-                          <img src="{% if member.profile.profile_picture %}
-                              {{ member.profile.profile_picture.url }}
-                            {% else %}
-                              {% static 'images/icons/profile.svg' %}
-                            {% endif %}"
-                            alt="Profil Fotoğrafı"
-                            class="profile-avatar" />
-                        </div>
-                        <span class="  font-medium truncate">{{ member.get_full_name }}</span>
-                      </div>
-                    {% endfor %}
-                  </div>
-                  {% if project.team.count > 4 %}
-                    <div class="text-xs   mt-2 text-center flex items-center justify-center gap-1">
-                    </div>
-                  {% endif %}
-                {% else %}
-                  <div class=" italic bg-gray-100 bg-gray-800 p-4 rounded-lg text-center">
-                    Henüz takım üyesi yok
-                  </div>
-                {% endif %}
-              </div>
+               <!-- Takım Üyeleri -->
+               <div>
+                 <h4 class=" text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                   Takım Üyeleri
+                   <span class="ml-2 px-2 py-1 bg-blue-100 bg-blue-900  text-blue-300 text-xs rounded-full">{{ project.team.count }}</span>
+                 </h4>
+                 {% if project.team.all %}
+                   <div class="team-members-scrollable max-h-64 overflow-y-auto space-y-2 pr-2 border border-gray-200 border-gray-700 rounded-lg p-3 bg-gray-50 bg-gray-800">
+                     {% for member in project.team.all %}
+                       <a href="{% url 'accounts:user_profile' member.id %}" class="flex items-center gap-3 p-3 bg-gray-700 rounded-lg border border-gray-200 border-gray-600 hover:bg-gray-600 transition-colors group">
+                         <div class="bg-blue-500 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm team-avatar flex-shrink-0">
+                           <img src="{% if member.profile.profile_picture %}
+                               {{ member.profile.profile_picture.url }}
+                             {% else %}
+                               {% static 'images/icons/profile.svg' %}
+                             {% endif %}"
+                             alt="Profil Fotoğrafı"
+                             class="profile-avatar" />
+                         </div>
+                         <span class="font-medium truncate group-hover:text-blue-300 transition-colors">{{ member.get_full_name }}</span>
+                       </a>
+                     {% endfor %}
+                   </div>
+                   {% if project.team.count > 4 %}
+                     <div class="text-xs   mt-2 text-center flex items-center justify-center gap-1">
+                     </div>
+                   {% endif %}
+                 {% else %}
+                   <div class=" italic bg-gray-100 bg-gray-800 p-4 rounded-lg text-center">
+                     Henüz takım üyesi yok
+                   </div>
+                 {% endif %}
+               </div>
             </div>
 
             <!-- Action Buttons -->
-            {% if user == project.created_by or user == project.advisor %}
+            {% if user == project.created_by or user == project.advisor or user in project.team.all %}
               <div class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200 border-gray-700">
                 <a href="{% url 'projects:project_update' project.id %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold">
                   Projeyi Düzenle

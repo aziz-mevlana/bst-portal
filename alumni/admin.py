@@ -1,10 +1,5 @@
 from django.contrib import admin
-from .models import SkillTag, Alumni, WorkExperience
-
-@admin.register(SkillTag)
-class SkillTagAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
+from .models import Alumni, WorkExperience
 
 @admin.register(Alumni)
 class AlumniAdmin(admin.ModelAdmin):

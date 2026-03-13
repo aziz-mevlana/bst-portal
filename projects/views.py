@@ -7,7 +7,10 @@ from django.http import JsonResponse
 from .models import Project, ProjectRequest, ProjectCategory, Technology, ProjectUpdate, ProjectComment
 from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
 from .forms import RequestForm
+from django.template.loader import render_to_string
 import json
+
+PAGE_SIZE = 14
 
 def get_student_users():
     return User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
@@ -20,13 +23,26 @@ def project_list(request):
     category_id = request.GET.get('category', '')
     technology_id = request.GET.get('technology', '')
     status = request.GET.get('status', '')
+    offset = int(request.GET.get('offset', 0))
     
     projects = Project.objects.prefetch_related('categories', 'technologies').all()
     
-    if request.user.profile.user_type == 'teacher':
-        projects = projects.filter(advisor=request.user)
-    elif request.user.profile.user_type == 'student':
-        projects = projects.filter(Q(created_by=request.user) | Q(team=request.user))
+    user = request.user
+    user_type = user.profile.user_type
+    
+    # Privacy Filter: Teachers and Staff can see all projects, others need permission
+    if user_type not in ['teacher', 'staff_student']:
+        projects = projects.filter(
+            Q(is_private=False) |
+            Q(created_by=user) |
+            Q(team=user) |
+            Q(advisor=user)
+        )
+    
+    # Role-based filtering
+    if user_type == 'teacher':
+        projects = projects.filter(advisor=user)
+    # Students can see public projects + their private projects (handled by privacy filter above)
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -37,16 +53,73 @@ def project_list(request):
     if status:
         projects = projects.filter(status=status)
     
+    total_count = projects.distinct().count()
+    projects = projects.distinct()[offset:offset + PAGE_SIZE]
+    has_more = offset + PAGE_SIZE < total_count
+    
     context = {
-        'projects': projects.distinct(),
+        'projects': projects,
         'categories': ProjectCategory.objects.all(),
         'technologies': Technology.objects.all(),
         'statuses': Project.STATUS_CHOICES,
         'selected_category': category_id,
         'selected_technology': technology_id,
         'selected_status': status,
+        'has_more': has_more,
+        'next_offset': offset + PAGE_SIZE,
+        'total_count': total_count,
     }
     return render(request, 'projects/project_list.html', context)
+
+
+@login_required
+def project_load_more(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    technology_id = request.GET.get('technology', '')
+    status = request.GET.get('status', '')
+    offset = int(request.GET.get('offset', 0))
+    limit = PAGE_SIZE
+    
+    projects = Project.objects.prefetch_related('categories', 'technologies').all()
+    
+    user = request.user
+    user_type = user.profile.user_type
+    
+    # Privacy Filter: Teachers and Staff can see all projects, others need permission
+    if user_type not in ['teacher', 'staff_student']:
+        projects = projects.filter(
+            Q(is_private=False) |
+            Q(created_by=user) |
+            Q(team=user) |
+            Q(advisor=user)
+        )
+    
+    # Role-based filtering
+    if user_type == 'teacher':
+        projects = projects.filter(advisor=user)
+    # Students can see public projects + their private projects (handled by privacy filter above)
+    
+    if query:
+        projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    if category_id:
+        projects = projects.filter(categories__id=category_id)
+    if technology_id:
+        projects = projects.filter(technologies__id=technology_id)
+    if status:
+        projects = projects.filter(status=status)
+    
+    total_count = projects.distinct().count()
+    projects = projects.distinct()[offset:offset + limit]
+    has_more = offset + limit < total_count
+    
+    html = render_to_string('projects/partials/project_item.html', {'projects': projects})
+    
+    return JsonResponse({
+        'items': html,
+        'has_more': has_more,
+        'next_offset': offset + limit
+    })
 
 
 @login_required
@@ -76,7 +149,19 @@ def request_create(request):
 @login_required
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    # access control: if your Project model has visibility controls implement them here
+    
+    # Access control for private projects
+    if project.is_private:
+        user = request.user
+        is_team_member = user in project.team.all()
+        is_advisor = user == project.advisor
+        is_creator = user == project.created_by
+        is_staff_or_teacher = hasattr(user, 'profile') and user.profile.user_type in ('staff_student', 'teacher')
+        
+        if not (is_team_member or is_advisor or is_creator or is_staff_or_teacher):
+            messages.error(request, 'Bu proje gizlidir ve size görüntüleme yetkisi verilmedi.')
+            return redirect('projects:project_list')
+    
     updates = project.updates.all()
     comments = project.comments.all()
     comment_form = ProjectCommentForm()
@@ -106,7 +191,11 @@ def project_create(request):
             messages.success(request, 'Proje başarıyla oluşturuldu.')
             return redirect('projects:project_detail', project_id=project.id)
     else:
-        form = ProjectForm()
+        # Pre-select the current user in the team field if they are a student
+        initial_team = []
+        if request.user.profile.user_type == 'student':
+            initial_team = [request.user.id]
+        form = ProjectForm(initial={'team': initial_team})
 
     requests = ProjectRequest.objects.all().values('id', 'teacher_id', 'teacher__first_name', 'teacher__last_name')
     request_teacher_map = {str(r['id']): {'id': r['teacher_id'], 'name': f"{r['teacher__first_name']} {r['teacher__last_name']}".strip() or 'Belirtilmemiş'} for r in requests}
@@ -118,7 +207,9 @@ def project_create(request):
 @login_required
 def project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    if request.user != project.created_by and request.user != project.advisor:
+    # Check if user is creator, advisor, or team member
+    is_team_member = request.user in project.team.all()
+    if request.user != project.created_by and request.user != project.advisor and not is_team_member:
         messages.error(request, 'Bu projeyi düzenleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
     
@@ -144,7 +235,9 @@ def project_update(request, project_id):
 @login_required
 def add_project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    if request.user != project.created_by and request.user != project.advisor:
+    # Check if user is creator, advisor, or team member
+    is_team_member = request.user in project.team.all()
+    if request.user != project.created_by and request.user != project.advisor and not is_team_member:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Proje güncellemesi ekleme yetkiniz yok.'})
         messages.error(request, 'Proje güncellemesi ekleme yetkiniz yok.')

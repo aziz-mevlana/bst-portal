@@ -73,6 +73,7 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    is_private = models.BooleanField(default=False)
 
     # Tag relationships
     categories = models.ManyToManyField(ProjectCategory, related_name='projects', blank=True)

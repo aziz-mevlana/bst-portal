@@ -4,53 +4,136 @@
 {% block title %}BST Portal | Yeni Haber Oluştur{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-8 page-container color-page rounded-lg shadow-lg">
-    <h2 class="text-2xl font-bold mb-8 text-center">Yeni Haber Oluştur</h2>
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
-        {% csrf_token %}
-        <div>
-            <label class="block mb-2 font-semibold" for="title">Başlık</label>
-            <input type="text" id="title" name="title" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" required>
-        </div>
-        <div>
-            <label class="block mb-2 font-semibold" for="summary">Özet</label>
-            <textarea id="summary" name="summary" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="2" required></textarea>
-        </div>
-        <div>
-            <label class="block mb-2 font-semibold" for="content">İçerik</label>
-            <textarea id="content" name="content" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input" rows="6" required></textarea>
-        </div>
-        <div class="flex flex-col md:flex-row md:gap-4">
-            <div class="flex-1 mb-4 md:mb-0">
-                <label class="block mb-2 font-semibold" for="article_type">Haber Tipi</label>
-                <input type="text" id="article_type" name="article_type" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
-            </div>
-            <div class="flex-1">
-                <label class="block mb-2 font-semibold" for="article_category">Haber Kategorisi</label>
-                <input type="text" id="article_category" name="article_category" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+<div class="min-h-screen px-4 py-8">
+    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4">
+        <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-center sm:text-left">
+                <h2 class="text-3xl font-bold text-white">{{ page_title|default:'Yeni Haber Oluştur' }}</h2>
             </div>
         </div>
-        <div class="flex items-center">
-            <input type="checkbox" id="is_homepage" name="is_homepage" class="mr-2">
-            <label class="font-semibold" for="is_homepage">Ana sayfada gösterilsin</label>
-        </div>
-        <div class="flex flex-col md:flex-row md:gap-4">
-            <div class="flex-1 mb-4 md:mb-0">
-                <label class="block mb-2 font-semibold" for="source">Kaynak</label>
-                <input type="text" id="source" name="source" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+            {% csrf_token %}
+
+            <div class="project-detail-item rounded-2xl shadow-2xl border border-gray-700/70 p-6 lg:p-10">
+                <div class="border-b border-gray-700 pb-4 mb-8">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-2xl font-semibold text-blue-400">Haber Bilgileri</h3>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-300" for="title">Başlık <span class="text-blue-400">*</span></label>
+                            <input type="text" id="title" name="title" value="{{ article.title|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-300" for="summary">Özet <span class="text-blue-400">*</span></label>
+                            <textarea id="summary" name="summary" rows="3" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ article.summary|default_if_none:'' }}</textarea>
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-medium text-gray-300" for="content">İçerik <span class="text-blue-400">*</span></label>
+                            <textarea id="content" name="content" rows="7" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>{{ article.content|default_if_none:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="article_type">Haber Tipi</label>
+                            <input type="text" id="article_type" name="article_type" value="{{ article.article_type|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Röportaj">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="article_category">Haber Kategorisi</label>
+                            <input type="text" id="article_category" name="article_category" value="{{ article.article_category|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Duyuru">
+                        </div>
+                    </div>
+
+                    <label class="flex items-center gap-3 text-gray-200 text-sm font-semibold py-3 px-4 bg-[#181e29] rounded-xl border border-gray-600 cursor-pointer" for="is_homepage">
+                        <input type="checkbox" id="is_homepage" name="is_homepage" class="w-5 h-5 rounded border-gray-500 text-blue-500 focus:ring-blue-400" {% if article.is_homepage %}checked{% endif %}>
+                        Ana sayfada gösterilsin
+                    </label>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="source">Kaynak</label>
+                            <input type="text" id="source" name="source" value="{{ article.source|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Kaynağı ekleyin">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300" for="url">Haber Linki</label>
+                            <input type="url" id="url" name="url" value="{{ article.url|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="https://">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-sm font-medium text-gray-300" for="image">Görsel</label>
+                        <div class="rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-5 space-y-4">
+                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
+                            <div id="news-image-preview" class="w-full rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
+                                <span class="text-sm text-gray-500 {% if article.image %}hidden{% endif %}">Henüz bir görsel seçilmedi</span>
+                                <img src="{% if article.image %}{{ article.image.url }}{% endif %}" alt="Görsel ön izlemesi" class="{% if article.image %}{% else %}hidden {% endif %}w-full h-full object-cover" loading="lazy">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="flex-1">
-                <label class="block mb-2 font-semibold" for="url">Haber Linki</label>
-                <input type="url" id="url" name="url" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+                {% if article %}
+                <button type="submit" form="delete-news-form" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition">
+                    Sil
+                </button>
+                {% endif %}
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+                    {{ submit_label|default:'Oluştur' }}
+                </button>
             </div>
-        </div>
-        <div>
-            <label class="block mb-2 font-semibold" for="image">Görsel</label>
-            <input type="file" id="image" name="image" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 project-form-input">
-        </div>
-        <div class="flex justify-end">
-            <button type="submit" class="px-8 py-2 project-list-button hover:bg-blue-100 rounded font-semibold transition">Oluştur</button>
-        </div>
-    </form>
+        </form>
+        {% if article %}
+        <form id="delete-news-form" method="post" action="{% url 'news:delete_news' article.id %}" class="hidden">
+            {% csrf_token %}
+        </form>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('image');
+    const previewWrapper = document.getElementById('news-image-preview');
+    if (!input || !previewWrapper) {
+        return;
+    }
+
+    const previewImage = previewWrapper.querySelector('img');
+    const placeholderText = previewWrapper.querySelector('span');
+
+    if (previewImage && previewImage.getAttribute('src')) {
+        previewImage.classList.remove('hidden');
+        if (placeholderText) {
+            placeholderText.classList.add('hidden');
+        }
+    }
+
+    input.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+
+        if (!file) {
+            previewImage.classList.add('hidden');
+            previewImage.removeAttribute('src');
+            if (placeholderText) {
+                placeholderText.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        previewImage.src = objectUrl;
+        previewImage.classList.remove('hidden');
+        if (placeholderText) {
+            placeholderText.classList.add('hidden');
+        }
+    });
+});
+</script>
 {% endblock %}

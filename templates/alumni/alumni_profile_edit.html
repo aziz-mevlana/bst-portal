@@ -1,33 +1,38 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}BST Portal | Mezun Profilini Düzenle{% endblock %}
+{% load widget_tweaks %}
+
+{% block title %}
+  BST Portal | Mezun Profilini Düzenle
+{% endblock %}
 
 {% block extra_css %}
-<style>
+  <link rel="stylesheet" href="{% static 'css/projects.css' %}" />
+  <style>
 .checkbox-group label {
   display: flex !important;
   align-items: center !important;
   gap: 0.75rem !important;
   padding: 0.75rem 1rem !important;
-  background: #232a36 !important;
-  border: 1px solid #4b5563 !important;
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
   border-radius: 0.5rem !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  margin-bottom: 0.5rem !important;
 }
 .checkbox-group label:hover {
   background: #374151 !important;
   border-color: #60a5fa !important;
 }
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   width: 1.25rem !important;
   height: 1.25rem !important;
   accent-color: #3b82f6 !important;
   cursor: pointer !important;
 }
-.checkbox-group input[type="checkbox"]:checked + span {
+.checkbox-group input[type='checkbox']:checked + span {
   color: #60a5fa !important;
-  font-weight: 500 !important;
 }
 .checkbox-group span {
   color: #e5e7eb !important;
@@ -35,10 +40,18 @@
   transition: color 0.2s ease !important;
 }
 
+.alumni-skill-tag {
+  transition: all 0.2s ease !important;
+}
+
+.alumni-skill-tag:hover {
+  filter: brightness(1.2);
+}
+
 .skills-scrollable {
   max-height: 300px !important;
   overflow-y: auto !important;
-  border: 1px solid #4b5563 !important;
+  border: 1px solid #374151 !important;
   border-radius: 0.5rem !important;
   padding: 1rem !important;
   background: #1f2937 !important;
@@ -61,23 +74,53 @@
 .skills-scrollable::-webkit-scrollbar-thumb:hover {
   background: #9ca3af !important;
 }
+
+.project-form-input {
+  background-color: #181e29 !important;
+  border: 1px solid #374151 !important;
+  color: white !important;
+  transition: all 0.15s ease-in-out !important;
+}
+.project-form-input::placeholder {
+  color: #6b7280 !important;
+}
+.project-form-input:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+.project-detail-item {
+  background-color: #1f2937 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-3 alumni-detail-page-container">
-    <div class="max-w-4xl mx-auto">
-        <!-- Başlık -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold">Mezun Profilini Düzenle</h1>
-        </div>
+<div class="min-h-screen px-4">
+    <div class="w-full max-w-4xl mx-auto px-4">
+        <div class="py-4">
+            <!-- Header -->
+            <div class="mb-4">
+                <h1 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                    Mezun Profilini Düzenle
+                </h1>
+            </div>
 
-        <form method="post" class="space-y-6">
-            {% csrf_token %}
-            
-            <!-- Temel Bilgiler -->
-            <div class="color-page rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold  mb-6">Temel Bilgiler</h2>
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Temel Bilgiler -->
+                <div class="project-detail-item rounded-xl shadow-lg p-6">
+                    <div class="border-b border-gray-700 pb-4 mb-6">
+                        <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                            Temel Bilgiler
+                        </h2>
+                    </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Mezuniyet Yılı -->
@@ -91,7 +134,7 @@
                                value="{{ profile.graduation_year }}" 
                                min="1980" 
                                max="2030"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all" 
                                required>
                     </div>
 
@@ -102,7 +145,7 @@
                         </label>
                         <select name="experience_level" 
                                 id="experience_level" 
-                                class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer">
                             <option value="junior" {% if profile.experience_level == 'junior' %}selected{% endif %}>Junior (0-2 yıl)</option>
                             <option value="mid" {% if profile.experience_level == 'mid' %}selected{% endif %}>Mid-Level (2-5 yıl)</option>
                             <option value="senior" {% if profile.experience_level == 'senior' %}selected{% endif %}>Senior (5+ yıl)</option>
@@ -119,7 +162,7 @@
                                id="current_position" 
                                value="{{ profile.current_position }}" 
                                placeholder="Örn: Software Developer"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all" 
                                required>
                     </div>
 
@@ -133,7 +176,7 @@
                                id="company" 
                                value="{{ profile.company }}" 
                                placeholder="Örn: ABC Teknoloji"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input" 
+                               class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all" 
                                required>
                     </div>
                 </div>
@@ -147,69 +190,62 @@
                               id="bio" 
                               rows="4" 
                               placeholder="Kendinizden, deneyimlerinizden ve hedeflerinizden bahsedin..."
-                              class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">{{ profile.bio }}</textarea>
+                              class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none">{{ profile.bio }}</textarea>
                     <p class="mt-2 text-sm text-gray-400">Maksimum 500 karakter</p>
                 </div>
             </div>
 
             <!-- Sosyal Medya Linkleri -->
-            <div class="color-page rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold  mb-6">Sosyal Medya Linkleri</h2>
+            <div class="project-detail-item rounded-xl shadow-lg p-6">
+                <div class="border-b border-gray-700 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                        Sosyal Medya Linkleri
+                    </h2>
+                </div>
                 
                 <div class="space-y-4">
-                    <!-- LinkedIn -->
-                    <div>
-                        <label for="linkedin_url" class="block text-sm font-medium  mb-2">
-                            <div class="flex items-center">
-                                <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
-                                LinkedIn
-                            </div>
-                        </label>
-                        <input type="url" 
-                               name="linkedin_url" 
-                               id="linkedin_url" 
-                               value="{{ profile.linkedin_url }}" 
-                               placeholder="https://linkedin.com/in/kullaniciadi"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
-                    </div>
+<!-- LinkedIn -->
+<div class="flex items-center gap-3 mb-4">
+  <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 filter invert brightness-0">
+                <input type="url" 
+                       name="linkedin_url" 
+                       id="linkedin_url" 
+                       value="{{ profile.linkedin_url }}" 
+                       placeholder="https://linkedin.com/in/kullaniciadi"
+                       class="project-form-input flex-1 p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
+</div>
 
-                    <!-- GitHub -->
-                    <div>
-                        <label for="github_url" class="block text-sm font-medium  mb-2">
-                            <div class="flex items-center">
-                                <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
-                                GitHub
-                            </div>
-                        </label>
-                        <input type="url" 
-                               name="github_url" 
-                               id="github_url" 
-                               value="{{ profile.github_url }}" 
-                               placeholder="https://github.com/kullaniciadi"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
-                    </div>
+<!-- GitHub -->
+<div class="flex items-center gap-3 mb-4">
+  <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 filter invert brightness-0">
+                <input type="url" 
+                       name="github_url" 
+                       id="github_url" 
+                       value="{{ profile.github_url }}" 
+                       placeholder="https://github.com/kullaniciadi"
+                       class="project-form-input flex-1 p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
+</div>
 
-                    <!-- Kişisel Web Sitesi -->
-                    <div>
-                        <label for="personal_website" class="block text-sm font-medium  mb-2">
-                            <div class="flex items-center">
-                                <img src="{% static 'images/icons/profile.svg' %}" alt="Kişisel Web Sitesi" class="w-5 h-5 mr-2 alumni-list-social-media-icons ">
-                                Kişisel Web Sitesi
-                            </div>
-                        </label>
-                        <input type="url" 
-                               name="personal_website" 
-                               id="personal_website" 
-                               value="{{ profile.personal_website }}" 
-                               placeholder="https://orneksite.com"
-                               class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
-                    </div>
+<!-- Kişisel Web Sitesi -->
+<div class="flex items-center gap-3 mb-4">
+  <img src="{% static 'images/icons/profile.svg' %}" alt="Kişisel Web Sitesi" class="w-5 h-5 filter invert brightness-0">
+                <input type="url" 
+                       name="personal_website" 
+                       id="personal_website" 
+                       value="{{ profile.personal_website }}" 
+                       placeholder="https://orneksite.com"
+                       class="project-form-input flex-1 p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
+</div>
                 </div>
             </div>
 
-            <!-- Yetenekler ve Mentorluk -->
-            <div class="color-page bg-gray-800 rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-white mb-6">Seçenekler</h2>
+            <!-- Seçenekler -->
+            <div class="project-detail-item rounded-xl shadow-lg p-6">
+                <div class="border-b border-gray-700 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-blue-300 flex items-center gap-2">
+                        Seçenekler
+                    </h2>
+                </div>
                 
                 <!-- Mentorluk ve Görünüm -->
                 <div class="mb-6">
@@ -232,32 +268,49 @@
                     </div>
                 </div>
 
-                <!-- Etiketler -->
-                <div>
-                    <label class="block text-sm font-medium  mb-3">
-                        Yetenekleriniz
-                    </label>
-                    <div class="checkbox-group space-y-2 skills-scrollable">
-                        {% for tag in tags %}
-                        <label>
-                            <input type="checkbox" 
-                                   name="tags" 
-                                   value="{{ tag.id }}" 
-                                    {% if tag in profile.skills.all %}checked{% endif %}>
-                            <span class="alumni-skill-tag inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-2" 
-                                  style="--skill-bg: {{ tag.color }}20; --skill-color: {{ tag.color }}; --skill-border: {{ tag.color }}40;" 
-                                  data-skill-color="{{ tag.color }}">
-                                {{ tag.name }}
-                            </span>
-                        </label>
-                        {% endfor %}
+                <!-- Teknolojiler -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Teknolojiler</label>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                        <div id="selectedSkillsList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                            <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
+                        </div>
+                        <button type="button" onclick="openSkillModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Ekle
+                        </button>
                     </div>
                 </div>
+                
+                <!-- Kategoriler -->
+                <div class="space-y-6 pt-4">
+                    <label class="block text-sm font-medium text-gray-300">Kategoriler</label>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                        <div id="selectedCategoriesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                            <span class="text-gray-500 text-sm">Kategori seçiniz</span>
+                        </div>
+                        <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Ekle
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="skillsHiddenInputs"></div>
+                <div id="categoriesHiddenInputs"></div>
             </div>
 
             <!-- İş Deneyimleri -->
-            <div class="color-page rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold mb-6">İş Deneyimleri</h2>
+            <div class="project-detail-item rounded-xl shadow-lg p-6">
+                <div class="border-b border-gray-700 pb-4 mb-6">
+                    <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                        İş Deneyimleri
+                    </h2>
+                </div>
                 
                 <!-- Mevcut Deneyimler -->
                 <div class="mb-6">
@@ -278,18 +331,18 @@
                                                  <p class="mt-2 text-sm">{{ exp.description }}</p>
                                              {% endif %}
                                          </div>
-                                         <div class="flex gap-2">
-                                             <button type="button" 
-                                                     onclick="editExperience({{ exp.id }})"
-                                                     class="text-blue-600 hover:text-blue-800 text-sm">
-                                                 Düzenle
-                                             </button>
-                                             <button type="button" 
-                                                     onclick="deleteExperience({{ exp.id }})"
-                                                     class="text-red-600 hover:text-red-800 text-sm">
-                                                 Sil
-                                             </button>
-                                         </div>
+                                          <div class="flex gap-2">
+                                              <button type="button" 
+                                                      onclick="editExperience({{ exp.id }})"
+                                                      class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                                  Düzenle
+                                              </button>
+                                              <button type="button" 
+                                                      onclick="deleteExperience({{ exp.id }})"
+                                                      class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors">
+                                                  Sil
+                                              </button>
+                                          </div>
                                      </div>
                                  </div>
                             {% endfor %}
@@ -311,7 +364,7 @@
                                    name="exp_company" 
                                    id="exp_company" 
                                    placeholder="Örn: ABC Teknoloji"
-                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                   class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
                         </div>
 
                         <div>
@@ -322,7 +375,7 @@
                                    name="exp_position" 
                                    id="exp_position" 
                                    placeholder="Örn: Software Developer"
-                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                   class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
                         </div>
 
                         <div>
@@ -332,7 +385,7 @@
                             <input type="date" 
                                    name="exp_start_date" 
                                    id="exp_start_date" 
-                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                   class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
                         </div>
 
                         <div>
@@ -342,7 +395,7 @@
                             <input type="date" 
                                    name="exp_end_date" 
                                    id="exp_end_date" 
-                                   class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                                   class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
                         </div>
                     </div>
 
@@ -366,7 +419,7 @@
                                   id="exp_description" 
                                   rows="3" 
                                   placeholder="Bu iş pozisyonunda yaptığınız çalışmalardan bahsedin..."
-                                  class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input"></textarea>
+                                  class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"></textarea>
                     </div>
 
                     <div class="mt-4">
@@ -382,18 +435,17 @@
             <!-- Form Aksiyonları -->
             <div class="flex flex-col sm:flex-row gap-4 justify-end">
                 <a href="{% url 'alumni:alumni_profile' %}" 
-                   class="inline-flex justify-center items-center px-6 py-3 border  rounded-lg shadow-sm text-sm font-medium  color-page hover:border-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                   class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
                     İptal
                 </a>
+                
                 <button type="submit" 
-                        class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
+                        class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
                     Değişiklikleri Kaydet
                 </button>
             </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -525,22 +577,22 @@ function showEditForm(expId, experience) {
             <div>
                 <label class="block text-sm font-medium mb-2">Şirket <span class="text-red-500">*</span></label>
                 <input type="text" id="edit-company-${expId}" value="${experience.company}" 
-                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                       class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Pozisyon <span class="text-red-500">*</span></label>
                 <input type="text" id="edit-position-${expId}" value="${experience.position}" 
-                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                       class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Başlangıç Tarihi <span class="text-red-500">*</span></label>
                 <input type="date" id="edit-start-date-${expId}" value="${experience.start_date}" 
-                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">
+                       class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Bitiş Tarihi</label>
                 <input type="date" id="edit-end-date-${expId}" value="${experience.end_date || ''}" 
-                       class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input"
+                       class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
                        ${experience.is_current ? 'disabled' : ''}>
             </div>
         </div>
@@ -554,7 +606,7 @@ function showEditForm(expId, experience) {
         <div class="mt-3">
             <label class="block text-sm font-medium mb-2">Açıklama</label>
             <textarea id="edit-description-${expId}" rows="3" 
-                      class="block w-full px-4 py-3 border  rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 project-form-input">${experience.description || ''}</textarea>
+                      class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none">${experience.description || ''}</textarea>
         </div>
         <div class="mt-4 flex gap-2">
             <button type="button" onclick="updateExperience(${expId})" 
@@ -635,19 +687,297 @@ function cancelEdit(expId) {
 </script>
 
 <script>
-// Enhanced alumni skill tag functionality
-document.addEventListener('DOMContentLoaded', function() {
-  const skillTags = document.querySelectorAll('.alumni-skill-tag[data-skill-color]');
-  
-  skillTags.forEach((tag) => {
-    const color = tag.dataset.skillColor;
-    
-    // Apply dynamic colors
-    tag.style.setProperty('--skill-bg', color + '20');
-    tag.style.setProperty('--skill-color', color);
-    tag.style.setProperty('--skill-border', color + '40');
+// Skill Modal Functions
+function openSkillModal() {
+  const modal = document.getElementById('skillModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('skillSearchInput').focus();
+}
+
+function closeSkillModal() {
+  const modal = document.getElementById('skillModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = 'auto';
+  document.getElementById('skillSearchInput').value = '';
+  const allItems = document.querySelectorAll('.skill-item');
+  allItems.forEach(item => item.style.display = 'flex');
+}
+
+function searchSkills() {
+  const searchValue = document.getElementById('skillSearchInput').value.toLowerCase();
+  const allItems = document.querySelectorAll('.skill-item');
+  allItems.forEach(item => {
+    const name = item.dataset.name.toLowerCase();
+    if (name.includes(searchValue)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
   });
+}
+
+function toggleSkill(id, name, color, checkbox) {
+  updateSkillDisplay();
+}
+
+function removeSkill(id) {
+  const modalCheckboxes = document.querySelectorAll('#skillModal input[type="checkbox"]');
+  modalCheckboxes.forEach(cb => {
+    if (cb.dataset.id === String(id)) {
+      cb.checked = false;
+    }
+  });
+  updateSkillDisplay();
+}
+
+function updateSkillDisplay() {
+  const list = document.getElementById('selectedSkillsList');
+  const hiddenContainer = document.getElementById('skillsHiddenInputs');
+  if (!list || !hiddenContainer) return;
+  
+  const checkedBoxes = document.querySelectorAll('#skillModal input[type="checkbox"]:checked');
+  
+  hiddenContainer.innerHTML = '';
+  checkedBoxes.forEach(cb => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'technologies';
+    input.value = cb.dataset.id;
+    hiddenContainer.appendChild(input);
+  });
+  
+  if (!checkedBoxes.length) {
+    list.innerHTML = `<span class="text-gray-500 text-sm">Teknoloji seçiniz</span>`;
+    return;
+  }
+
+  let html = '';
+  checkedBoxes.forEach(cb => {
+    const skillId = cb.dataset.id;
+    const skillName = cb.dataset.name || '';
+    const color = cb.dataset.color || '#3B82F6';
+    if (!skillName) return;
+    html += `
+      <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
+        ${skillName}
+        <button type="button" onclick="removeSkill('${skillId}')" class="hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </span>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
+// Category Modal Functions
+function openCategoryModal() {
+  const modal = document.getElementById('categoryModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('categorySearchInput').focus();
+}
+
+function closeCategoryModal() {
+  const modal = document.getElementById('categoryModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = 'auto';
+  document.getElementById('categorySearchInput').value = '';
+  const allItems = document.querySelectorAll('.category-item');
+  allItems.forEach(item => item.style.display = 'flex');
+}
+
+function searchCategories() {
+  const searchValue = document.getElementById('categorySearchInput').value.toLowerCase();
+  const allItems = document.querySelectorAll('.category-item');
+  allItems.forEach(item => {
+    const name = item.dataset.name.toLowerCase();
+    if (name.includes(searchValue)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function toggleCategory(id, name, color, checkbox) {
+  updateCategoryDisplay();
+}
+
+function removeCategory(id) {
+  const modalCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
+  modalCheckboxes.forEach(cb => {
+    if (cb.dataset.id === String(id)) {
+      cb.checked = false;
+    }
+  });
+  updateCategoryDisplay();
+}
+
+function updateCategoryDisplay() {
+  const list = document.getElementById('selectedCategoriesList');
+  const hiddenContainer = document.getElementById('categoriesHiddenInputs');
+  if (!list || !hiddenContainer) return;
+  
+  const checkedBoxes = document.querySelectorAll('#categoryModal input[type="checkbox"]:checked');
+  
+  hiddenContainer.innerHTML = '';
+  checkedBoxes.forEach(cb => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'categories';
+    input.value = cb.dataset.id;
+    hiddenContainer.appendChild(input);
+  });
+  
+  if (!checkedBoxes.length) {
+    list.innerHTML = `<span class="text-gray-500 text-sm">Kategori seçiniz</span>`;
+    return;
+  }
+
+  let html = '';
+  checkedBoxes.forEach(cb => {
+    const catId = cb.dataset.id;
+    const catName = cb.dataset.name || '';
+    const color = cb.dataset.color || '#3B82F6';
+    if (!catName) return;
+    html += `
+      <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
+        ${catName}
+        <button type="button" onclick="removeCategory('${catId}')" class="hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </span>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize displays
+  updateSkillDisplay();
+  updateCategoryDisplay();
 });
 </script>
+
+<!-- Category Modal -->
+<div id="categoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+  <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+        <h3 class="text-lg font-semibold text-white">Kategoriler</h3>
+      </div>
+      <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 border-b border-gray-700 shrink-0">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" id="categorySearchInput" onkeyup="searchCategories()" 
+               class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+               placeholder="Kategori ara...">
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+      {% for category in categories %}
+        <label class="category-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
+          <div class="flex items-center gap-3 text-white">
+            <input type="checkbox" 
+                   data-id="{{ category.id }}"
+                   data-name="{{ category.name }}"
+                   data-color="{{ category.color }}"
+                   onchange="toggleCategory('{{ category.id }}', '{{ category.name }}', '{{ category.color }}', this)"
+                   {% if category in profile.categories.all %}checked{% endif %}
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ category.name }}</span>
+          </div>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }};">
+            {{ category.name|slice:":1" }}
+          </span>
+        </label>
+      {% empty %}
+        <div class="text-center text-gray-400 py-8">
+          <p>Henüz kategori bulunmuyor</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="p-4 border-t border-gray-700 shrink-0">
+      <button type="button" onclick="closeCategoryModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+        Tamam
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Skill Modal -->
+<div id="skillModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+  <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+        <h3 class="text-lg font-semibold text-white">Teknolojiler</h3>
+      </div>
+      <button onclick="closeSkillModal()" class="text-gray-400 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 border-b border-gray-700 shrink-0">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" id="skillSearchInput" onkeyup="searchSkills()" 
+               class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+               placeholder="Yetenek ara...">
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+      {% for tech in technologies %}
+        <label class="skill-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ tech.name }}">
+          <div class="flex items-center gap-3 text-white">
+            <input type="checkbox" 
+                   data-id="{{ tech.id }}"
+                   data-name="{{ tech.name }}"
+                   data-color="{{ tech.color }}"
+                   onchange="toggleSkill('{{ tech.id }}', '{{ tech.name }}', '{{ tech.color }}', this)"
+                   {% if tech in profile.technologies.all %}checked{% endif %}
+                   class="w-5 h-5 accent-blue-500 cursor-pointer">
+            <span class="text-white font-medium text-sm">{{ tech.name }}</span>
+          </div>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
+            {{ tech.name|slice:":1" }}
+          </span>
+        </label>
+      {% empty %}
+        <div class="text-center text-gray-400 py-8">
+          <p>Henüz teknoloji bulunmuyor</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="p-4 border-t border-gray-700 shrink-0">
+      <button type="button" onclick="closeSkillModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+        Tamam
+      </button>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

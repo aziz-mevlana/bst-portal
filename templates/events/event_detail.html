@@ -7,33 +7,49 @@
 <div class="max-w-4xl mx-auto px-4 py-8 page-container-large">
     <!-- Etkinlik Başlığı ve Meta Bilgileri -->
     <div class="mb-8">
-        <div class="flex items-center gap-2 mb-4">
-            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
-                {{ event.get_event_type_display }}
-            </span>
-            {% if event.is_active %}
-            <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-green">
-                Aktif
-            </span>
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
+                    {{ event.get_event_type_display }}
+                </span>
+                {% if event.is_active %}
+                <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-green">
+                    Aktif
+                </span>
+                {% endif %}
+            </div>
+            {% if user.is_authenticated and user == event.created_by or user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
+            <a href="{% url 'events:edit_event' event.id %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Etkinliği Düzenle
+            </a>
             {% endif %}
         </div>
         <h1 class="text-3xl font-bold mb-4">{{ event.title }}</h1>
         <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4 card-link">
-            <span class="flex items-center gap-1">
-                <img src="{% static 'images/icons/calendar.svg' %}" alt="Başlangıç" class="w-4 h-4">
-                {{ event.start_date|date:"d.m.Y H:i" }}
+            <span class="flex items-center gap-1 card-link">
+                <div class="flex items-center gap-1">
+                    <img src="{% static 'images/icons/calendar.svg' %}" alt="Başlangıç" class="w-4 h-4">
+                    {{ event.start_date|date:"d.m.Y H:i" }}
+                </div>
             </span>
-            <span class="flex items-center gap-1">
-                <img src="{% static 'images/icons/calendar.svg' %}" alt="Bitiş" class="w-4 h-4">
-                {{ event.end_date|date:"d.m.Y H:i" }}
+            <span class="flex items-center gap-1 card-link">
+                <div class="flex items-center gap-1">
+                    <img src="{% static 'images/icons/calendar.svg' %}" alt="Bitiş" class="w-4 h-4">
+                    {{ event.end_date|date:"d.m.Y H:i" }}
+                </div>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/location.svg' %}" alt="Konum" class="w-4 h-4">
                 {{ event.location }}
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/profile.svg' %}" alt="Organizatör" class="w-4 h-4">
-                {{ event.created_by.get_full_name|default:event.created_by.username }}
+                <a href="{% url 'accounts:user_profile' event.created_by.id %}" class="hover:text-blue-400 transition-colors">
+                    {{ event.created_by.get_full_name|default:event.created_by.username }}
+                </a>
             </span>
         </div>
     </div>
@@ -51,7 +67,7 @@
     </div>
 
     <!-- Etkinlik Durumu -->
-    <div class="mt-8 p-4 color-page rounded-lg">
+    <div class="mt-8 mb-8 p-4 rounded-lg color-page">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-semibold mb-2">Etkinlik Durumu</h3>
@@ -66,7 +82,10 @@
                 </p>
             </div>
             {% if event.is_active and event.start_date > now %}
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <button class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg hover:shadow-blue-600/25">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
                 Katıl
             </button>
             {% endif %}

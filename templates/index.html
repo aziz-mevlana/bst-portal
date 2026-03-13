@@ -12,23 +12,21 @@
       <!-- Swiper Carousel -->
       <div class="swiper hero-carousel">
         <div class="swiper-wrapper">
-          {% for item in news %}
-            {% if item.is_homepage%}
-              <div class="swiper-slide">
-                <a href="{% url 'news:news_detail' item.id %}">
-                  {% if item.image %}
-                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="slide-image">
-                  {% else %}
-                    <img src="{% static 'images/placeholder.jpg' %}" alt="Placeholder" class="slide-image">
-                  {% endif %}
-                  <div class="slide-overlay"></div>
-                  <div class="slide-content">
-                    <h2 class="slide-title">{{ item.title }}</h2>
-                    <p class="slide-description">{{ item.content|truncatewords:20 }}</p>
-                  </div>
-                </a>
-              </div>
-            {% endif %}
+          {% for item in homepage_news %}
+            <div class="swiper-slide">
+              <a href="{% url 'news:news_detail' item.id %}">
+                {% if item.image %}
+                  <img src="{{ item.image.url }}" alt="{{ item.title }}" class="slide-image">
+                {% else %}
+                  <img src="{% static 'images/placeholder.jpg' %}" alt="Placeholder" class="slide-image">
+                {% endif %}
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                  <h2 class="slide-title">{{ item.title }}</h2>
+                  <p class="slide-description">{{ item.content|truncatewords:20 }}</p>
+                </div>
+              </a>
+            </div>
           {% endfor %}
         </div>
         <!-- Add Pagination -->
@@ -99,9 +97,9 @@
             </a>
           </div>
 
-          {% if news %}
+          {% if all_news %}
             <div class="card-grid">
-              {% for item in news %}
+              {% for item in all_news %}
                 <a href="{% url 'news:news_detail' item.id %}">
                   <div class="card news-card">
                     <div class="card-content md:w-full">
@@ -126,8 +124,8 @@
                       </div>
                     </div>
                   </div>
-                  {% endfor %}
-                </a> 
+                </a>
+              {% endfor %}
             </div>
           {% else %}
             <div class="card-grid">
