@@ -4,119 +4,80 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/projects.css' %}">
-<style>
-  .alumni-skill-tag,
-  .alumni-badge {
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .alumni-skill-tag::before,
-  .alumni-badge::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-  }
-  .alumni-skill-tag:hover::before,
-  .alumni-badge:hover::before {
-    left: 100%;
-  }
-  .alumni-skill-tag[data-skill-color] {
-    background-color: var(--skill-bg);
-    color: var(--skill-color);
-    border: 1px solid var(--skill-border);
-  }
-  .alumni-badge[data-badge-color] {
-    background-color: var(--badge-bg);
-    color: var(--badge-color);
-    border: 1px solid var(--badge-border);
-  }
-  .alumni-avatar {
-    width: 8rem;
-    height: 8rem;
-    border-radius: 999px;
-    border: 2px solid #60a5fa;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    object-fit: cover;
-  }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="w-full max-w-6xl mx-auto px-4">
   <div class="p-6 lg:px-12">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-end gap-4 mb-6">
-      <a href="{% url 'alumni:alumni_profile_edit' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+      <a href="{% url 'alumni:alumni_profile_edit' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition w-full sm:w-auto">
         Profili Düzenle
       </a>
     </div>
 
-    <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-gray-700">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="md:col-span-2 flex items-center gap-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 mb-10 border border-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div class="md:col-span-2 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           {% if profile.user.profile.profile_picture %}
-            <img src="{{ profile.user.profile.profile_picture.url }}" alt="{{ profile.user.get_full_name }}" class="alumni-avatar shadow-xl">
+            <img src="{{ profile.user.profile.profile_picture.url }}" alt="{{ profile.user.get_full_name }}" class="alumni-avatar shadow-xl w-24 h-24 sm:w-32 sm:h-32">
           {% else %}
-            <div class="alumni-avatar bg-slate-800 flex items-center justify-center shadow-xl">
+            <div class="alumni-avatar bg-slate-800 flex items-center justify-center shadow-xl w-24 h-24 sm:w-32 sm:h-32">
               <img src="{% static 'images/icons/profile.svg' %}" alt="Profil" class="w-12 h-12 opacity-70">
             </div>
           {% endif %}
-          <div class="space-y-3">
-            <h2 class="text-3xl lg:text-4xl font-bold text-blue-300 leading-tight">{{ profile.user.get_full_name }}</h2>
-            <p class="text-sm text-gray-400">{{ profile.user.username }}</p>
-            <div class="pt-2">
-              <p class="text-lg text-gray-200">{{ profile.current_position }}</p>
-              <p class="text-md text-gray-400">{{ profile.company }}</p>
+          <div class="space-y-3 text-center sm:text-left">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-300 leading-tight">{{ profile.user.get_full_name }}</h2>
+            <p class="text-xs sm:text-sm text-gray-400">{{ profile.user.username }}</p>
+            <div class="pt-1">
+              <p class="text-base sm:text-lg text-gray-200">{{ profile.current_position }}</p>
+              <p class="text-sm sm:text-md text-gray-400">{{ profile.company }}</p>
             </div>
             
           </div>
         </div>
-        <div class="flex flex-col gap-3 md:ms-11 sm:ms-0 items-end">
-          {% if profile.linkedin_url %}
-            <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition md:w-40 w-full">
-              <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-4 h-4 filter invert brightness-0">
-              LinkedIn
-            </a>
-          {% endif %}
-          {% if profile.github_url %}
-            <a href="{{ profile.github_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition md:w-40 w-full">
-              <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-4 h-4 filter invert brightness-0">
-              GitHub
-            </a>
-          {% endif %}
-          {% if profile.personal_website %}
-            <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition md:w-40 w-full">
-              <img src="{% static 'images/icons/profile.svg' %}" alt="Website" class="w-4 h-4 filter invert brightness-0">
-              Web Sitesi
-            </a>
-          {% endif %}
-          <div class="text-sm text-gray-400 mt-3">{{ profile.user.email }}</div>
+        <div class="flex flex-col gap-2 md:ms-11 sm:ms-0 items-center sm:items-end mt-4 sm:mt-0">
+          <div class="flex flex-wrap gap-2 justify-center sm:justify-end w-full">
+            {% if profile.linkedin_url %}
+              <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex justify-center items-center gap-1 px-3 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-1/3 sm:w-full min-w-[80px]">
+                <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-4 h-4 filter invert brightness-0">
+                <span class="hidden sm:inline">LinkedIn</span>
+              </a>
+            {% endif %}
+            {% if profile.github_url %}
+              <a href="{{ profile.github_url }}" target="_blank" class="inline-flex justify-center items-center gap-1 px-3 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-1/3 sm:w-full min-w-[80px]">
+                <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-4 h-4 filter invert brightness-0">
+                <span class="hidden sm:inline">GitHub</span>
+              </a>
+            {% endif %}
+            {% if profile.personal_website %}
+              <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex justify-center items-center gap-1 px-3 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-1/3 sm:w-full min-w-[80px]">
+                <img src="{% static 'images/icons/profile.svg' %}" alt="Website" class="w-4 h-4 filter invert brightness-0">
+                <span class="hidden sm:inline">Web</span>
+              </a>
+            {% endif %}
+          </div>
+          <div class="text-xs sm:text-sm text-gray-400 mt-1 sm:mt-3 break-all text-center sm:text-right">{{ profile.user.email }}</div>
         </div>
         
       </div>
-      <div class="flex gap-2 pt-2">
+      <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start pt-4 mt-4 border-t border-gray-700">
               {% if profile.user.profile.user_type == 'staff_student' %}
-              <span class="alumni-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#8b5cf620;--badge-color:#8b5cf6;--badge-border:#8b5cf640;" data-badge-color="#8b5cf6">
+              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#8b5cf620;--tag-color:#8b5cf6;--tag-border:#8b5cf640;" data-badge-color="#8b5cf6">
                 Görevli Öğrenci
               </span>
               {% elif profile.user.profile.user_type == 'teacher' %}
-              <span class="alumni-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#f59e0b20;--badge-color:#f59e0b;--badge-border:#f59e0b40;" data-badge-color="#f59e0b">
+              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#f59e0b20;--tag-color:#f59e0b;--tag-border:#f59e0b40;" data-badge-color="#f59e0b">
                 Öğretim Üyesi
               </span>
               {% endif %}
-              <span class="alumni-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#ffffff20;--badge-color:#ffffff;--badge-border:#ffffff40;" data-badge-color="#ffffff">
+              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#ffffff20;--tag-color:#ffffff;--tag-border:#ffffff40;" data-badge-color="#ffffff">
                 {{ profile.graduation_year }} Mezunu
               </span>
-              <span class="alumni-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#3b82f620;--badge-color:#3b82f6;--badge-border:#3b82f640;" data-badge-color="#3b82f6">
+              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#3b82f620;--tag-color:#3b82f6;--tag-border:#3b82f640;" data-badge-color="#3b82f6">
                 {{ profile.get_experience_level_display }}
               </span>
               {% if profile.is_available_for_mentoring %}
-              <span class="alumni-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#10b98120;--badge-color:#10b981;--badge-border:#10b98140;" data-badge-color="#10b981">
+              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#10b98120;--tag-color:#10b981;--tag-border:#10b98140;" data-badge-color="#10b981">
                 Mentorluk Yapıyor
               </span>
               {% endif %}
@@ -218,5 +179,32 @@
       </div>
     </div>
   </div>
-</div>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Enhanced alumni skill tag functionality
+      const skillTags = document.querySelectorAll('.alumni-skill-tag[data-skill-color]');
+      
+      skillTags.forEach((tag) => {
+        const color = tag.dataset.skillColor;
+        
+        // Apply dynamic colors
+        tag.style.setProperty('--skill-bg', color + '20');
+        tag.style.setProperty('--skill-color', color);
+        tag.style.setProperty('--skill-border', color + '40');
+      });
+
+      const alumniBadges = document.querySelectorAll('.dynamic-tag.alumni-badge[data-badge-color]');
+      
+      alumniBadges.forEach((badge) => {
+        const color = badge.dataset.badgeColor;
+        
+        // Apply dynamic colors
+        badge.style.setProperty('--tag-bg', color + '20');
+        badge.style.setProperty('--tag-color', color);
+        badge.style.setProperty('--tag-border', color + '40');
+      });
+    });
+    </script>
 {% endblock %}

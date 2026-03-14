@@ -3,9 +3,8 @@
     <div>
         <div class="flex items-start justify-between mb-2">
             <h3 class="text-xl font-bold flex-1 mr-2">{{ project.title }}</h3>
-            <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                  style="--technology-bg: #3b82f620; --technology-color: #3b82f6; --technology-border: #3b82f640;" 
-                  data-technology-color="#3b82f6">
+            <span class="dynamic-tag" 
+                  style="--tag-bg: #3b82f620; --tag-color: #3b82f6; --tag-border: #3b82f640;">
                 {{ project.get_status_display }}
             </span>
         </div>
@@ -14,16 +13,14 @@
         <!-- Etiketler -->
         <div class="flex flex-wrap gap-2 mb-4">
             {% for category in project.categories.all %}
-            <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                  style="--technology-bg: {{ category.color }}20; --technology-color: {{ category.color }}; --technology-border: {{ category.color }}40;" 
-                  data-technology-color="{{ category.color }}">
+            <span class="dynamic-tag" 
+                  style="--tag-bg: {{ category.color }}20; --tag-color: {{ category.color }}; --tag-border: {{ category.color }}40;">
                 {{ category.name }}
             </span>
             {% endfor %}
             {% for technology in project.technologies.all %}
-            <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                  style="--technology-bg: {{ technology.color }}20; --technology-color: {{ technology.color }}; --technology-border: {{ technology.color }}40;" 
-                  data-technology-color="{{ technology.color }}">
+            <span class="dynamic-tag" 
+                  style="--tag-bg: {{ technology.color }}20; --tag-color: {{ technology.color }}; --tag-border: {{ technology.color }}40;">
                 {% if technology.icon %}<i class="{{ technology.icon }} mr-1"></i>{% endif %}
                 {{ technology.name }}
             </span>

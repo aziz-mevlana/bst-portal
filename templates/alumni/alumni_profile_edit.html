@@ -249,8 +249,8 @@
                 
                 <!-- Mentorluk ve Görünüm -->
                 <div class="mb-6">
-                    <div class="checkbox-group pro flex flex-wrap gap-4">
-                        <label>
+                    <div class="checkbox-group pro flex flex-col sm:flex-row gap-4">
+                        <label class="w-full sm:w-auto">
                             <input type="checkbox" 
                                    name="is_available_for_mentoring" 
                                    id="is_available_for_mentoring" 
@@ -258,7 +258,7 @@
                             <span>Mentorluk yapmak istiyorum</span>
                         </label>
                         
-                        <label>
+                        <label class="w-full sm:w-auto">
                             <input type="checkbox" 
                                    name="is_show_in_alumni_list" 
                                    id="is_show_in_alumni_list" 
@@ -433,14 +433,14 @@
             </div>
 
             <!-- Form Aksiyonları -->
-            <div class="flex flex-col sm:flex-row gap-4 justify-end">
+            <div class="flex flex-col sm:flex-row gap-4 justify-end pt-4">
                 <a href="{% url 'alumni:alumni_profile' %}" 
-                   class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                   class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors w-full sm:w-auto">
                     İptal
                 </a>
                 
                 <button type="submit" 
-                        class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                        class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors w-full sm:w-auto">
                     Değişiklikleri Kaydet
                 </button>
             </div>

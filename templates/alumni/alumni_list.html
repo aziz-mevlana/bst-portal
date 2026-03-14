@@ -115,13 +115,13 @@
                     <option value="{{ technology.id }}" {% if selected_technology|add:"" == technology.id|stringformat:"s" %}selected{% endif %}>{{ technology.name }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
+                <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
             </form>
         </div>
     </div>
 
     <!-- Desktop Filtreleme -->
-    <form method="get" class="sm:hidden md:grid md:grid-cols-6 gap-4 mb-8">
+    <form method="get" class="hidden md:grid md:grid-cols-6 gap-4 mb-8">
         <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Mezun ara..." value="{{ query }}">
         <select name="experience_level" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
             <option value="">Deneyim Seviyesi</option>
@@ -147,60 +147,60 @@
             <option value="{{ technology.id }}" {% if selected_technology|add:"" == technology.id|stringformat:"s" %}selected{% endif %}>{{ technology.name }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition md:self-end">Filtrele</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
     </form>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for alumni in alumni_list %}
-            <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between h-full">
+            <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-5 flex flex-col justify-between h-full">
             <a href="{% url 'alumni:alumni_detail' alumni.user.username %}">
-                <div class="flex flex-wrap items-start gap-4 mb-4">
-                    <div class="shrink-0">
+                <div class="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
+                    <div class="shrink-0 mx-auto sm:mx-0">
                         {% if alumni.user.profile.profile_picture %}
-                            <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover alumni-list-profile-picture">
+                            <img src="{{ alumni.user.profile.profile_picture.url }}" alt="{{ alumni.user.username }}" class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full alumni-list-profile-picture">
                         {% else %}
-                            <img src="{% static 'images/icons/profile.svg' %}" alt="{{ alumni.user.username }}" class="w-6rem h-6rem object-cover alumni-list-profile-picture icon-thema">
+                            <img src="{% static 'images/icons/profile.svg' %}" alt="{{ alumni.user.username }}" class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full alumni-list-profile-picture icon-thema">
                         {% endif %}
                     </div>
-                    <div class="flex-1 min-w-[200px] space-y-1">
-                        <h3 class="text-xl font-bold">{{ alumni.user.get_full_name }}</h3>
-                        <div class="text-sm text-gray-400">{{ alumni.current_position }} @ {{ alumni.company }}</div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 w-full pt-2">
-                      <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-                            style="--badge-bg: #FFFFFF20; --badge-color: #FFFFFF; --badge-border: #FFFFFF40;" 
-                            data-badge-color="#FFFFFF">
-                          {{ alumni.graduation_year }}
-                      </span>
-                        <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-                              style="--badge-bg: #3B82F620; --badge-color: #3B82F6; --badge-border: #3B82F640;" 
-                              data-badge-color="#3B82F6">
-                            {{ alumni.experience_level|capfirst }}
-                        </span>
-                        {% if alumni.is_available_for_mentoring %}
-                        <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-                              style="--badge-bg: #10B98120; --badge-color: #10B981; --badge-border: #10B98140;" 
-                              data-badge-color="#10B981">
-                            Mentor
-                        </span>
-                        {% endif %}
-                        {% for category in alumni.categories.all %}
-                        <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                              style="--skill-bg: {{ category.color }}20; --skill-color: {{ category.color }}; --skill-border: {{ category.color }}40;" 
-                              data-skill-color="{{ category.color }}">
-                            {{ category.name }}
-                        </span>
-                        {% endfor %}
-                        {% for technology in alumni.technologies.all %}
-                        <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                              style="--skill-bg: {{ technology.color }}20; --skill-color: {{ technology.color }}; --skill-border: {{ technology.color }}40;" 
-                              data-skill-color="{{ technology.color }}">
-                            {{ technology.name }}
-                        </span>
-                        {% endfor %}
+                    <div class="flex-1 text-center sm:text-left space-y-1">
+                        <h3 class="text-lg sm:text-xl font-bold">{{ alumni.user.get_full_name }}</h3>
+                        <div class="text-xs sm:text-sm text-gray-400 truncate">{{ alumni.current_position }} @ {{ alumni.company }}</div>
                     </div>
                 </div>
+                <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
+                    <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--badge-bg: #FFFFFF20; --badge-color: #FFFFFF; --badge-border: #FFFFFF40;" 
+                          data-badge-color="#FFFFFF">
+                        {{ alumni.graduation_year }}
+                    </span>
+                    <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--badge-bg: #3B82F620; --badge-color: #3B82F6; --badge-border: #3B82F640;" 
+                          data-badge-color="#3B82F6">
+                        {{ alumni.experience_level|capfirst }}
+                    </span>
+                    {% if alumni.is_available_for_mentoring %}
+                    <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--badge-bg: #10B98120; --badge-color: #10B981; --badge-border: #10B98140;" 
+                          data-badge-color="#10B981">
+                        Mentor
+                    </span>
+                    {% endif %}
+                    {% for category in alumni.categories.all %}
+                    <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--skill-bg: {{ category.color }}20; --skill-color: {{ category.color }}; --skill-border: {{ category.color }}40;" 
+                          data-skill-color="{{ category.color }}">
+                        {{ category.name }}
+                    </span>
+                    {% endfor %}
+                    {% for technology in alumni.technologies.all %}
+                    <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
+                          style="--skill-bg: {{ technology.color }}20; --skill-color: {{ technology.color }}; --skill-border: {{ technology.color }}40;" 
+                          data-skill-color="{{ technology.color }}">
+                        {{ technology.name }}
+                    </span>
+                    {% endfor %}
+                </div>
             </a>
-            <div class="flex flex-wrap items-center justify-between border-t border-gray-600 pt-4 mt-auto ">
+            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-600 pt-3 mt-auto gap-2">
                 <div class="flex items-center gap-3 alumni-list-social-media-icons">
                     {% if alumni.linkedin_url %}
                     <a href="{{ alumni.linkedin_url }}" target="_blank" title="LinkedIn" class="hover:scale-110 transition"><img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" width="20" height="20"></a>
@@ -212,11 +212,11 @@
                     <a href="{{ alumni.personal_website }}" target="_blank" title="Web" class="hover:scale-110 transition"><img src="{% static 'images/icons/external-link.svg' %}" alt="Web" width="20" height="20"></a>
                     {% endif %}
                 </div>
-                <div class="text-gray-400 text-sm">{{ alumni.user.email }}</div>
+                <div class="text-gray-400 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">{{ alumni.user.email }}</div>
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center font-semibold">Hiç mezun bulunamadı.</div>
+        <div class="col-span-full text-center font-semibold py-8">Hiç mezun bulunamadı.</div>
         {% endfor %}
     </div>
 </div>

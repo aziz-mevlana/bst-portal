@@ -64,14 +64,12 @@
         <a href="{% url 'events:event_detail' event.id %}" class="event-item project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between color-page">
             <div>
                 <div class="flex items-center gap-2 mb-2">
-                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                          style="--technology-bg: #3b82f620; --technology-color: #3b82f6; --technology-border: #3b82f640;" 
-                          data-technology-color="#3b82f6">
+                    <span class="dynamic-tag" 
+                          style="--tag-bg: #3b82f620; --tag-color: #3b82f6; --tag-border: #3b82f640;">
                         {{ event.get_event_type_display }}
                     </span>
-                    <span class="technology-tag px-2 py-1 rounded-full text-xs font-semibold" 
-                          style="--technology-bg: #6b728020; --technology-color: #6b7280; --technology-border: #6b728040;" 
-                          data-technology-color="#6b7280">
+                    <span class="dynamic-tag" 
+                          style="--tag-bg: #6b728020; --tag-color: #6b7280; --tag-border: #6b728040;">
                         {{ event.location }}
                     </span>
                 </div>

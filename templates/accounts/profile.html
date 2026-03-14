@@ -74,21 +74,21 @@
 <div class="w-full max-w-6xl mx-auto px-4">
   <div class="p-6 lg:px-12">
 
-    <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-gray-700">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="md:col-span-2 flex items-center gap-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 mb-10 border border-gray-700">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div class="md:col-span-2 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           {% if view_user.profile.profile_picture %}
-            <img src="{{ view_user.profile.profile_picture.url }}" alt="{{ view_user.get_full_name }}" class="profile-page-avatar shadow-xl">
+            <img src="{{ view_user.profile.profile_picture.url }}" alt="{{ view_user.get_full_name }}" class="profile-page-avatar shadow-xl w-24 h-24 sm:w-32 sm:h-32">
           {% else %}
-            <div class="profile-page-avatar bg-slate-800 flex items-center justify-center shadow-xl">
+            <div class="profile-page-avatar bg-slate-800 flex items-center justify-center shadow-xl w-24 h-24 sm:w-32 sm:h-32">
               <img src="{% static 'images/icons/profile.svg' %}" alt="Profil" class="w-12 h-12 opacity-70">
             </div>
           {% endif %}
-          <div class="space-y-3">
-            <h2 class="text-3xl lg:text-4xl font-bold text-blue-300 leading-tight">{{ view_user.get_full_name|default:view_user.username }}</h2>
-            <p class="text-sm text-gray-400">{{ view_user.username }}</p>
-            <div class="flex flex-wrap gap-2 pt-2">
-              <span class="profile-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#ffffff20;--badge-color:#ffffff;--badge-border:#ffffff40;" data-badge-color="#ffffff">
+          <div class="space-y-3 text-center sm:text-left">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-300 leading-tight">{{ view_user.get_full_name|default:view_user.username }}</h2>
+            <p class="text-xs sm:text-sm text-gray-400">{{ view_user.username }}</p>
+            <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start pt-1">
+              <span class="profile-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="--badge-bg:#ffffff20;--badge-color:#ffffff;--badge-border:#ffffff40;" data-badge-color="#ffffff">
                 {% if view_user.profile.user_type == 'student'%}
                   Öğrenci
                 {% elif view_user.profile.user_type == 'staff_student' %}
@@ -100,17 +100,17 @@
                 {% endif %}
               </span>
               {% if view_user.profile.user_type == 'student' or view_user.profile.user_type == 'staff_student' %}
-              <span class="profile-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold" style="--badge-bg:#3b82f620;--badge-color:#3b82f6;--badge-border:#3b82f640;" data-badge-color="#3b82f6">
+              <span class="profile-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="--badge-bg:#3b82f620;--badge-color:#3b82f6;--badge-border:#3b82f640;" data-badge-color="#3b82f6">
                 {{ view_user.profile.class_level }}
               </span>
               {% endif %}
             </div>
           </div>
         </div>
-        <div class="flex flex-col gap-3 md:ms-11 sm:ms-0 items-end">
-          <div class="text-sm text-gray-400 mt-3">{{ view_user.email }}</div>
+        <div class="flex flex-col gap-2 md:ms-11 sm:ms-0 items-center sm:items-end mt-4 sm:mt-0">
+          <div class="text-xs sm:text-sm text-gray-400 mt-1 sm:mt-3 break-all text-center sm:text-right">{{ view_user.email }}</div>
           {% if view_user.profile.phone_number %}
-          <div class="text-sm text-gray-400">{{ view_user.profile.phone_number }}</div>
+          <div class="text-xs sm:text-sm text-gray-400 break-all text-center sm:text-right">{{ view_user.profile.phone_number }}</div>
           {% endif %}
         </div>
       </div>
@@ -348,7 +348,7 @@
 
             <!-- Form Aksiyonları -->
             <div class="flex flex-col sm:flex-row gap-4 justify-end pt-6">
-              <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto">
                 Değişiklikleri Kaydet
               </button>
             </div>
@@ -715,6 +715,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize displays
   updateSkillDisplay();
   updateCategoryDisplay();
+
+  // Apply dynamic colors to profile badges
+  const profileBadges = document.querySelectorAll('.profile-badge[data-badge-color]');
+  profileBadges.forEach((badge) => {
+    const color = badge.dataset.badgeColor;
+    badge.style.setProperty('--badge-bg', color + '20');
+    badge.style.setProperty('--badge-color', color);
+    badge.style.setProperty('--badge-border', color + '40');
+  });
 });
 </script>
 
