@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* Koyu tema için arka plan ve metin renkleri */
+  body {
+    background-color: #111827; /* Gray-900 */
+    color: #f3f4f6; /* Gray-100 */
+  }
+  
+  .dashboard-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background-color: #1f2937; /* Gray-800 */
+    border-right: 1px solid #374151;
+    overflow-y: auto;
+  }
+  
+  .dashboard-content {
+    min-height: 100vh;
+    background-color: #111827; /* Gray-900 */
+  }
+  
+  .nav-link.active {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-left: 3px solid #3b82f6;
+    color: #60a5fa;
+  }
+  
+  /* Header (Navbar) gizle */
+  #main-header {
+    display: none !important;
+  }
+  
+  /* Dashboard Header */
+  .dashboard-header {
+    background-color: #1f2937;
+    border-bottom: 1px solid #374151;
+  }
+  
+  /* Card styles for dark mode */
+  .dashboard-card {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+  }
+  
+  /* Input styles for dark mode */
+  .dashboard-input {
+    background-color: #374151;
+    border: 1px solid #4b5563;
+    color: #f3f4f6;
+  }
+  .dashboard-input::placeholder {
+    color: #9ca3af;
+  }
+  
+  /* Table styles for dark mode */
+  .dashboard-table {
+    background-color: #1f2937;
+  }
+  .dashboard-table th {
+    background-color: #374151;
+    color: #e5e7eb;
+  }
+  .dashboard-table td {
+    border-color: #374151;
+  }
+  .dashboard-table tr:hover {
+    background-color: #374151;
+  }
+  
+  /* Custom scrollbar for sidebar */
+  .dashboard-sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .dashboard-sidebar::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+  .dashboard-sidebar::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+  }
+  .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row min-h-screen">
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar w-full md:w-64 py-4 px-0 flex-shrink-0 top-0">
+    <!-- Logo & Title Section -->
+    <div class="mb-6 px-4 flex items-center gap-3">
+      <img src="{% static 'images/logo.svg' %}" alt="Logo" class="w-10 h-10">
+      <div>
+        <h2 class="text-xl font-bold text-blue-400">Dashboard</h2>
+        <p class="text-xs text-gray-400">Öğretmen/Görevli Paneli</p>
+      </div>
+    </div>
+    
+    <!-- Navigation Section -->
+    <nav class="space-y-1 px-0">
+      <a href="{% url 'dashboard:home' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        Genel Bakış
+      </a>
+      <a href="{% url 'dashboard:projects' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:projects' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        Projeler
+      </a>
+      <a href="{% url 'dashboard:requests' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:requests' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+        Proje İstekleri
+      </a>
+      <a href="{% url 'dashboard:students' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:students' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>
+        Öğrenciler
+      </a>
+    </nav>
+    
+    <!-- User Section at Bottom -->
+    <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-gray-700">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          {% if request.user.profile.profile_picture %}
+            <img src="{{ request.user.profile.profile_picture.url }}" alt="User" class="w-8 h-8 rounded-full object-cover">
+          {% else %}
+            <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">
+              {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+            </div>
+          {% endif %}
+          <div>
+            <p class="text-sm font-medium truncate max-w-[120px]">{{ request.user.get_full_name }}</p>
+            <p class="text-xs text-gray-400">{{ request.user.email }}</p>
+          </div>
+        </div>
+        <a href="{% url 'accounts:logout' %}" class="text-gray-400 hover:text-white" title="Çıkış Yap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-content flex-1 py-6 px-4 overflow-y-auto">
+    {% block dashboard_content %}
+    <!-- Content will be injected here -->
+    {% endblock %}
+  </main>
+</div>
+{% endblock %}
+
+{% block footer %}
+  <!-- Footer gizlendi -->
+{% endblock %}

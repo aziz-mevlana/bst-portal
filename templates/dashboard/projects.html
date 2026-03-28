@@ -1,0 +1,93 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">
+            {% if is_teacher_or_staff %}
+                Danışmanlık Projeleri
+            {% else %}
+                Tamamlanan Projeler
+            {% endif %}
+        </h1>
+        <p class="text-gray-400">
+            {% if is_teacher_or_staff %}
+                Danışmanı olduğunuz projeleri görüntüleyin.
+            {% else %}
+                Tamamlanan tüm projeleri görüntüleyin.
+            {% endif %}
+        </p>
+    </div>
+    {% if is_teacher_or_staff %}
+    <a href="{% url 'projects:project_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Yeni Proje
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="dashboard-card rounded-xl shadow p-4 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <input type="text" name="q" value="{{ query }}" placeholder="Proje ara..." 
+               class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        {% if is_teacher_or_staff %}
+        <select name="project_request" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <option value="">Tüm İstekler</option>
+            {% for req in teacher_requests %}
+            <option value="{{ req.id }}" {% if selected_request == req.id|stringformat:"i" %}selected{% endif %}>{{ req.title }}</option>
+            {% endfor %}
+        </select>
+        {% else %}
+        <input type="hidden" name="project_request" value="">
+        {% endif %}
+        <select name="status" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <option value="">Tüm Durumlar</option>
+            {% for value, label in statuses %}
+            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Filtrele</button>
+    </form>
+</div>
+
+<!-- Projects Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for project in projects %}
+    <div class="dashboard-card rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-3">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {% if project.status == 'draft' %}bg-yellow-900 text-yellow-300
+                    {% else %}bg-green-900 text-green-300{% endif %}">
+                    {{ project.get_status_display }}
+                </span>
+                <a href="{% url 'projects:project_detail' project.id %}" class="text-blue-400 hover:text-blue-300 text-sm">Detay</a>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">{{ project.title }}</h3>
+            {% if project.project_request %}
+            <div class="text-xs text-gray-400 mb-3">
+                <span class="text-gray-500">İstek:</span> {{ project.project_request.title }}
+            </div>
+            {% endif %}
+            <p class="text-gray-400 text-sm mb-4 line-clamp-2">{{ project.description|truncatewords:15 }}</p>
+            
+            <div class="flex flex-wrap gap-1 mb-4">
+                {% for tech in project.technologies.all|slice:":3" %}
+                <span class="text-xs px-2 py-0.5 bg-gray-700 rounded text-gray-300">{{ tech.name }}</span>
+                {% endfor %}
+            </div>
+            
+            <div class="flex items-center justify-between text-xs text-gray-400 border-t border-gray-700 pt-3">
+                <span>Takım: {{ project.team.count }} üye</span>
+                <span>{{ project.created_at|date:"d.m.Y" }}</span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full dashboard-card rounded-xl p-8 text-center">
+        <p class="text-gray-400">Henüz danışmanlık yaptığınız bir proje bulunmuyor.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

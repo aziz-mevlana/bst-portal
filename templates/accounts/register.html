@@ -4,13 +4,13 @@
 {% block title %}BST Portal | Kayıt Ol{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center min-h-[70vh] page-container">
-    <div class="w-full max-w-md p-8 color-page rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-2 text-center">Kayıt Ol</h2>
-        <p class="mb-6 text-center">BST Portal'a katılmak için bilgilerinizi girin.</p>
-        
+<div class="flex items-center justify-center min-h-[50vh] sm:min-h-[60vh] lg:min-h-[70vh] px-4 py-8 sm:py-12">
+    <div class="w-full max-w-sm sm:max-w-md lg:max-w-lg p-5 sm:p-8 color-page rounded-xl shadow-lg">
+        <h2 class="text-xl sm:text-2xl font-bold mb-2 text-center">Kayıt Ol</h2>
+        <p class="mb-5 sm:mb-6 text-center text-sm sm:text-base">BST Portal'a katılmak için bilgilerinizi girin.</p>
+
         {% if form.errors %}
-            <div class="mb-4 p-3 alumni-experience-card rounded">
+            <div class="mb-4 p-3 alumni-experience-card rounded-lg text-sm">
                 {% for field, errors in form.errors.items %}
                     {% for error in errors %}
                         {{ error }}<br>
@@ -21,33 +21,33 @@
 
         <form method="post" class="flex flex-col gap-4">
             {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="id_first_name" class="block text-sm font-medium mb-1">İsim</label>
-                    <input type="text" name="first_name" id="id_first_name" placeholder="" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required autofocus>
+                    <input type="text" name="first_name" id="id_first_name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required autofocus>
                 </div>
                 <div>
                     <label for="id_last_name" class="block text-sm font-medium mb-1">Soyisim</label>
-                    <input type="text" name="last_name" id="id_last_name" placeholder="" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required autofocus>
+                    <input type="text" name="last_name" id="id_last_name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
                 </div>
             </div>
             <div>
-                <label for="id_student_number" class="block text-sm font-medium mb-2">Öğrenci Numarası</label>
-                <input type="text" name="student_number" id="id_student_number" placeholder="9 Haneli" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required>
+                <label for="id_student_number" class="block text-sm font-medium mb-1 sm:mb-2">Öğrenci Numarası</label>
+                <input type="text" name="student_number" id="id_student_number" placeholder="9 Haneli" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <div>
-                <label for="id_email" class="block text-sm font-medium mb-2">E-posta</label>
-                <input type="email" name="email" id="id_email" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required>
+                <label for="id_email" class="block text-sm font-medium mb-1 sm:mb-2">E-posta</label>
+                <input type="email" name="email" id="id_email" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <div>
-                <label for="id_password_1" class="block text-sm font-medium mb-2">Şifre</label>
-                <input type="password" name="password_1" id="id_password_1" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required>
+                <label for="id_password_1" class="block text-sm font-medium mb-1 sm:mb-2">Şifre</label>
+                <input type="password" name="password_1" id="id_password_1" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <div>
-                <label for="id_password_2" class="block text-sm font-medium mb-2">Şifre (Tekrar)</label>
-                <input type="password" name="password_2" id="id_password_2" class="project-form-input block w-full px-4 py-3  rounded-lg shadow-sm  " required>
+                <label for="id_password_2" class="block text-sm font-medium mb-1 sm:mb-2">Şifre (Tekrar)</label>
+                <input type="password" name="password_2" id="id_password_2" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
-            <button type="submit" class="w-full mt-2 py-3 px-6 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 ">
+            <button type="submit" class="w-full mt-1 sm:mt-2 py-2.5 sm:py-3 px-6 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base transition-colors">
                 Kayıt Ol
             </button>
         </form>

@@ -1,8 +1,51 @@
+import random
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+from datetime import timedelta
 from projects.models import ProjectCategory, Technology
+
+
+class EmailVerification(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    session_data = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Email Verification"
+        verbose_name_plural = "Email Verifications"
+
+    def __str__(self):
+        return f"{self.email} - {self.code}"
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+    @staticmethod
+    def generate_code():
+        return str(random.randint(100000, 999999))
+
+
+class PasswordReset(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Password Reset"
+        verbose_name_plural = "Password Resets"
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+    @staticmethod
+    def generate_code():
+        return str(random.randint(100000, 999999))
 
 
 class Profile(models.Model):

@@ -209,14 +209,30 @@
 
 
 
-/* Category Tag Dynamic Styling */
-.category-tag {
-    transition: all 0.2s ease;
+/* Category & Technology Tag Dynamic Styling */
+.dynamic-tag,
+.category-tag,
+.technology-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
     position: relative;
     overflow: hidden;
+    transition: all 0.25s ease;
+    opacity: 0.9;
+    background-color: var(--tag-bg, var(--category-bg, var(--technology-bg, rgba(59, 130, 246, 0.12))));
+    color: var(--tag-color, var(--category-color, var(--technology-color, #c7d2fe)));
+    border: 1px solid var(--tag-border, var(--category-border, var(--technology-border, rgba(59, 130, 246, 0.35))));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
-.category-tag::before {
+.dynamic-tag::before,
+.category-tag::before,
+.technology-tag::before {
     content: '';
     position: absolute;
     top: 0;
@@ -224,35 +240,21 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+    transition: left 0.45s ease;
 }
 
-.category-tag:hover::before {
+.dynamic-tag:hover::before,
+.category-tag:hover::before,
+.technology-tag:hover::before {
     left: 100%;
 }
 
-.category-tag {
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-    opacity: 0.9;
-}
-
-.category-tag:hover {
-    opacity: 1;
-}
-
-/* Technology Tag Dynamic Styling */
-.technology-tag {
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-    opacity: 0.9;
-}
-
+.dynamic-tag:hover,
+.category-tag:hover,
 .technology-tag:hover {
     opacity: 1;
     transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.35);
 }
 
 /* Enhanced form styling for dark mode */

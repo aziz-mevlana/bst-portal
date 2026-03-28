@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.bstportal.com', 'bstportal.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.bstportal.com', 'bstportal.com', 'testserver']
 
 
 # Application definition
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'alumni',
     'accounts',
     'news',
+    'dashboard',
     'widget_tweaks',
 ]
 
@@ -133,12 +134,12 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email ayarları
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'bst_portal.email_backend.CertifiEmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''  # Gmail adresiniz
-EMAIL_HOST_PASSWORD = ''  # Gmail uygulama şifreniz
+EMAIL_HOST_USER = 'azizalim41@gmail.com'
+EMAIL_HOST_PASSWORD = 'mmgn yxeh blvh mrpg'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

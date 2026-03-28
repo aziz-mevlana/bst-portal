@@ -567,8 +567,6 @@ header.scrolled {
 /* Main Content */
 main {
     flex: 1;
-    
-    padding: 0 1rem;
 }
 
 /* Messages */

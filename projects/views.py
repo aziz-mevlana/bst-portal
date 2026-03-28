@@ -17,7 +17,6 @@ def get_student_users():
 
 # Create your views here.
 
-@login_required
 def project_list(request):
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
@@ -27,22 +26,19 @@ def project_list(request):
     
     projects = Project.objects.prefetch_related('categories', 'technologies').all()
     
-    user = request.user
-    user_type = user.profile.user_type
+    # Check if user is authenticated and get user type
+    user = request.user if request.user.is_authenticated else None
+    user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
     
     # Privacy Filter: Teachers and Staff can see all projects, others need permission
     if user_type not in ['teacher', 'staff_student']:
-        projects = projects.filter(
-            Q(is_private=False) |
-            Q(created_by=user) |
-            Q(team=user) |
-            Q(advisor=user)
-        )
+        # For non-teachers/staff, show only public and completed projects (hide drafts)
+        projects = projects.filter(is_private=False, status='completed')
+    # Note: We don't filter by user relationships for non-authenticated users
     
-    # Role-based filtering
+    # Role-based filtering (only for teachers)
     if user_type == 'teacher':
         projects = projects.filter(advisor=user)
-    # Students can see public projects + their private projects (handled by privacy filter above)
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -68,11 +64,11 @@ def project_list(request):
         'has_more': has_more,
         'next_offset': offset + PAGE_SIZE,
         'total_count': total_count,
+        'is_authenticated': request.user.is_authenticated,  # Pass to template
     }
     return render(request, 'projects/project_list.html', context)
 
 
-@login_required
 def project_load_more(request):
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
@@ -83,22 +79,19 @@ def project_load_more(request):
     
     projects = Project.objects.prefetch_related('categories', 'technologies').all()
     
-    user = request.user
-    user_type = user.profile.user_type
+    # Check if user is authenticated and get user type
+    user = request.user if request.user.is_authenticated else None
+    user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
     
     # Privacy Filter: Teachers and Staff can see all projects, others need permission
     if user_type not in ['teacher', 'staff_student']:
-        projects = projects.filter(
-            Q(is_private=False) |
-            Q(created_by=user) |
-            Q(team=user) |
-            Q(advisor=user)
-        )
+        # For non-teachers/staff, show only public and completed projects (hide drafts)
+        projects = projects.filter(is_private=False, status='completed')
+    # Note: We don't filter by user relationships for non-authenticated users
     
-    # Role-based filtering
+    # Role-based filtering (only for teachers)
     if user_type == 'teacher':
         projects = projects.filter(advisor=user)
-    # Students can see public projects + their private projects (handled by privacy filter above)
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -146,13 +139,25 @@ def request_create(request):
         form = RequestForm()
     return render(request, 'projects/request_form.html', {'form': form})
 
-@login_required
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     
+    # Check if user is authenticated and get user type
+    user = request.user if request.user.is_authenticated else None
+    user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
+    
+    # Block access to draft projects for non-teachers/staff
+    if project.status == 'draft' and (not user or user_type not in ['teacher', 'staff_student']):
+        messages.error(request, 'Bu proje henüz tamamlanmamış ve görüntülemek için yetkiniz bulunmuyor.')
+        return redirect('projects:project_list')
+    
     # Access control for private projects
     if project.is_private:
-        user = request.user
+        # Handle anonymous users
+        if not user or not user.is_authenticated:
+            messages.error(request, 'Bu proje gizlidir ve görüntüleme için giriş yapmanız gerekiyor.')
+            return redirect('projects:project_list')
+            
         is_team_member = user in project.team.all()
         is_advisor = user == project.advisor
         is_creator = user == project.created_by
@@ -164,7 +169,12 @@ def project_detail(request, project_id):
     
     updates = project.updates.all()
     comments = project.comments.all()
-    comment_form = ProjectCommentForm()
+    
+    # Only show comment form for authenticated users
+    if request.user.is_authenticated:
+        comment_form = ProjectCommentForm()
+    else:
+        comment_form = None
     
     context = {
         'project': project,

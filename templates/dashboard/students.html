@@ -1,0 +1,81 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Öğrenci Listesi</h1>
+    <p class="text-gray-400">Danışmanı olduğunuz projelerdeki öğrencileri görüntüleyin.</p>
+</div>
+
+<!-- Filters -->
+<div class="dashboard-card rounded-xl shadow p-4 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4">
+        <input type="text" name="q" value="{{ query }}" placeholder="Öğrenci ara..." 
+               class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <select name="project" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <option value="">Tüm Projeler</option>
+            {% for project in projects %}
+            <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"i" %}selected{% endif %}>{{ project.title }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Filtrele</button>
+    </form>
+</div>
+
+<!-- Students List -->
+<div class="dashboard-card rounded-xl shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-700 dashboard-table">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Öğrenci</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Proje</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Sınıf</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Bölüm</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                {% for item in students_data %}
+                <tr class="hover:bg-gray-700/50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                {% if item.student.profile.profile_picture %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ item.student.profile.profile_picture.url }}" alt="">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
+                                        <span class="text-gray-300 text-sm">{{ item.student.first_name|first }}{{ item.student.last_name|first }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium">{{ item.student.get_full_name }}</div>
+                                <div class="text-sm text-gray-400">{{ item.student.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm">{{ item.project.title }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-400">{{ item.student.profile.class_level|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-400">{{ item.student.profile.department|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{% url 'accounts:user_profile' item.student.id %}" class="text-blue-400 hover:text-blue-300">Profil</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-400">
+                        Henüz bir öğrenci bulunmuyor veya filtre sonuçları boş.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

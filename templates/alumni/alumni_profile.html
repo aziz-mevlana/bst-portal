@@ -9,11 +9,6 @@
 {% block content %}
 <div class="w-full max-w-6xl mx-auto px-4">
   <div class="p-6 lg:px-12">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-      <a href="{% url 'alumni:alumni_profile_edit' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition w-full sm:w-auto">
-        Profili Düzenle
-      </a>
-    </div>
 
     <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 mb-10 border border-gray-700">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
@@ -60,28 +55,35 @@
         </div>
         
       </div>
-      <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start pt-4 mt-4 border-t border-gray-700">
-              {% if profile.user.profile.user_type == 'staff_student' %}
-              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#8b5cf620;--tag-color:#8b5cf6;--tag-border:#8b5cf640;" data-badge-color="#8b5cf6">
-                Görevli Öğrenci
-              </span>
-              {% elif profile.user.profile.user_type == 'teacher' %}
-              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#f59e0b20;--tag-color:#f59e0b;--tag-border:#f59e0b40;" data-badge-color="#f59e0b">
-                Öğretim Üyesi
-              </span>
-              {% endif %}
-              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#ffffff20;--tag-color:#ffffff;--tag-border:#ffffff40;" data-badge-color="#ffffff">
-                {{ profile.graduation_year }} Mezunu
-              </span>
-              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#3b82f620;--tag-color:#3b82f6;--tag-border:#3b82f640;" data-badge-color="#3b82f6">
-                {{ profile.get_experience_level_display }}
-              </span>
-              {% if profile.is_available_for_mentoring %}
-              <span class="dynamic-tag alumni-badge px-2 py-1 text-xs" style="--tag-bg:#10b98120;--tag-color:#10b981;--tag-border:#10b98140;" data-badge-color="#10b981">
-                Mentorluk Yapıyor
-              </span>
-              {% endif %}
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pt-4 mt-4 border-t border-gray-700">
+        <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+                {% if profile.user.profile.user_type == 'staff_student' %}
+                <span class="dynamic-tag alumni-badge px-2 py-1 " style="--tag-bg:#8b5cf620;--tag-color:#8b5cf6;--tag-border:#8b5cf640;" data-badge-color="#8b5cf6">
+                  Görevli Öğrenci
+                </span>
+                {% elif profile.user.profile.user_type == 'teacher' %}
+                <span class="dynamic-tag alumni-badge px-2 py-1" style="--tag-bg:#f59e0b20;--tag-color:#f59e0b;--tag-border:#f59e0b40;" data-badge-color="#f59e0b">
+                  Öğretim Üyesi
+                </span>
+                {% endif %}
+                <span class="dynamic-tag alumni-badge px-2 py-1" style="--tag-bg:#ffffff20;--tag-color:#ffffff;--tag-border:#ffffff40;" data-badge-color="#ffffff">
+                  {{ profile.graduation_year }} Mezunu
+                </span>
+                <span class="dynamic-tag alumni-badge px-2 py-1" style="--tag-bg:#3b82f620;--tag-color:#3b82f6;--tag-border:#3b82f640;" data-badge-color="#3b82f6">
+                  {{ profile.get_experience_level_display }}
+                </span>
+                {% if profile.is_available_for_mentoring %}
+                <span class="dynamic-tag alumni-badge px-2 py-1" style="--tag-bg:#10b98120;--tag-color:#10b981;--tag-border:#10b98140;" data-badge-color="#10b981">
+                  Mentorluk Yapıyor
+                </span>
+                {% endif %}
             </div>
+            <div class="flex sm:items-center justify-center sm:justify-end h-full">
+              <a href="{% url 'alumni:alumni_profile_edit' %}" class="inline-flex items-center justify-center px-6 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition w-full sm:w-auto">
+                Profili Düzenle
+              </a>
+            </div>
+          </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

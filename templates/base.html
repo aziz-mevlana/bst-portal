@@ -22,7 +22,9 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% include 'includes/footer.html' %}
+    {% block footer %}
+        {% include 'includes/footer.html' %}
+    {% endblock %}
     <script src="{% static 'js/swiper-bundle.min.js' %}"></script>
     
     <!-- Toast Notification System -->

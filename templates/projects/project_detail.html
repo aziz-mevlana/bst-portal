@@ -302,30 +302,39 @@
             <div class="space-y-6">
               <!-- Yorum Ekleme Formu -->
               <div class="bg-thema rounded-xl p-6 border border-gray-700">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                    <img src="{% if user.profile.profile_picture %}
-                        {{ user.profile.profile_picture.url }}
-                      {% else %}
-                        {% static 'images/icons/profile.svg' %}
-                      {% endif %}"
-                      alt="Profil Fotoğrafı"
-                      class="profile-avatar" />
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-semibold ">Yorum Yap</h3>
-                    <p class=" text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
-                  </div>
-                </div>
-                <form method="post" action="{% url 'projects:add_comment' project.id %}">
-                  {% csrf_token %}
-                  <div class="space-y-4">
-                    <div>{{ comment_form.content }}</div>
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold">
-                      Yorumu Gönder
-                    </button>
-                  </div>
-                </form>
+                 <div class="flex items-center gap-3 mb-4">
+                   <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                     {% if user.is_authenticated and user.profile.profile_picture %}
+                     <img src="{{ user.profile.profile_picture.url }}"
+                          alt="Profil Fotoğrafı"
+                          class="profile-avatar" />
+                     {% else %}
+                     <img src="{% static 'images/icons/profile.svg' %}"
+                          alt="Profil Fotoğrafı"
+                          class="profile-avatar" />
+                     {% endif %}
+                   </div>
+                   <div>
+                     {% if user.is_authenticated %}
+                     <h3 class="text-lg font-semibold ">Yorum Yap</h3>
+                     <p class=" text-sm">Proje hakkında düşüncelerinizi paylaşın</p>
+                     {% else %}
+                     <h3 class="text-lg font-semibold text-gray-400 ">Yorum Yap (Giriş Yapın)</h3>
+                     <p class=" text-sm text-gray-400">Yorum yapabilmek için giriş yapmanız gerekiyor.</p>
+                     {% endif %}
+                   </div>
+                 </div>
+                 {% if user.is_authenticated %}
+                 <form method="post" action="{% url 'projects:add_comment' project.id %}">
+                   {% csrf_token %}
+                   <div class="space-y-4">
+                     <div>{{ comment_form.content }}</div>
+                     <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold">
+                       Yorumu Gönder
+                     </button>
+                   </div>
+                 </form>
+                 {% endif %}
               </div>
 
               <!-- Yorumlar Listesi -->
