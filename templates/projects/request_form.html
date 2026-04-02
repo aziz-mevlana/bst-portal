@@ -33,30 +33,30 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen px-4">
-    <div class="w-full max-w-3xl mx-auto px-4">
-        <div class="py-4">
-            <!-- Header -->
-            <div class="mb-4">
-                <h2 class="text-3xl font-bold text-white mb-2">
+<div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
+    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
+        <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-center sm:text-left">
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">
                     {% if form.instance.pk %}
                         Proje İsteğini Düzenle
                     {% else %}
                         Yeni Proje İsteği Oluştur
                     {% endif %}
                 </h2>
-                <p class="text-gray-400 text-sm">Öğrencilerin görebileceği bir proje isteği oluşturun.</p>
+                <p class="text-gray-400 text-sm mt-1">Öğrencilerin görebileceği bir proje isteği oluşturun.</p>
             </div>
+        </div>
 
-            <form method="post">
-                {% csrf_token %}
+        <form method="post" class="space-y-6 sm:space-y-8">
+            {% csrf_token %}
 
-                <!-- Temel Bilgiler -->
-                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
-                    <div class="border-b border-gray-700 pb-4 mb-6">
-                        <h3 class="text-xl font-bold text-blue-400">Temel Bilgiler</h3>
-                    </div>
-                    <div class="space-y-6">
+            <!-- Temel Bilgiler -->
+            <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+                <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                    <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Temel Bilgiler</h3>
+                </div>
+                <div class="space-y-6 sm:space-y-8">
                         <!-- Başlık -->
                         <div class="space-y-2">
                             <label for="id_title" class="text-sm font-medium text-gray-300 flex items-center gap-2">
@@ -78,7 +78,7 @@
                         </div>
 
                         <!-- Dönem ve Ekip Büyüklüğü -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                             <div class="space-y-2">
                                 <label for="id_semester" class="text-sm font-medium text-gray-300">Dönem</label>
                                 {% if form.semester.errors %}
@@ -96,7 +96,7 @@
                         </div>
 
                         <!-- Son Başvuru Tarihi ve Durum -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                             <div class="space-y-2">
                                 <label for="id_deadline" class="text-sm font-medium text-gray-300">Son Başvuru Tarihi</label>
                                 {% if form.deadline.errors %}
@@ -116,9 +116,9 @@
                 </div>
 
                 <!-- Detaylar -->
-                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
-                    <div class="border-b border-gray-700 pb-4 mb-6">
-                        <h3 class="text-xl font-bold text-blue-400">Detaylar</h3>
+                <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+                    <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Detaylar</h3>
                     </div>
                     <div class="space-y-6">
                         <!-- Açıklama -->
@@ -142,9 +142,9 @@
                 </div>
 
                 <!-- Kategoriler ve Teknolojiler -->
-                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
-                    <div class="border-b border-gray-700 pb-4 mb-6">
-                        <h3 class="text-xl font-bold text-blue-400">Kategoriler ve Teknolojiler</h3>
+                <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+                    <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Kategoriler ve Teknolojiler</h3>
                     </div>
                     <div class="space-y-6">
                         <!-- Kategoriler -->
@@ -185,11 +185,11 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-end mt-6">
-                    <a href="{% url 'dashboard:requests' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+                    <a href="{% url 'dashboard:requests' %}" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">
                         İptal
                     </a>
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>

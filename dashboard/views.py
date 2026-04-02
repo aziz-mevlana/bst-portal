@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from projects.models import Project, ProjectRequest
 from accounts.models import Profile
+from alumni.models import Alumni
 from django.contrib.auth.models import User
 
 
@@ -188,3 +189,37 @@ def dashboard_projects(request):
         'is_teacher_or_staff': is_teacher_or_staff,  # Pass to template for conditional UI
     }
     return render(request, 'dashboard/projects.html', context)
+
+
+def dashboard_alumni(request):
+    if not is_teacher_or_staff(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
+    query = request.GET.get('q', '')
+    experience = request.GET.get('experience', '')
+    mentoring = request.GET.get('mentoring', '')
+
+    alumni = Alumni.objects.select_related('user', 'user__profile').prefetch_related('technologies')
+
+    if query:
+        alumni = alumni.filter(
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(company__icontains=query) |
+            Q(current_position__icontains=query)
+        )
+
+    if experience:
+        alumni = alumni.filter(experience_level=experience)
+
+    if mentoring == '1':
+        alumni = alumni.filter(is_available_for_mentoring=True)
+
+    context = {
+        'alumni_list': alumni,
+        'query': query,
+        'selected_experience': experience,
+        'selected_mentoring': mentoring,
+        'experience_choices': Alumni.EXPERIENCE_LEVEL_CHOICES,
+    }
+    return render(request, 'dashboard/alumni.html', context)

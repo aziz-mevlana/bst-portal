@@ -43,12 +43,11 @@
 {% endblock %}
 
 {% block content %}
-  <div class="min-h-screen px-4">
-    <div class="w-full max-w-4xl mx-auto px-4">
-      <div class="py-4">
-        <!-- Header -->
-        <div class="mb-4">
-          <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+  <div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
+    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
+      <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-center sm:text-left">
+          <h2 class="text-2xl sm:text-3xl font-bold text-white">
             {% if form.instance.pk %}
               Projeyi Düzenle
             {% else %}
@@ -56,16 +55,18 @@
             {% endif %}
           </h2>
         </div>
-      <form method="post" enctype="multipart/form-data">
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
         {% csrf_token %}
 
         <!-- Main Content Grid -->
         <div class="gap-8">
           <!-- Temel Bilgiler -->
-          <div class="flex flex-col gap-8">
-            <div class="project-detail-item rounded-xl shadow-lg p-6">
-              <div class="border-b border-gray-700 pb-4 mb-6">
-                <h3 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+          <div class="flex flex-col gap-6 sm:gap-8">
+            <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+              <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                <h3 class="text-xl sm:text-2xl font-semibold text-blue-400 flex items-center gap-2">
                   Temel Bilgiler
                 </h3>
               </div>
@@ -108,12 +109,12 @@
                             </div>
                           </div>
                         {% elif field.field.widget.input_type == 'textarea' %}
-                          {{ field|add_class:'project-form-input w-full min-h-[120px] p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none' }}
+                          {{ field|add_class:'project-form-input w-full min-h-[120px] p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none' }}
                         {% elif field.field.widget.input_type == 'file' %}
-                          <div class="w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg">{{ field|add_class:'w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer file:hover:bg-blue-700 file:transition-colors file:text-sm file:font-medium' }}</div>
+                          <div class="w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl">{{ field|add_class:'w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer file:hover:bg-blue-700 file:transition-colors file:text-sm file:font-medium' }}</div>
                         {% elif field.field.widget.input_type == 'select' %}
                           <div class="relative">
-                            {{ field|add_class:'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer' }}
+                            {{ field|add_class:'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer' }}
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -122,11 +123,11 @@
                           </div>
                         {% elif field.name == 'project_link' %}
                           <input type="text" name="project_link" id="id_project_link" 
-                            class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                            class="project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
                             value="{{ form.project_link.value|default:'' }}"
                             placeholder="Proje linki giriniz">
                         {% else %}
-                          {{ field|add_class:'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
+                          {{ field|add_class:'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
                         {% endif %}
 
                         {% if field.help_text %}
@@ -221,9 +222,9 @@
                 <!-- Form Actions -->
               </div>
             </div>
-            <div class="flex flex-col sm:flex-row gap-4 justify-end">
-              <a href="{% url 'projects:project_list' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">İptal</a>
-              <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+              <a href="{% url 'projects:project_list' %}" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">İptal</a>
+              <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">
                 {% if form.instance.pk %}
                   Projeyi Düzenle
                 {% else %}
