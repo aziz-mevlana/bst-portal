@@ -3,7 +3,7 @@
 {% load widget_tweaks %}
 
 {% block title %}
-  BST Portal | Mezun Profilini Düzenle
+  BST Akademi | Mezun Profilini Düzenle
 {% endblock %}
 
 {% block extra_css %}
@@ -101,28 +101,28 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen px-4">
-    <div class="w-full max-w-4xl mx-auto px-4">
-        <div class="py-4">
+<div class="min-h-screen px-3 sm:px-4">
+    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
+        <div class="py-3 sm:py-4">
             <!-- Header -->
-            <div class="mb-4">
-                <h1 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <div class="mb-3 sm:mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
                     Mezun Profilini Düzenle
                 </h1>
             </div>
 
-            <form method="post" class="space-y-6">
+            <form method="post" class="space-y-4 sm:space-y-6">
                 {% csrf_token %}
                 
                 <!-- Temel Bilgiler -->
-                <div class="project-detail-item rounded-xl shadow-lg p-6">
-                    <div class="border-b border-gray-700 pb-4 mb-6">
-                        <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                <div class="project-detail-item rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
+                    <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-4 sm:mb-6">
+                        <h2 class="text-xl sm:text-2xl font-bold text-blue-400 flex items-center gap-2">
                             Temel Bilgiler
                         </h2>
                     </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <!-- Mezuniyet Yılı -->
                     <div>
                         <label for="graduation_year" class="block text-sm font-medium  mb-2">

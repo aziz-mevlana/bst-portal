@@ -154,7 +154,7 @@ class Command(BaseCommand):
             'Online Eğitim Duyurusu', 'Yeni Araştırma Projesi', 'Yıl Sonu Etkinliği'
         ]
 
-        sources = ['BST Portal', 'Teknoloji Haberleri', 'Bilim Dünyası', 'Tech News', 'Güncel Akademi']
+        sources = ['BST Akademi', 'Teknoloji Haberleri', 'Bilim Dünyası', 'Tech News', 'Güncel Akademi']
 
         for i, title in enumerate(news_titles):
             article, created = Article.objects.get_or_create(

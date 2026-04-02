@@ -4,8 +4,8 @@
         <div class="nav-content">
             <!-- Logo -->
             <a href="{% url 'portal:index' %}" class="nav-logo">
-                <img src="{% static 'images/logo.svg' %}" alt="BST Portal Logo">
-                <span>BST Portal</span>
+                <img src="{% static 'images/logo.svg' %}" alt="BST Akademi Logo">
+                <span>BST Akademi</span>
             </a>
 
             <!-- Desktop Navigation -->
@@ -14,6 +14,9 @@
                     <li><a href="{% url 'portal:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Ana Sayfa</a></li>
                     <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                     <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
+                    {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
+                    <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Dashboard</a></li>
+                    {% endif %}
                 </ul>
             </nav>
 
@@ -72,8 +75,9 @@
                 <li><a href="{% url 'news:news_list' %}" {% if 'news' in request.path %}class="active"{% endif %}>Haberler</a></li>
                 <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                 <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
-                
-                
+                {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
+                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Dashboard</a></li>
+                {% endif %}
 
                 <!-- Mobile Auth Actions -->
                 {% if user.is_authenticated %}

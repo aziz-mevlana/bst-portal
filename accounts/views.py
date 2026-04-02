@@ -82,8 +82,8 @@ def register_view(request):
 
         try:
             send_mail(
-                'BST Portal - Email Doğrulama Kodu',
-                f'Merhaba {first_name},\n\nKayıt işlemini tamamlamak için doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Portal',
+                'BST Akademi - Email Doğrulama Kodu',
+                f'Merhaba {first_name},\n\nKayıt işlemini tamamlamak için doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Akademi',
                 settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,
@@ -168,8 +168,8 @@ def resend_code_view(request):
 
     try:
         send_mail(
-            'BST Portal - Yeni Doğrulama Kodu',
-            f'Merhaba,\n\nYeni doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Portal',
+            'BST Akademi - Yeni Doğrulama Kodu',
+            f'Merhaba,\n\nYeni doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Akademi',
             settings.EMAIL_HOST_USER,
             [email],
             fail_silently=False,
@@ -196,8 +196,8 @@ def forgot_password_view(request):
 
         try:
             send_mail(
-                'BST Portal - Şifre Sıfırlama Kodu',
-                f'Merhaba {user.first_name},\n\nŞifre sıfırlama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Portal',
+                'BST Akademi - Şifre Sıfırlama Kodu',
+                f'Merhaba {user.first_name},\n\nŞifre sıfırlama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Akademi',
                 settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,

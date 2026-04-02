@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# BST Portal Production Deployment Script
+# BST Akademi Production Deployment Script
 
-echo "Starting BST Portal deployment..."
+echo "Starting BST Akademi deployment..."
 
 # Update system packages
 echo "Updating system packages..."
@@ -53,7 +53,7 @@ sudo -u bstportal /var/www/bstportal/venv/bin/python /var/www/bstportal/manage.p
 echo "Creating Gunicorn service..."
 sudo cat > /etc/systemd/system/bstportal.service << 'SERVICE'
 [Unit]
-Description=BST Portal Gunicorn daemon
+Description=BST Akademi Gunicorn daemon
 After=network.target
 
 [Service]
@@ -75,7 +75,7 @@ echo "Creating Nginx configuration..."
 sudo cat > /etc/nginx/sites-available/bstportal << 'NGINX'
 server {
     listen 80;
-    server_name bstportal.com www.bstportal.com;
+    server_name bstakademi.com www.bstakademi.com;
     
     location = /favicon.ico { access_log off; log_not_found off; }
     
@@ -112,4 +112,4 @@ sudo ufw enable
 
 echo "Deployment completed successfully!"
 echo "Please configure SSL certificate using Certbot:"
-echo "sudo certbot --nginx -d bstportal.com -d www.bstportal.com"
+echo "sudo certbot --nginx -d bstakademi.com -d www.bstakademi.com"

@@ -1,75 +1,75 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}BST Portal | Yeni Haber Oluştur{% endblock %}
+{% block title %}BST Akademi | Yeni Haber Oluştur{% endblock %}
 
 {% block content %}
-<div class="min-h-screen px-4 py-8">
-    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4">
-        <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
+    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
+        <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="text-center sm:text-left">
-                <h2 class="text-3xl font-bold text-white">{{ page_title|default:'Yeni Haber Oluştur' }}</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">{{ page_title|default:'Yeni Haber Oluştur' }}</h2>
             </div>
         </div>
 
-        <form method="post" enctype="multipart/form-data" class="space-y-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
             {% csrf_token %}
 
-            <div class="project-detail-item rounded-2xl shadow-2xl border border-gray-700/70 p-6 lg:p-10">
-                <div class="border-b border-gray-700 pb-4 mb-8">
+            <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+                <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
                     <div class="flex items-center gap-2">
-                        <h3 class="text-2xl font-semibold text-blue-400">Haber Bilgileri</h3>
+                        <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Haber Bilgileri</h3>
                     </div>
                 </div>
 
-                <div class="space-y-8">
-                    <div class="grid gap-6 md:grid-cols-2">
+                <div class="space-y-6 sm:space-y-8">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="title">Başlık <span class="text-blue-400">*</span></label>
-                            <input type="text" id="title" name="title" value="{{ article.title|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="text" id="title" name="title" value="{{ article.title|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="summary">Özet <span class="text-blue-400">*</span></label>
-                            <textarea id="summary" name="summary" rows="3" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ article.summary|default_if_none:'' }}</textarea>
+                            <textarea id="summary" name="summary" rows="3" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ article.summary|default_if_none:'' }}</textarea>
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="content">İçerik <span class="text-blue-400">*</span></label>
-                            <textarea id="content" name="content" rows="7" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>{{ article.content|default_if_none:'' }}</textarea>
+                            <textarea id="content" name="content" rows="7" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>{{ article.content|default_if_none:'' }}</textarea>
                         </div>
                     </div>
 
-                    <div class="grid gap-6 md:grid-cols-2">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="article_type">Haber Tipi</label>
-                            <input type="text" id="article_type" name="article_type" value="{{ article.article_type|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Röportaj">
+                            <input type="text" id="article_type" name="article_type" value="{{ article.article_type|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Röportaj">
                         </div>
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="article_category">Haber Kategorisi</label>
-                            <input type="text" id="article_category" name="article_category" value="{{ article.article_category|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Duyuru">
+                            <input type="text" id="article_category" name="article_category" value="{{ article.article_category|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Örn. Duyuru">
                         </div>
                     </div>
 
-                    <label class="flex items-center gap-3 text-gray-200 text-sm font-semibold py-3 px-4 bg-[#181e29] rounded-xl border border-gray-600 cursor-pointer" for="is_homepage">
+                    <label class="flex items-center gap-3 text-gray-200 text-sm font-semibold py-2.5 sm:py-3 px-3 sm:px-4 bg-[#181e29] rounded-lg sm:rounded-xl border border-gray-600 cursor-pointer" for="is_homepage">
                         <input type="checkbox" id="is_homepage" name="is_homepage" class="w-5 h-5 rounded border-gray-500 text-blue-500 focus:ring-blue-400" {% if article.is_homepage %}checked{% endif %}>
                         Ana sayfada gösterilsin
                     </label>
 
-                    <div class="grid gap-6 md:grid-cols-2">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="source">Kaynak</label>
-                            <input type="text" id="source" name="source" value="{{ article.source|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Kaynağı ekleyin">
+                            <input type="text" id="source" name="source" value="{{ article.source|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Kaynağı ekleyin">
                         </div>
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="url">Haber Linki</label>
-                            <input type="url" id="url" name="url" value="{{ article.url|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="https://">
+                            <input type="url" id="url" name="url" value="{{ article.url|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="https://">
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <label class="text-sm font-medium text-gray-300" for="image">Görsel</label>
-                        <div class="rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-5 space-y-4">
-                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
-                            <div id="news-image-preview" class="w-full rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
+                        <div class="rounded-xl sm:rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-4 sm:p-5 space-y-4">
+                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-3 sm:file:mr-4 file:py-2 sm:file:py-2.5 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
+                            <div id="news-image-preview" class="w-full rounded-lg sm:rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
                                 <span class="text-sm text-gray-500 {% if article.image %}hidden{% endif %}">Henüz bir görsel seçilmedi</span>
                                 <img src="{% if article.image %}{{ article.image.url }}{% endif %}" alt="Görsel ön izlemesi" class="{% if article.image %}{% else %}hidden {% endif %}w-full h-full object-cover" loading="lazy">
                             </div>
@@ -80,11 +80,11 @@
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
                 {% if article %}
-                <button type="submit" form="delete-news-form" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition">
+                <button type="submit" form="delete-news-form" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
                     Sil
                 </button>
                 {% endif %}
-                <button type="submit" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
                     {{ submit_label|default:'Oluştur' }}
                 </button>
             </div>

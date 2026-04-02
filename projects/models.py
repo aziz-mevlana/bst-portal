@@ -37,11 +37,29 @@ class Technology(models.Model):
 
 class ProjectRequest(models.Model):
     """Project requests/proposals"""
+    SEMESTER_CHOICES = [
+        ('fall', 'Güz'),
+        ('spring', 'Bahar'),
+        ('summer', 'Yaz'),
+    ]
+    REQUEST_STATUS_CHOICES = [
+        ('active', 'Aktif'),
+        ('closed', 'Kapandı'),
+        ('completed', 'Tamamlandı'),
+    ]
+
     title = models.CharField(max_length=200)
     course = models.CharField(max_length=200, blank=True, null=True)
-    duration = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, verbose_name='Açıklama')
+    requirements = models.TextField(blank=True, null=True, verbose_name='Gerekli Koşullar')
+    semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES, blank=True, null=True, verbose_name='Dönem')
+    year = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Yıl')
+    deadline = models.DateField(blank=True, null=True, verbose_name='Son Başvuru Tarihi')
     team_size = models.PositiveSmallIntegerField(blank=True, null=True)
+    status = models.CharField(max_length=15, choices=REQUEST_STATUS_CHOICES, default='active', verbose_name='Durum')
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='project_requests')
+    categories = models.ManyToManyField(ProjectCategory, related_name='project_requests', blank=True, verbose_name='Kategoriler')
+    technologies = models.ManyToManyField(Technology, related_name='project_requests', blank=True, verbose_name='Teknolojiler')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,6 +73,18 @@ class ProjectRequest(models.Model):
             return f"{self.title} - {self.teacher.get_full_name()}"
         else:
             return self.title
+
+    def get_semester_display_full(self):
+        if self.semester:
+            return self.get_semester_display()
+        return None
+
+    @property
+    def is_past_deadline(self):
+        if self.deadline:
+            from django.utils import timezone
+            return timezone.now().date() > self.deadline
+        return False
 
 
 class Project(models.Model):

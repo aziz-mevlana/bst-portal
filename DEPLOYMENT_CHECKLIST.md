@@ -1,4 +1,4 @@
-# BST Portal Deployment Checklist
+# BST Akademi Deployment Checklist
 
 ## Before Deployment
 
@@ -50,7 +50,7 @@
 
 ### 3. SSL Certificate
 - [ ] Install Certbot: `sudo apt install certbot python3-certbot-nginx`
-- [ ] Obtain certificate: `sudo certbot --nginx -d bstportal.com -d www.bstportal.com`
+- [ ] Obtain certificate: `sudo certbot --nginx -d bstakademi.com -d www.bstakademi.com`
 - [ ] Set up auto-renewal
 
 ## Post-Deployment
@@ -81,10 +81,10 @@ Create a `.env` file in the project root:
 # Django Settings
 DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=False
-ALLOWED_HOSTS=bstportal.com,www.bstportal.com
+ALLOWED_HOSTS=bstakademi.com,www.bstakademi.com
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/bstportal
+DATABASE_URL=postgresql://user:password@localhost:5432/bstakademi
 
 # Email Settings
 EMAIL_HOST=smtp.gmail.com
@@ -92,7 +92,7 @@ EMAIL_PORT=587
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password
 EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=noreply@bstportal.com
+DEFAULT_FROM_EMAIL=noreply@bstakademi.com
 
 # Security Settings
 SECURE_SSL_REDIRECT=True
@@ -100,8 +100,8 @@ SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True
 
 # File Paths
-STATIC_ROOT=/var/www/bstportal/static
-MEDIA_ROOT=/var/www/bstportal/media
+STATIC_ROOT=/var/www/bstakademi/static
+MEDIA_ROOT=/var/www/bstakademi/media
 
 # Logging
 LOG_LEVEL=INFO
@@ -122,35 +122,35 @@ LOG_LEVEL=INFO
    - Check database user permissions
 
 3. **Gunicorn service not starting**
-   - Check logs: `sudo journalctl -u bstportal`
+   - Check logs: `sudo journalctl -u bstakademi`
    - Verify virtual environment path
    - Check socket file permissions
 
 4. **Nginx 502 Bad Gateway**
-   - Check if Gunicorn is running: `sudo systemctl status bstportal`
-   - Verify socket file exists: `ls -la /var/www/bstportal/bstportal.sock`
+   - Check if Gunicorn is running: `sudo systemctl status bstakademi`
+   - Verify socket file exists: `ls -la /var/www/bstakademi/bstakademi.sock`
    - Check Nginx error logs: `sudo tail -f /var/log/nginx/error.log`
 
 ### Useful Commands
 
 ```bash
 # View Gunicorn logs
-sudo journalctl -u bstportal -f
+sudo journalctl -u bstakademi -f
 
 # View Nginx logs
 sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 
 # Restart services
-sudo systemctl restart bstportal
+sudo systemctl restart bstakademi
 sudo systemctl restart nginx
 
 # Check service status
-sudo systemctl status bstportal
+sudo systemctl status bstakademi
 sudo systemctl status nginx
 
 # Run Django management commands
-sudo -u bstportal /var/www/bstportal/venv/bin/python /var/www/bstportal/manage.py <command>
+sudo -u bstakademi /var/www/bstakademi/venv/bin/python /var/www/bstakademi/manage.py <command>
 ```
 
 ## Security Best Practices
@@ -168,4 +168,4 @@ sudo -u bstportal /var/www/bstportal/venv/bin/python /var/www/bstportal/manage.p
 
 For issues or questions, please refer to:
 - Django documentation: https://docs.djangoproject.com/
-- BST Portal documentation: [Add your documentation link]
+- BST Akademi documentation: [Add your documentation link]

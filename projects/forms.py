@@ -7,13 +7,32 @@ from django.contrib.auth.models import User
 class RequestForm(forms.ModelForm):
     class Meta:
         model = ProjectRequest
-        fields = ['title', 'course', 'duration', 'team_size']
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'project-form-input'}),
-            'course': forms.TextInput(attrs={'class': 'project-form-input'}),
-            'duration': forms.TextInput(attrs={'class': 'project-form-input'}),
-            'team_size': forms.NumberInput(attrs={'class': 'project-form-input'}),
+        fields = ['title', 'course', 'description', 'requirements', 'semester', 'deadline', 'team_size', 'status', 'categories', 'technologies']
+        labels = {
+            'title': 'Proje Başlığı',
+            'course': 'Ders',
+            'description': 'Açıklama',
+            'requirements': 'Gerekli Koşullar',
+            'semester': 'Dönem',
+            'deadline': 'Son Başvuru Tarihi',
+            'team_size': 'Ekip Büyüklüğü',
+            'status': 'Durum',
         }
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all', 'placeholder': 'Proje başlığını giriniz'}),
+            'course': forms.TextInput(attrs={'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all', 'placeholder': 'Örn: Yazılım Mühendisliği'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none', 'placeholder': 'Proje hakkında detaylı bilgi veriniz'}),
+            'requirements': forms.Textarea(attrs={'rows': 3, 'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none', 'placeholder': 'Öğrencilerden beklenen ön koşullar'}),
+            'semester': forms.Select(attrs={'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
+            'deadline': forms.DateInput(attrs={'type': 'date', 'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
+            'team_size': forms.NumberInput(attrs={'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all', 'placeholder': 'Örn: 3', 'min': '1', 'max': '10'}),
+            'status': forms.Select(attrs={'class': 'project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['semester'].required = False
+        self.fields['status'].required = False
 
 
 class ProjectForm(forms.ModelForm):

@@ -10,12 +10,37 @@
   }
   
   .dashboard-sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
     height: 100vh;
+    width: 280px;
     background-color: #1f2937; /* Gray-800 */
     border-right: 1px solid #374151;
     overflow-y: auto;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .dashboard-sidebar.open {
+    transform: translateX(0);
+  }
+  @media (min-width: 768px) {
+    .dashboard-sidebar {
+      position: sticky;
+      transform: translateX(0);
+    }
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 40;
+    display: none;
+  }
+  .sidebar-overlay.active {
+    display: block;
   }
   
   .dashboard-content {
@@ -89,16 +114,24 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col md:flex-row min-h-screen">
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="flex min-h-screen">
   <!-- Sidebar -->
-  <aside class="dashboard-sidebar w-full md:w-64 py-4 px-0 flex-shrink-0 top-0">
-    <!-- Logo & Title Section -->
-    <div class="mb-6 px-4 flex items-center gap-3">
-      <img src="{% static 'images/logo.svg' %}" alt="Logo" class="w-10 h-10">
-      <div>
-        <h2 class="text-xl font-bold text-blue-400">Dashboard</h2>
-        <p class="text-xs text-gray-400">Öğretmen/Görevli Paneli</p>
+  <aside class="dashboard-sidebar py-4 px-0 flex-shrink-0" id="dashboard-sidebar">
+    <!-- Logo & Title with Close Button -->
+    <div class="mb-6 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="{% static 'images/logo.svg' %}" alt="Logo" class="w-10 h-10">
+        <div>
+          <h2 class="text-xl font-bold text-blue-400">Dashboard</h2>
+          <p class="text-xs text-gray-400">Öğretmen/Görevli Paneli</p>
+        </div>
       </div>
+      <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 md:hidden">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
     </div>
     
     <!-- Navigation Section -->
@@ -120,6 +153,14 @@
         Öğrenciler
       </a>
     </nav>
+
+    <!-- Ana Sayfaya Dön Butonu -->
+    <div class="px-2 mt-4">
+      <a href="{% url 'portal:index' %}" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition border border-gray-700">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path></svg>
+        Ana Sayfaya Dön
+      </a>
+    </div>
     
     <!-- User Section at Bottom -->
     <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-gray-700">
@@ -155,4 +196,25 @@
 
 {% block footer %}
   <!-- Footer gizlendi -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSidebar() {
+  const sidebar = document.getElementById('dashboard-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
+// Close sidebar on window resize to desktop
+window.addEventListener('resize', function() {
+  if (window.innerWidth >= 768) {
+    const sidebar = document.getElementById('dashboard-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
+});
+</script>
 {% endblock %}

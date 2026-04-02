@@ -1,9 +1,16 @@
 {% extends 'dashboard/base.html' %}
 
 {% block dashboard_content %}
-<div class="mb-6">
-    <h1 class="text-2xl font-bold">Öğrenci Listesi</h1>
-    <p class="text-gray-400">Danışmanı olduğunuz projelerdeki öğrencileri görüntüleyin.</p>
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Öğrenci Listesi</h1>
+        <p class="text-gray-400 hidden sm:block">Danışmanı olduğunuz projelerdeki öğrencileri görüntüleyin.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
 </div>
 
 <!-- Filters -->

@@ -1,51 +1,51 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}BST Portal | Yeni Etkinlik Oluştur{% endblock %}
+{% block title %}BST Akademi | Yeni Etkinlik Oluştur{% endblock %}
 
 {% block content %}
-<div class="min-h-screen px-4 py-8">
-    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4">
-        <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
+    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
+        <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="text-center sm:text-left">
-                <h2 class="text-3xl font-bold text-white">{{ page_title|default:'Yeni Etkinlik Oluştur' }}</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">{{ page_title|default:'Yeni Etkinlik Oluştur' }}</h2>
             </div>
         </div>
 
-        <form method="post" enctype="multipart/form-data" class="space-y-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
             {% csrf_token %}
 
-            <div class="project-detail-item rounded-2xl shadow-2xl border border-gray-700/70 p-6 lg:p-10">
-                <div class="border-b border-gray-700 pb-4 mb-8">
-                    <h3 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+            <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
+                <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                    <h3 class="text-xl sm:text-2xl font-semibold text-blue-400 flex items-center gap-2">
                         Etkinlik Detayları
                     </h3>
                 </div>
 
-                <div class="space-y-8">
-                    <div class="grid gap-6 md:grid-cols-2">
+                <div class="space-y-6 sm:space-y-8">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="title">Başlık <span class="text-blue-400">*</span></label>
-                            <input type="text" id="title" name="title" value="{{ event_obj.title|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="text" id="title" name="title" value="{{ event_obj.title|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="description">Açıklama <span class="text-blue-400">*</span></label>
-                            <textarea id="description" name="description" rows="4" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ event_obj.description|default_if_none:'' }}</textarea>
+                            <textarea id="description" name="description" rows="4" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ event_obj.description|default_if_none:'' }}</textarea>
                         </div>
                     </div>
 
-                    <div class="grid gap-6 md:grid-cols-2">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="event_type">Etkinlik Türü</label>
                             <div class="relative">
-                                <select id="event_type" name="event_type" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none cursor-pointer" required>
+                                <select id="event_type" name="event_type" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none cursor-pointer" required>
                                     <option value="seminar" {% if event_obj.event_type == 'seminar' %}selected{% endif %}>Seminer</option>
                                     <option value="workshop" {% if event_obj.event_type == 'workshop' %}selected{% endif %}>Atölye</option>
                                     <option value="conference" {% if event_obj.event_type == 'conference' %}selected{% endif %}>Konferans</option>
                                     <option value="social" {% if event_obj.event_type == 'social' %}selected{% endif %}>Sosyal Etkinlik</option>
                                     <option value="other" {% if event_obj.event_type == 'other' %}selected{% endif %}>Diğer</option>
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                                     </svg>
@@ -54,26 +54,26 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="location">Konum</label>
-                            <input type="text" id="location" name="location" value="{{ event_obj.location|default_if_none:'' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="text" id="location" name="location" value="{{ event_obj.location|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                     </div>
 
-                    <div class="grid gap-6 md:grid-cols-2">
+                    <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="start_date">Başlangıç Tarihi</label>
-                            <input type="datetime-local" id="start_date" name="start_date" value="{{ event_obj.start_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="datetime-local" id="start_date" name="start_date" value="{{ event_obj.start_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-300" for="end_date">Bitiş Tarihi</label>
-                            <input type="datetime-local" id="end_date" name="end_date" value="{{ event_obj.end_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="datetime-local" id="end_date" name="end_date" value="{{ event_obj.end_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <label class="text-sm font-medium text-gray-300" for="image">Görsel</label>
-                        <div class="rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-5 space-y-4">
-                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
-                            <div id="event-image-preview" class="w-full rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
+                        <div class="rounded-xl sm:rounded-2xl border border-dashed border-gray-500 bg-[#111827] p-4 sm:p-5 space-y-4">
+                            <input type="file" id="image" name="image" accept="image/*" class="block w-full text-sm text-gray-300 file:mr-3 sm:file:mr-4 file:py-2 sm:file:py-2.5 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition">
+                            <div id="event-image-preview" class="w-full rounded-lg sm:rounded-xl bg-[#0f172a] aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
                                 <span class="text-sm text-gray-500 {% if event_obj.image %}hidden{% endif %}">Henüz bir görsel seçilmedi</span>
                                 <img src="{% if event_obj.image %}{{ event_obj.image.url }}{% endif %}" alt="Görsel ön izlemesi" class="{% if event_obj.image %}{% else %}hidden {% endif %}w-full h-full object-cover" loading="lazy">
                             </div>
@@ -84,11 +84,11 @@
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
                 {% if event_obj %}
-                <button type="submit" form="delete-event-form" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition">
+                <button type="submit" form="delete-event-form" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
                     Sil
                 </button>
                 {% endif %}
-                <button type="submit" class="inline-flex items-center justify-center gap-2 px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+                <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
                     {{ submit_label|default:'Oluştur' }}
                 </button>
             </div>

@@ -8,6 +8,7 @@ urlpatterns = [
     path('load-more/', views.project_load_more, name='project_load_more'),
     path('requests/', views.request_list, name='request_list'),
     path('requests/create/', views.request_create, name='request_create'),
+    path('requests/<int:request_id>/edit/', views.request_edit, name='request_edit'),
     path('create/', views.project_create, name='project_create'),
     path('<int:project_id>/', views.project_detail, name='project_detail'),
     path('<int:project_id>/update/', views.project_update, name='project_update'),

@@ -133,11 +133,58 @@ def request_create(request):
             req = form.save(commit=False)
             req.teacher = request.user
             req.save()
-            messages.success(request, 'Request oluşturuldu.')
-            return redirect('projects:request_list')
+            form.save_m2m()
+            messages.success(request, 'Proje isteği başarıyla oluşturuldu.')
+            return redirect('dashboard:requests')
     else:
         form = RequestForm()
-    return render(request, 'projects/request_form.html', {'form': form})
+    return render(request, 'projects/request_form.html', {
+        'form': form,
+        'categories': ProjectCategory.objects.all(),
+        'technologies': Technology.objects.all(),
+    })
+
+
+@login_required
+def request_edit(request, request_id):
+    req = get_object_or_404(ProjectRequest, id=request_id)
+    if req.teacher != request.user and not request.user.is_staff:
+        messages.error(request, 'Bu isteği düzenleme yetkiniz yok.')
+        return redirect('dashboard:requests')
+
+    if request.method == 'POST':
+        form = RequestForm(request.POST, instance=req)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Proje isteği başarıyla güncellendi.')
+            return redirect('dashboard:requests')
+    else:
+        form = RequestForm(instance=req)
+    return render(request, 'projects/request_form.html', {
+        'form': form,
+        'categories': ProjectCategory.objects.all(),
+        'technologies': Technology.objects.all(),
+    })
+
+
+@login_required
+def request_delete(request, request_id):
+    req = get_object_or_404(ProjectRequest, id=request_id)
+    if req.teacher != request.user and not request.user.is_staff:
+        messages.error(request, 'Bu isteği silme yetkiniz yok.')
+        return redirect('dashboard:requests')
+
+    if req.projects.exists():
+        messages.error(request, 'Bu istekle ilişkili proje olduğu için silinemez.')
+        return redirect('dashboard:requests')
+
+    if request.method == 'POST':
+        req.delete()
+        messages.success(request, 'Proje isteği başarıyla silindi.')
+        return redirect('dashboard:requests')
+
+    return redirect('dashboard:requests')
+
 
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
@@ -205,14 +252,38 @@ def project_create(request):
         initial_team = []
         if request.user.profile.user_type == 'student':
             initial_team = [request.user.id]
-        form = ProjectForm(initial={'team': initial_team})
+        initial = {'team': initial_team}
+        # Pre-select request if provided via query param
+        request_id = request.GET.get('request')
+        if request_id:
+            try:
+                initial['project_request'] = int(request_id)
+            except (ValueError, TypeError):
+                pass
+        form = ProjectForm(initial=initial)
 
-    requests = ProjectRequest.objects.all().values('id', 'teacher_id', 'teacher__first_name', 'teacher__last_name')
-    request_teacher_map = {str(r['id']): {'id': r['teacher_id'], 'name': f"{r['teacher__first_name']} {r['teacher__last_name']}".strip() or 'Belirtilmemiş'} for r in requests}
+    request_data = {}
+    for req in ProjectRequest.objects.all().prefetch_related('categories', 'technologies'):
+        teacher_name = f"{req.teacher.first_name} {req.teacher.last_name}".strip() if req.teacher else 'Belirtilmemiş'
+        request_data[str(req.id)] = {
+            'id': req.teacher_id,
+            'name': teacher_name,
+            'description': req.description or '',
+            'requirements': req.requirements or '',
+            'category_ids': list(req.categories.values_list('id', flat=True)),
+            'technology_ids': list(req.technologies.values_list('id', flat=True)),
+        }
     team_members = get_student_users()
     categories = ProjectCategory.objects.all()
     technologies = Technology.objects.all()
-    return render(request, 'projects/project_form.html', {'form': form, 'action': 'create', 'request_teacher_map': json.dumps(request_teacher_map), 'team_members': team_members, 'categories': categories, 'technologies': technologies})
+    return render(request, 'projects/project_form.html', {
+        'form': form,
+        'action': 'create',
+        'request_data_json': json.dumps(request_data),
+        'team_members': team_members,
+        'categories': categories,
+        'technologies': technologies,
+    })
 
 @login_required
 def project_update(request, project_id):
@@ -235,12 +306,28 @@ def project_update(request, project_id):
             return redirect('projects:project_detail', project_id=project.id)
     else:
         form = ProjectForm(instance=project)
-    
-    requests = ProjectRequest.objects.all().values('id', 'teacher_id', 'teacher__first_name', 'teacher__last_name')
-    request_teacher_map = {str(r['id']): {'id': r['teacher_id'], 'name': f"{r['teacher__first_name']} {r['teacher__last_name']}".strip() or 'Belirtilmemiş'} for r in requests}
+
+    request_data = {}
+    for req in ProjectRequest.objects.all().prefetch_related('categories', 'technologies'):
+        teacher_name = f"{req.teacher.first_name} {req.teacher.last_name}".strip() if req.teacher else 'Belirtilmemiş'
+        request_data[str(req.id)] = {
+            'id': req.teacher_id,
+            'name': teacher_name,
+            'description': req.description or '',
+            'requirements': req.requirements or '',
+            'category_ids': list(req.categories.values_list('id', flat=True)),
+            'technology_ids': list(req.technologies.values_list('id', flat=True)),
+        }
     categories = ProjectCategory.objects.all()
     technologies = Technology.objects.all()
-    return render(request, 'projects/project_form.html', {'form': form, 'action': 'update', 'request_teacher_map': json.dumps(request_teacher_map), 'team_members': get_student_users(), 'categories': categories, 'technologies': technologies})
+    return render(request, 'projects/project_form.html', {
+        'form': form,
+        'action': 'update',
+        'request_data_json': json.dumps(request_data),
+        'team_members': get_student_users(),
+        'categories': categories,
+        'technologies': technologies,
+    })
 
 @login_required
 def add_project_update(request, project_id):

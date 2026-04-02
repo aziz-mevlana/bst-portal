@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}BST Akademi | Yeni Proje İsteği{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/projects.css' %}" />
+<style>
+    .checkbox-group label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        background: #1f2937 !important;
+        border: 1px solid #374151 !important;
+        border-radius: 0.5rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        margin-bottom: 0.5rem !important;
+    }
+    .checkbox-group label:hover {
+        background: #374151 !important;
+        border-color: #60a5fa !important;
+    }
+    .checkbox-group input[type='checkbox'] {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        accent-color: #3b82f6 !important;
+        cursor: pointer !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen px-4">
+    <div class="w-full max-w-3xl mx-auto px-4">
+        <div class="py-4">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2 class="text-3xl font-bold text-white mb-2">
+                    {% if form.instance.pk %}
+                        Proje İsteğini Düzenle
+                    {% else %}
+                        Yeni Proje İsteği Oluştur
+                    {% endif %}
+                </h2>
+                <p class="text-gray-400 text-sm">Öğrencilerin görebileceği bir proje isteği oluşturun.</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Temel Bilgiler -->
+                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
+                    <div class="border-b border-gray-700 pb-4 mb-6">
+                        <h3 class="text-xl font-bold text-blue-400">Temel Bilgiler</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- Başlık -->
+                        <div class="space-y-2">
+                            <label for="id_title" class="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                Proje Başlığı <span class="text-blue-400">*</span>
+                            </label>
+                            {% if form.title.errors %}
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.title.errors }}</div>
+                            {% endif %}
+                            {{ form.title }}
+                        </div>
+
+                        <!-- Ders -->
+                        <div class="space-y-2">
+                            <label for="id_course" class="text-sm font-medium text-gray-300">Ders</label>
+                            {% if form.course.errors %}
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.course.errors }}</div>
+                            {% endif %}
+                            {{ form.course }}
+                        </div>
+
+                        <!-- Dönem ve Ekip Büyüklüğü -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="id_semester" class="text-sm font-medium text-gray-300">Dönem</label>
+                                {% if form.semester.errors %}
+                                    <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.semester.errors }}</div>
+                                {% endif %}
+                                {{ form.semester }}
+                            </div>
+                            <div class="space-y-2">
+                                <label for="id_team_size" class="text-sm font-medium text-gray-300">Ekip Büyüklüğü</label>
+                                {% if form.team_size.errors %}
+                                    <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.team_size.errors }}</div>
+                                {% endif %}
+                                {{ form.team_size }}
+                            </div>
+                        </div>
+
+                        <!-- Son Başvuru Tarihi ve Durum -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="id_deadline" class="text-sm font-medium text-gray-300">Son Başvuru Tarihi</label>
+                                {% if form.deadline.errors %}
+                                    <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.deadline.errors }}</div>
+                                {% endif %}
+                                {{ form.deadline }}
+                            </div>
+                            <div class="space-y-2">
+                                <label for="id_status" class="text-sm font-medium text-gray-300">Durum</label>
+                                {% if form.status.errors %}
+                                    <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.status.errors }}</div>
+                                {% endif %}
+                                {{ form.status }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detaylar -->
+                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
+                    <div class="border-b border-gray-700 pb-4 mb-6">
+                        <h3 class="text-xl font-bold text-blue-400">Detaylar</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- Açıklama -->
+                        <div class="space-y-2">
+                            <label for="id_description" class="text-sm font-medium text-gray-300">Açıklama</label>
+                            {% if form.description.errors %}
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.description.errors }}</div>
+                            {% endif %}
+                            {{ form.description }}
+                        </div>
+
+                        <!-- Gerekli Koşullar -->
+                        <div class="space-y-2">
+                            <label for="id_requirements" class="text-sm font-medium text-gray-300">Gerekli Koşullar</label>
+                            {% if form.requirements.errors %}
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.requirements.errors }}</div>
+                            {% endif %}
+                            {{ form.requirements }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kategoriler ve Teknolojiler -->
+                <div class="project-detail-item rounded-xl shadow-lg p-6 mb-6">
+                    <div class="border-b border-gray-700 pb-4 mb-6">
+                        <h3 class="text-xl font-bold text-blue-400">Kategoriler ve Teknolojiler</h3>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- Kategoriler -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300">Kategoriler</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                                <div id="selectedCategoriesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                                    <span class="text-gray-500 text-sm">Kategori seçiniz</span>
+                                </div>
+                                <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    Ekle
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Teknolojiler -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-gray-300">Teknolojiler</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
+                                <div id="selectedTechnologiesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
+                                    <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
+                                </div>
+                                <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    Ekle
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="categoriesHiddenInputs"></div>
+                        <div id="technologiesHiddenInputs"></div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-end mt-6">
+                    <a href="{% url 'dashboard:requests' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                        İptal
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        {% if form.instance.pk %}Güncelle{% else %}İsteği Oluştur{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div id="categoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <h3 class="text-lg font-semibold text-white">Kategoriler</h3>
+            </div>
+            <button type="button" onclick="closeCategoryModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 border-b border-gray-700 shrink-0">
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input type="text" id="categorySearchInput" onkeyup="searchCategories()"
+                       class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                       placeholder="Kategori ara...">
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            {% for category in categories %}
+                <label class="category-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
+                    <input type="checkbox" data-id="{{ category.id }}" data-name="{{ category.name }}" data-color="{{ category.color }}"
+                           onchange="updateCategoryDisplay()"
+                           {% if form.instance.pk and category in form.instance.categories.all %}checked{% endif %}
+                           class="w-5 h-5 accent-blue-500 cursor-pointer">
+                    <span class="text-white font-medium text-sm">{{ category.name }}</span>
+                    <span class="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }};">{{ category.name|slice:":1" }}</span>
+                </label>
+            {% empty %}
+                <div class="text-center text-gray-400 py-8"><p>Henüz kategori bulunmuyor</p></div>
+            {% endfor %}
+        </div>
+        <div class="p-4 border-t border-gray-700 shrink-0">
+            <button type="button" onclick="closeCategoryModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">Tamam</button>
+        </div>
+    </div>
+</div>
+
+<!-- Technology Modal -->
+<div id="technologyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <h3 class="text-lg font-semibold text-white">Teknolojiler</h3>
+            </div>
+            <button type="button" onclick="closeTechnologyModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 border-b border-gray-700 shrink-0">
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input type="text" id="technologySearchInput" onkeyup="searchTechnologies()"
+                       class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                       placeholder="Teknoloji ara...">
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            {% for tech in technologies %}
+                <label class="technology-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ tech.name }}">
+                    <input type="checkbox" data-id="{{ tech.id }}" data-name="{{ tech.name }}" data-color="{{ tech.color }}"
+                           onchange="updateTechnologyDisplay()"
+                           {% if form.instance.pk and tech in form.instance.technologies.all %}checked{% endif %}
+                           class="w-5 h-5 accent-blue-500 cursor-pointer">
+                    <span class="text-white font-medium text-sm">{{ tech.name }}</span>
+                    <span class="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ tech.color }}20; color: {{ tech.color }};">{{ tech.name|slice:":1" }}</span>
+                </label>
+            {% empty %}
+                <div class="text-center text-gray-400 py-8"><p>Henüz teknoloji bulunmuyor</p></div>
+            {% endfor %}
+        </div>
+        <div class="p-4 border-t border-gray-700 shrink-0">
+            <button type="button" onclick="closeTechnologyModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">Tamam</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Category Modal
+    function openCategoryModal() {
+        const modal = document.getElementById('categoryModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('categorySearchInput').focus();
+    }
+    function closeCategoryModal() {
+        const modal = document.getElementById('categoryModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        document.getElementById('categorySearchInput').value = '';
+        document.querySelectorAll('.category-item').forEach(item => item.style.display = 'flex');
+    }
+    function searchCategories() {
+        const val = document.getElementById('categorySearchInput').value.toLowerCase();
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.style.display = item.dataset.name.toLowerCase().includes(val) ? 'flex' : 'none';
+        });
+    }
+    function removeCategory(id) {
+        document.querySelectorAll('#categoryModal input[type="checkbox"]').forEach(cb => {
+            if (cb.dataset.id === String(id)) cb.checked = false;
+        });
+        updateCategoryDisplay();
+    }
+    function updateCategoryDisplay() {
+        const list = document.getElementById('selectedCategoriesList');
+        const container = document.getElementById('categoriesHiddenInputs');
+        const checked = document.querySelectorAll('#categoryModal input[type="checkbox"]:checked');
+        container.innerHTML = '';
+        checked.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'categories';
+            input.value = cb.dataset.id;
+            container.appendChild(input);
+        });
+        if (!checked.length) {
+            list.innerHTML = '<span class="text-gray-500 text-sm">Kategori seçiniz</span>';
+            return;
+        }
+        let html = '';
+        checked.forEach(cb => {
+            html += `<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${cb.dataset.color}20;color:${cb.dataset.color};border:1px solid ${cb.dataset.color}40;">
+                ${cb.dataset.name}
+                <button type="button" onclick="removeCategory('${cb.dataset.id}')" class="hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+            </span>`;
+        });
+        list.innerHTML = html;
+    }
+
+    // Technology Modal
+    function openTechnologyModal() {
+        const modal = document.getElementById('technologyModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('technologySearchInput').focus();
+    }
+    function closeTechnologyModal() {
+        const modal = document.getElementById('technologyModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        document.getElementById('technologySearchInput').value = '';
+        document.querySelectorAll('.technology-item').forEach(item => item.style.display = 'flex');
+    }
+    function searchTechnologies() {
+        const val = document.getElementById('technologySearchInput').value.toLowerCase();
+        document.querySelectorAll('.technology-item').forEach(item => {
+            item.style.display = item.dataset.name.toLowerCase().includes(val) ? 'flex' : 'none';
+        });
+    }
+    function removeTechnology(id) {
+        document.querySelectorAll('#technologyModal input[type="checkbox"]').forEach(cb => {
+            if (cb.dataset.id === String(id)) cb.checked = false;
+        });
+        updateTechnologyDisplay();
+    }
+    function updateTechnologyDisplay() {
+        const list = document.getElementById('selectedTechnologiesList');
+        const container = document.getElementById('technologiesHiddenInputs');
+        const checked = document.querySelectorAll('#technologyModal input[type="checkbox"]:checked');
+        container.innerHTML = '';
+        checked.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'technologies';
+            input.value = cb.dataset.id;
+            container.appendChild(input);
+        });
+        if (!checked.length) {
+            list.innerHTML = '<span class="text-gray-500 text-sm">Teknoloji seçiniz</span>';
+            return;
+        }
+        let html = '';
+        checked.forEach(cb => {
+            html += `<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${cb.dataset.color}20;color:${cb.dataset.color};border:1px solid ${cb.dataset.color}40;">
+                ${cb.dataset.name}
+                <button type="button" onclick="removeTechnology('${cb.dataset.id}')" class="hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+            </span>`;
+        });
+        list.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCategoryDisplay();
+        updateTechnologyDisplay();
+    });
+</script>
+{% endblock %}

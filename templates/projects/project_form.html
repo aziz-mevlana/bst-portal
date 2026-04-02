@@ -3,7 +3,7 @@
 {% load widget_tweaks %}
 
 {% block title %}
-  BST Portal | Proje Ekle
+  BST Akademi | Proje Ekle
 {% endblock %}
 
 {% block extra_css %}
@@ -137,6 +137,32 @@
                   {% endfor %}
                 </div>
 
+                <!-- Seçili İstek Bilgi Kutusu -->
+                <div id="requestInfoBox" class="hidden mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                        </svg>
+                        <span class="text-sm font-semibold text-blue-300">Proje Bilgileri</span>
+                    </div>
+                    <div id="requestDescription" class="hidden mb-3">
+                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Açıklama</p>
+                        <p class="text-sm text-gray-300" id="requestDescriptionText"></p>
+                    </div>
+                    <div id="requestRequirements" class="hidden">
+                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Gerekli Koşullar</p>
+                        <p class="text-sm text-gray-300" id="requestRequirementsText"></p>
+                    </div>
+                    <div id="requestCategoryFilter" class="hidden mt-3">
+                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Kategoriler</p>
+                        <p class="text-xs text-gray-400">Sadece istekte belirtilen kategorilerden seçim yapabilirsiniz.</p>
+                    </div>
+                    <div id="requestTechnologyFilter" class="hidden mt-2">
+                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Teknolojiler</p>
+                        <p class="text-xs text-gray-400">Sadece istekte belirtilen teknolojilerden seçim yapabilirsiniz.</p>
+                    </div>
+                </div>
+
                 <!-- Selection Sections -->
                 <div class="space-y-6 pt-4">
                   <!-- Ekip Üyeleri -->
@@ -212,7 +238,7 @@
   </div>
 
   <script> 
-    const requestTeacherMap = {{ request_teacher_map|default:'{}'|safe }};
+    const requestData = {{ request_data_json|default:'{}'|safe }};
 
     function findFieldByName(name) {
       return document.querySelector('[name="' + name + '"]');
@@ -282,16 +308,18 @@
       modal.classList.remove('flex');
       document.body.style.overflow = 'auto';
       document.getElementById('categorySearchInput').value = '';
-      const allItems = document.querySelectorAll('.category-item');
-      allItems.forEach(item => item.style.display = 'flex');
+      document.querySelectorAll('.category-item').forEach(item => {
+        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
+        item.style.display = isFilteredByRequest ? 'none' : 'flex';
+      });
     }
 
     function searchCategories() {
       const searchValue = document.getElementById('categorySearchInput').value.toLowerCase();
-      const allItems = document.querySelectorAll('.category-item');
-      allItems.forEach(item => {
+      document.querySelectorAll('.category-item').forEach(item => {
         const name = item.dataset.name.toLowerCase();
-        if (name.includes(searchValue)) {
+        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
+        if (name.includes(searchValue) && !isFilteredByRequest) {
           item.style.display = 'flex';
         } else {
           item.style.display = 'none';
@@ -418,16 +446,18 @@
       modal.classList.remove('flex');
       document.body.style.overflow = 'auto';
       document.getElementById('technologySearchInput').value = '';
-      const allItems = document.querySelectorAll('.technology-item');
-      allItems.forEach(item => item.style.display = 'flex');
+      document.querySelectorAll('.technology-item').forEach(item => {
+        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
+        item.style.display = isFilteredByRequest ? 'none' : 'flex';
+      });
     }
 
     function searchTechnologies() {
       const searchValue = document.getElementById('technologySearchInput').value.toLowerCase();
-      const allItems = document.querySelectorAll('.technology-item');
-      allItems.forEach(item => {
+      document.querySelectorAll('.technology-item').forEach(item => {
         const name = item.dataset.name.toLowerCase();
-        if (name.includes(searchValue)) {
+        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
+        if (name.includes(searchValue) && !isFilteredByRequest) {
           item.style.display = 'flex';
         } else {
           item.style.display = 'none';
@@ -491,6 +521,110 @@
       list.innerHTML = html;
     }
 
+    function onRequestChange() {
+      const requestField = findFieldByName('project_request');
+      const val = requestField ? requestField.value : '';
+      const infoBox = document.getElementById('requestInfoBox');
+      const descDiv = document.getElementById('requestDescription');
+      const reqDiv = document.getElementById('requestRequirements');
+      const catFilter = document.getElementById('requestCategoryFilter');
+      const techFilter = document.getElementById('requestTechnologyFilter');
+
+      if (val && requestData[val]) {
+        const data = requestData[val];
+
+        // Show info box
+        infoBox.classList.remove('hidden');
+
+        // Description
+        if (data.description) {
+          descDiv.classList.remove('hidden');
+          document.getElementById('requestDescriptionText').textContent = data.description;
+        } else {
+          descDiv.classList.add('hidden');
+        }
+
+        // Requirements
+        if (data.requirements) {
+          reqDiv.classList.remove('hidden');
+          document.getElementById('requestRequirementsText').textContent = data.requirements;
+        } else {
+          reqDiv.classList.add('hidden');
+        }
+
+        // Category filter indicator
+        if (data.category_ids && data.category_ids.length > 0) {
+          catFilter.classList.remove('hidden');
+        } else {
+          catFilter.classList.add('hidden');
+        }
+
+        // Technology filter indicator
+        if (data.technology_ids && data.technology_ids.length > 0) {
+          techFilter.classList.remove('hidden');
+        } else {
+          techFilter.classList.add('hidden');
+        }
+
+        // Filter categories and technologies
+        filterModalItems(data.category_ids, data.technology_ids);
+      } else {
+        // Hide info box
+        infoBox.classList.add('hidden');
+        filterModalItems(null, null);
+      }
+    }
+
+    function filterModalItems(allowedCatIds, allowedTechIds) {
+      // Filter categories
+      document.querySelectorAll('.category-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (!checkbox) return;
+        const id = parseInt(checkbox.dataset.id);
+        if (allowedCatIds && allowedCatIds.length > 0) {
+          if (allowedCatIds.includes(id)) {
+            item.style.display = 'flex';
+            item.setAttribute('data-filtered', 'false');
+          } else {
+            item.style.display = 'none';
+            item.setAttribute('data-filtered', 'true');
+            // Uncheck if hidden
+            if (checkbox.checked) {
+              checkbox.checked = false;
+              updateCategoryDisplay();
+            }
+          }
+        } else {
+          item.style.display = 'flex';
+          item.setAttribute('data-filtered', 'false');
+        }
+      });
+
+      // Filter technologies
+      document.querySelectorAll('.technology-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (!checkbox) return;
+        const id = parseInt(checkbox.dataset.id);
+        if (allowedTechIds && allowedTechIds.length > 0) {
+          if (allowedTechIds.includes(id)) {
+            item.style.display = 'flex';
+            item.setAttribute('data-filtered', 'false');
+          } else {
+            item.style.display = 'none';
+            item.setAttribute('data-filtered', 'true');
+            // Uncheck if hidden
+            if (checkbox.checked) {
+              checkbox.checked = false;
+              updateTechnologyDisplay();
+            }
+          }
+        } else {
+          item.style.display = 'flex';
+          item.setAttribute('data-filtered', 'false');
+        }
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       const requestField = findFieldByName('project_request');
 
@@ -498,12 +632,21 @@
       updateTeamDisplay();
       updateCategoryDisplay();
       updateTechnologyDisplay();
-      
+
       // Sync modal checkboxes with form checkboxes
       const teamCheckboxes = document.querySelectorAll('input[name="team"]');
       teamCheckboxes.forEach(cb => {
         cb.addEventListener('change', updateSelectedCount);
       });
+
+      // Listen for request change
+      if (requestField) {
+        requestField.addEventListener('change', onRequestChange);
+        // Trigger on page load if pre-selected
+        if (requestField.value) {
+          onRequestChange();
+        }
+      }
     });
   </script>
 
