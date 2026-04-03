@@ -4,7 +4,11 @@
         <div class="flex items-start justify-between mb-2">
             <h3 class="text-xl font-bold flex-1 mr-2">{{ project.title }}</h3>
             <span class="dynamic-tag" 
-                  style="--tag-bg: #3b82f620; --tag-color: #3b82f6; --tag-border: #3b82f640;">
+                  style="{% if project.status == 'in_review' %}--tag-bg: #854d0e20; --tag-color: #facc15; --tag-border: #854d0e40;
+                  {% elif project.status == 'approved' %}--tag-bg: #1d4ed820; --tag-color: #60a5fa; --tag-border: #1d4ed840;
+                  {% elif project.status == 'in_progress' %}--tag-bg: #15803d20; --tag-color: #4ade80; --tag-border: #15803d40;
+                  {% elif project.status == 'completed' %}--tag-bg: #7e22ce20; --tag-color: #c084fc; --tag-border: #7e22ce40;
+                  {% else %}--tag-bg: #3b82f620; --tag-color: #3b82f6; --tag-border: #3b82f640;{% endif %}">
                 {{ project.get_status_display }}
             </span>
         </div>

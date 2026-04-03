@@ -1,13 +1,13 @@
 from django import forms
 from django.db.models import Q
-from .models import Project, ProjectUpdate, ProjectComment, ProjectCategory, Technology, ProjectRequest
+from .models import Project, ProjectUpdate, ProjectComment, ProjectCategory, Technology, ProjectRequest, ProjectFeedback
 from django.contrib.auth.models import User
 
 
 class RequestForm(forms.ModelForm):
     class Meta:
         model = ProjectRequest
-        fields = ['title', 'course', 'description', 'requirements', 'semester', 'deadline', 'team_size', 'status', 'categories', 'technologies']
+        fields = ['title', 'course', 'description', 'requirements', 'semester', 'deadline', 'team_size', 'status', 'supervision_type', 'categories', 'technologies']
         labels = {
             'title': 'Proje Başlığı',
             'course': 'Ders',
@@ -17,6 +17,7 @@ class RequestForm(forms.ModelForm):
             'deadline': 'Son Başvuru Tarihi',
             'team_size': 'Ekip Büyüklüğü',
             'status': 'Durum',
+            'supervision_type': 'Denetim Türü',
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all', 'placeholder': 'Proje başlığını giriniz'}),
@@ -27,6 +28,7 @@ class RequestForm(forms.ModelForm):
             'deadline': forms.DateInput(attrs={'type': 'date', 'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
             'team_size': forms.NumberInput(attrs={'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all', 'placeholder': 'Örn: 3', 'min': '1', 'max': '10'}),
             'status': forms.Select(attrs={'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
+            'supervision_type': forms.Select(attrs={'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -53,7 +55,7 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['team'].queryset = User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
+        self.fields['team'].queryset = User.objects.filter(Q(profile__user_type='student')).distinct()
         # Rename field for better user experience
         self.fields['project_request'].label = 'Project Request'
 
@@ -74,4 +76,13 @@ class ProjectCommentForm(forms.ModelForm):
         fields = ['content']
         widgets = {
             'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Yorumunuzu yazın...', 'class': 'project-form-input'}),
+        }
+
+
+class ProjectFeedbackForm(forms.ModelForm):
+    class Meta:
+        model = ProjectFeedback
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Öğrenciye geri bildiriminizi yazın...', 'class': 'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none'}),
         }

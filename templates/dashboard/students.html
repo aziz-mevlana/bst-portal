@@ -4,7 +4,7 @@
 <div class="mb-6 flex flex-row justify-between items-center gap-4">
     <div>
         <h1 class="text-2xl font-bold">Öğrenci Listesi</h1>
-        <p class="text-gray-400 hidden sm:block">Danışmanı olduğunuz projelerdeki öğrencileri görüntüleyin.</p>
+        <p class="text-gray-400 hidden sm:block">Toplam {{ total_count }} öğrenci kayıtlı.</p>
     </div>
     <div class="flex items-center gap-2">
         <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
@@ -16,12 +16,12 @@
 <!-- Filters -->
 <div class="dashboard-card rounded-xl shadow p-4 mb-6">
     <form method="get" class="flex flex-col sm:flex-row gap-4">
-        <input type="text" name="q" value="{{ query }}" placeholder="Öğrenci ara..." 
+        <input type="text" name="q" value="{{ query }}" placeholder="İsim, e-posta veya kullanıcı adı ara..." 
                class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-        <select name="project" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-            <option value="">Tüm Projeler</option>
-            {% for project in projects %}
-            <option value="{{ project.id }}" {% if selected_project == project.id|stringformat:"i" %}selected{% endif %}>{{ project.title }}</option>
+        <select name="class_level" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
+            <option value="">Tüm Sınıflar</option>
+            {% for value, label in class_choices %}
+            <option value="{{ value }}" {% if class_level == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
         <button type="submit" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Filtrele</button>
@@ -35,54 +35,161 @@
             <thead>
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Öğrenci</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Proje</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Sınıf</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Bölüm</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">İşlemler</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-700">
-                {% for item in students_data %}
-                <tr class="hover:bg-gray-700/50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10">
-                                {% if item.student.profile.profile_picture %}
-                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ item.student.profile.profile_picture.url }}" alt="">
-                                {% else %}
-                                    <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
-                                        <span class="text-gray-300 text-sm">{{ item.student.first_name|first }}{{ item.student.last_name|first }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium">{{ item.student.get_full_name }}</div>
-                                <div class="text-sm text-gray-400">{{ item.student.email }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm">{{ item.project.title }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-400">{{ item.student.profile.class_level|default:"-" }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-400">{{ item.student.profile.department|default:"-" }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a href="{% url 'accounts:user_profile' item.student.id %}" class="text-blue-400 hover:text-blue-300">Profil</a>
-                    </td>
-                </tr>
-                {% empty %}
+            <tbody id="student-table-body" class="divide-y divide-gray-700">
+                {% if students %}
+                {% include 'dashboard/partials/student_row.html' %}
+                {% else %}
                 <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-gray-400">
-                        Henüz bir öğrenci bulunmuyor veya filtre sonuçları boş.
+                    <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                        Öğrenci bulunamadı.
                     </td>
                 </tr>
-                {% endfor %}
+                {% endif %}
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Loading Indicator -->
+<div id="student-load-trigger" class="flex justify-center py-6 {% if not has_more %}hidden{% endif %}">
+    <div class="flex items-center gap-3 text-gray-400">
+        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Yükleniyor...</span>
+    </div>
+</div>
+
+<!-- Student Action Modal -->
+<div id="studentActionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-md mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 class="text-base font-semibold text-white" id="studentActionName">İşlemler</h3>
+            <button onclick="closeStudentActionModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Sınıfını Düzenle</label>
+                <select id="studentClassLevel" class="w-full px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                    <option value="1">1. Sınıf</option>
+                    <option value="2">2. Sınıf</option>
+                    <option value="3">3. Sınıf</option>
+                    <option value="4">4. Sınıf</option>
+                    <option value="alt">Altdan Devam Ediyor</option>
+                    <option value="bitir">Bitirdi</option>
+                </select>
+            </div>
+            <button onclick="updateStudentClassLevel()" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                Kaydet
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let studentOffset = {{ next_offset|default:12 }};
+    let studentHasMore = {{ has_more|yesno:"true,false" }};
+    let studentLoading = false;
+
+    const studentTableBody = document.getElementById('student-table-body');
+    const studentTrigger = document.getElementById('student-load-trigger');
+
+    if (studentTrigger && studentTableBody) {
+        const studentObserver = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && studentHasMore && !studentLoading) {
+                studentLoading = true;
+
+                const url = new URL('{% url "dashboard:students_load_more" %}', window.location.origin);
+                url.searchParams.set('offset', studentOffset);
+                {% if query %}url.searchParams.set('q', '{{ query }}');{% endif %}
+                {% if class_level %}url.searchParams.set('class_level', '{{ class_level }}');{% endif %}
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        studentTableBody.insertAdjacentHTML('beforeend', data.items);
+                        studentHasMore = data.has_more;
+                        studentOffset = data.next_offset;
+                        studentLoading = false;
+                        if (!studentHasMore) {
+                            studentTrigger.classList.add('hidden');
+                        }
+                    })
+                    .catch(() => {
+                        studentLoading = false;
+                    });
+            }
+        }, { rootMargin: '200px' });
+
+        studentObserver.observe(studentTrigger);
+    }
+
+    // Student Action Modal
+    let currentStudentId = null;
+    let currentStudentName = '';
+
+    function openStudentActionModal(studentId, studentName, currentClassLevel) {
+        currentStudentId = studentId;
+        currentStudentName = studentName;
+
+        document.getElementById('studentActionName').textContent = studentName;
+        document.getElementById('studentClassLevel').value = currentClassLevel || '1';
+
+        const modal = document.getElementById('studentActionModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeStudentActionModal() {
+        const modal = document.getElementById('studentActionModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        currentStudentId = null;
+        currentStudentName = '';
+    }
+
+    function updateStudentClassLevel() {
+        if (!currentStudentId) return;
+        
+        const newClassLevel = document.getElementById('studentClassLevel').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+
+        fetch('{% url "dashboard:update_student_class" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ student_id: currentStudentId, class_level: newClassLevel })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeStudentActionModal();
+                window.location.reload();
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+            }
+        })
+        .catch(() => alert('Bir hata oluştu.'));
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('studentActionModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeStudentActionModal();
+    });
+</script>
 {% endblock %}

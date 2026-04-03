@@ -12,7 +12,7 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% if user.is_authenticated %}user-logged-in{% endif %}">
     {% include 'includes/header.html' %}
 
     <!-- Modern Toast Container -->

@@ -5,7 +5,7 @@ from .models import Event
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
-PAGE_SIZE = 14
+PAGE_SIZE = 12
 
 def _user_can_manage_event(user, event=None):
     if not user.is_authenticated:
@@ -19,13 +19,15 @@ def _user_can_manage_event(user, event=None):
     return False
 
 def event_list(request):
-    events = Event.objects.filter(is_active=True)[:PAGE_SIZE]
+    show_create_card = request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.user_type in ('staff_student', 'teacher')
+    page_size = PAGE_SIZE - 1 if show_create_card else PAGE_SIZE
+    events = Event.objects.filter(is_active=True)[:page_size]
     total_count = Event.objects.filter(is_active=True).count()
-    has_more = total_count > PAGE_SIZE
+    has_more = total_count > page_size
     return render(request, 'events/event_list.html', {
         'events': events,
         'has_more': has_more,
-        'next_offset': PAGE_SIZE,
+        'next_offset': page_size,
         'total_count': total_count
     })
 

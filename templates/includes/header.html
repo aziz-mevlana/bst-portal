@@ -1,9 +1,8 @@
 {% load static %}
 <header id="main-header">
-    <div class="nav-container">
-        <div class="nav-content">
-            <!-- Logo -->
-            <a href="{% url 'portal:index' %}" class="nav-logo">
+    <div class="nav-content {% if user.is_authenticated %}user-logged-in{% endif %}">
+        <!-- Logo -->
+        <a href="{% url 'portal:index' %}" class="nav-logo">
                 <img src="{% static 'images/logo.svg' %}" alt="BST Akademi Logo">
                 <span>BST Akademi</span>
             </a>
@@ -15,7 +14,9 @@
                     <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                     <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
                     {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
-                    <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Dashboard</a></li>
+                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
+                    {% else %}
+                    <li id="dashboard-nav-link" class="hidden"></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -76,7 +77,9 @@
                 <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                 <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
                 {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
-                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Dashboard</a></li>
+                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
+                {% else %}
+                <li class="hidden-dashboard"></li>
                 {% endif %}
 
                 <!-- Mobile Auth Actions -->

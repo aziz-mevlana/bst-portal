@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
-PAGE_SIZE = 14
+PAGE_SIZE = 12
 
 def _user_can_manage_news(user, article=None):
     if not user.is_authenticated:
@@ -20,13 +20,15 @@ def _user_can_manage_news(user, article=None):
     return False
 
 def news_list(request):
-    news = Article.objects.all()[:PAGE_SIZE]
+    show_create_card = request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.user_type in ('staff_student', 'teacher')
+    page_size = PAGE_SIZE - 1 if show_create_card else PAGE_SIZE
+    news = Article.objects.all()[:page_size]
     total_count = Article.objects.count()
-    has_more = total_count > PAGE_SIZE
+    has_more = total_count > page_size
     return render(request, 'news/news_list.html', {
         'news': news,
         'has_more': has_more,
-        'next_offset': PAGE_SIZE,
+        'next_offset': page_size,
         'total_count': total_count
     })
 

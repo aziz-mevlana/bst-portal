@@ -57,42 +57,416 @@
 </div>
 
 <!-- Projects Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for project in projects %}
-    <div class="dashboard-card rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-3">
-                <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                    {% if project.status == 'draft' %}bg-yellow-900 text-yellow-300
-                    {% else %}bg-green-900 text-green-300{% endif %}">
-                    {{ project.get_status_display }}
-                </span>
-                <a href="{% url 'projects:project_detail' project.id %}" class="text-blue-400 hover:text-blue-300 text-sm">Detay</a>
-            </div>
-            <h3 class="text-lg font-semibold mb-2">{{ project.title }}</h3>
-            {% if project.project_request %}
-            <div class="text-xs text-gray-400 mb-3">
-                <span class="text-gray-500">İstek:</span> {{ project.project_request.title }}
-            </div>
-            {% endif %}
-            <p class="text-gray-400 text-sm mb-4 line-clamp-2">{{ project.description|truncatewords:15 }}</p>
-            
-            <div class="flex flex-wrap gap-1 mb-4">
-                {% for tech in project.technologies.all|slice:":3" %}
-                <span class="text-xs px-2 py-0.5 bg-gray-700 rounded text-gray-300">{{ tech.name }}</span>
-                {% endfor %}
-            </div>
-            
-            <div class="flex items-center justify-between text-xs text-gray-400 border-t border-gray-700 pt-3">
-                <span>Takım: {{ project.team.count }} üye</span>
-                <span>{{ project.created_at|date:"d.m.Y" }}</span>
-            </div>
-        </div>
-    </div>
-    {% empty %}
+<div id="dashboard-project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% if projects %}
+    {% include 'dashboard/partials/project_card.html' %}
+    {% else %}
     <div class="col-span-full dashboard-card rounded-xl p-8 text-center">
         <p class="text-gray-400">Henüz danışmanlık yaptığınız bir proje bulunmuyor.</p>
     </div>
-    {% endfor %}
+    {% endif %}
 </div>
+
+<!-- Loading Indicator -->
+<div id="dashboard-load-trigger" class="flex justify-center py-6 {% if not has_more %}hidden{% endif %}">
+    <div class="flex items-center gap-3 text-gray-400">
+        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Yükleniyor...</span>
+    </div>
+</div>
+
+<!-- Project Detail Modal -->
+<div id="projectModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-5 border-b border-gray-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <h3 class="text-lg font-semibold text-white" id="modalTitle">Proje Detayı</h3>
+            </div>
+            <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 space-y-4">
+            <!-- Status Badge -->
+            <div class="flex items-center justify-between">
+                <span id="modalStatus" class="px-3 py-1 text-sm font-semibold rounded-full"></span>
+                <span id="modalDate" class="text-sm text-gray-400"></span>
+            </div>
+
+            <!-- Project Title -->
+            <h4 id="modalProjectTitle" class="text-xl font-bold text-white"></h4>
+
+            <!-- Description -->
+            <p id="modalDescription" class="text-gray-400 text-sm leading-relaxed"></p>
+
+            <!-- Info Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#181e29] rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs text-gray-500 mb-1">Oluşturan</p>
+                    <p id="modalCreatedBy" class="text-sm font-medium text-white"></p>
+                </div>
+                <div class="bg-[#181e29] rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs text-gray-500 mb-1">Danışman</p>
+                    <p id="modalAdvisor" class="text-sm font-medium text-white"></p>
+                </div>
+                <div class="bg-[#181e29] rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs text-gray-500 mb-1">Takım</p>
+                    <p id="modalTeam" class="text-sm font-medium text-white"></p>
+                </div>
+                <div class="bg-[#181e29] rounded-lg p-3 border border-gray-700">
+                    <p class="text-xs text-gray-500 mb-1">Proje İsteği</p>
+                    <p id="modalRequest" class="text-sm font-medium text-white truncate"></p>
+                </div>
+            </div>
+
+            <!-- Technologies -->
+            <div id="modalTechSection">
+                <p class="text-xs text-gray-500 mb-2">Teknolojiler</p>
+                <div id="modalTech" class="flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="p-5 border-t border-gray-700 shrink-0 space-y-3">
+            <div id="modalApprovalActions" class="flex gap-3 hidden">
+                <form id="modalApproveForm" method="post" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Fikri Onayla
+                    </button>
+                </form>
+                <button onclick="openDashboardFeedback()" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+                    Geri Bildirim
+                </button>
+            </div>
+            <!-- Status Change -->
+            <div id="modalStatusActions" class="relative">
+                <button onclick="toggleStatusDropdown()" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    Durum Değiştir
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="statusDropdown" class="hidden absolute bottom-full left-0 right-0 mb-2 bg-[#1f2937] border border-gray-600 rounded-xl shadow-2xl overflow-hidden z-10">
+                    <!-- Options filled by JS -->
+                </div>
+            </div>
+            <a id="modalProjectLink" href="#" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                Proje Sayfasına Git
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal (inside dashboard) -->
+<div id="dashboardFeedbackModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+        <div class="flex items-center justify-between p-5 border-b border-gray-700">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                <h3 class="text-lg font-semibold text-white" id="feedbackModalTitle">Geri Bildirim Gönder</h3>
+            </div>
+            <button onclick="closeDashboardFeedback()" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="dashboardFeedbackForm" class="p-5">
+            {% csrf_token %}
+            <div id="feedbackSuccessMessage" class="hidden mb-4 p-3 bg-green-900/30 border border-green-600/50 rounded-lg">
+                <div class="flex items-center gap-2 text-green-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="font-medium">Geri bildirim gönderildi!</span>
+                </div>
+            </div>
+            <textarea id="dashboardFeedbackContent" name="content" rows="5" required
+                      class="w-full p-3 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
+                      placeholder="Öğrenciye geri bildiriminizi yazın..."></textarea>
+            <div id="feedbackInfo" class="mt-3 text-sm text-gray-500 hidden">
+                <span id="feedbackTeacher"></span> · <span id="feedbackDate"></span>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button type="button" onclick="closeDashboardFeedback()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg font-semibold transition">Kapat</button>
+                <button type="submit" id="feedbackSubmitBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    Gönder
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentProjectId = null;
+
+    function openProjectModal(el) {
+        currentProjectId = el.dataset.id;
+        const statusValue = el.dataset.statusValue;
+
+        document.getElementById('modalProjectTitle').textContent = el.dataset.title;
+        document.getElementById('modalDescription').textContent = el.dataset.description || 'Açıklama bulunmuyor.';
+        document.getElementById('modalCreatedBy').textContent = el.dataset.createdBy;
+        document.getElementById('modalAdvisor').textContent = el.dataset.advisor;
+        document.getElementById('modalTeam').textContent = el.dataset.teamCount + ' üye';
+        document.getElementById('modalRequest').textContent = el.dataset.requestTitle || 'Belirtilmemiş';
+        document.getElementById('modalDate').textContent = el.dataset.createdAt;
+
+        // Status badge
+        const statusEl = document.getElementById('modalStatus');
+        statusEl.textContent = el.dataset.status;
+        statusEl.className = 'px-3 py-1 text-sm font-semibold rounded-full ';
+        if (statusValue === 'in_review') statusEl.className += 'bg-yellow-900 text-yellow-300';
+        else if (statusValue === 'approved') statusEl.className += 'bg-blue-900 text-blue-300';
+        else if (statusValue === 'in_progress') statusEl.className += 'bg-green-900 text-green-300';
+        else if (statusValue === 'completed') statusEl.className += 'bg-purple-900 text-purple-300';
+        else statusEl.className += 'bg-gray-700 text-gray-300';
+
+        // Technologies
+        const techContainer = document.getElementById('modalTech');
+        const techSection = document.getElementById('modalTechSection');
+        const techs = el.dataset.tech;
+        if (techs) {
+            techSection.classList.remove('hidden');
+            techContainer.innerHTML = techs.split(', ').map(t => 
+                '<span class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">' + t + '</span>'
+            ).join('');
+        } else {
+            techSection.classList.add('hidden');
+        }
+
+        // Approval actions - only for in_review
+        const approvalActions = document.getElementById('modalApprovalActions');
+        if (statusValue === 'in_review') {
+            approvalActions.classList.remove('hidden');
+            document.getElementById('modalApproveForm').action = '/projects/' + currentProjectId + '/approve/';
+        } else {
+            approvalActions.classList.add('hidden');
+        }
+
+        // Populate status change dropdown
+        const statusOptions = {
+            'in_review': [
+                { value: 'approved', label: 'Fikir Onaylandı', color: 'text-blue-400' },
+                { value: 'in_progress', label: 'Devam Ediyor', color: 'text-green-400' },
+                { value: 'completed', label: 'Tamamlandı', color: 'text-purple-400' },
+            ],
+            'approved': [
+                { value: 'in_review', label: 'Değerlendirme Aşamasında', color: 'text-yellow-400' },
+                { value: 'in_progress', label: 'Devam Ediyor', color: 'text-green-400' },
+                { value: 'completed', label: 'Tamamlandı', color: 'text-purple-400' },
+            ],
+            'in_progress': [
+                { value: 'completed', label: 'Tamamlandı', color: 'text-purple-400' },
+            ],
+            'completed': [
+                { value: 'in_progress', label: 'Devam Ediyor', color: 'text-green-400' },
+            ],
+        };
+
+        const dropdown = document.getElementById('statusDropdown');
+        const options = statusOptions[statusValue] || [];
+        if (options.length > 0) {
+            document.getElementById('modalStatusActions').classList.remove('hidden');
+            dropdown.innerHTML = options.map(opt =>
+                '<button onclick="changeStatus(\'' + opt.value + '\')" class="w-full text-left px-4 py-3 hover:bg-gray-700 transition flex items-center gap-2 ' + opt.color + '">' +
+                '<span class="w-2 h-2 rounded-full bg-current"></span>' +
+                opt.label +
+                '</button>'
+            ).join('');
+        } else {
+            document.getElementById('modalStatusActions').classList.add('hidden');
+        }
+
+        // Project link
+        document.getElementById('modalProjectLink').href = el.dataset.projectLink;
+
+        // Show modal
+        const modal = document.getElementById('projectModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProjectModal() {
+        const modal = document.getElementById('projectModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        document.getElementById('statusDropdown').classList.add('hidden');
+    }
+
+    function toggleStatusDropdown() {
+        const dropdown = document.getElementById('statusDropdown');
+        dropdown.classList.toggle('hidden');
+    }
+
+    function changeStatus(newStatus) {
+        if (!currentProjectId) return;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('/projects/' + currentProjectId + '/change-status/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeProjectModal();
+                window.location.reload();
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+            }
+        })
+        .catch(() => alert('Bir hata oluştu.'));
+    }
+
+    function openDashboardFeedback() {
+        const modal = document.getElementById('dashboardFeedbackModal');
+        const titleEl = document.getElementById('feedbackModalTitle');
+        const contentEl = document.getElementById('dashboardFeedbackContent');
+        const successEl = document.getElementById('feedbackSuccessMessage');
+        const infoEl = document.getElementById('feedbackInfo');
+        const submitBtn = document.getElementById('feedbackSubmitBtn');
+        const submitBtnText = submitBtn.querySelector('.btn-text');
+        
+        // Reset state
+        contentEl.value = '';
+        contentEl.classList.remove('hidden');
+        successEl.classList.add('hidden');
+        infoEl.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+        submitBtn.disabled = false;
+        // Reset button text
+        submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg><span class="btn-text">Gönder</span>';
+        
+        // Fetch existing feedback
+        fetch('/projects/' + currentProjectId + '/feedback/get/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Feedback exists - show edit mode
+                titleEl.textContent = 'Geri Bildirim';
+                contentEl.value = data.content;
+                document.getElementById('feedbackTeacher').textContent = data.teacher_name;
+                document.getElementById('feedbackDate').textContent = data.updated_at || data.created_at;
+                infoEl.classList.remove('hidden');
+                // Change button to "Güncelle"
+                submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span class="btn-text">Güncelle</span>';
+            } else {
+                // No feedback - show create mode
+                titleEl.textContent = 'Geri Bildirim Gönder';
+            }
+        })
+        .catch(() => {
+            titleEl.textContent = 'Geri Bildirim Gönder';
+        });
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeDashboardFeedback() {
+        const modal = document.getElementById('dashboardFeedbackModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    // Feedback form submit
+    document.getElementById('dashboardFeedbackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!currentProjectId) return;
+        const formData = new FormData(this);
+        const submitBtn = document.getElementById('feedbackSubmitBtn');
+
+        submitBtn.disabled = true;
+        const isUpdate = submitBtn.querySelector('.btn-text')?.textContent === 'Güncelle';
+        submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="btn-text">' + (isUpdate ? 'Güncelleniyor...' : 'Gönderiliyor...') + '</span>';
+
+        fetch('/projects/' + currentProjectId + '/feedback/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                document.getElementById('feedbackSuccessMessage').classList.remove('hidden');
+                document.getElementById('dashboardFeedbackContent').classList.add('hidden');
+                submitBtn.classList.add('hidden');
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span class="btn-text">' + (isUpdate ? 'Güncelle' : 'Gönder') + '</span>';
+            }
+        })
+        .catch(() => {
+            alert('Bir hata oluştu.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span class="btn-text">' + (isUpdate ? 'Güncelle' : 'Gönder') + '</span>';
+        });
+    });
+
+    // Close modals on backdrop click
+    document.getElementById('projectModal').addEventListener('click', function(e) {
+        if (e.target === this) closeProjectModal();
+    });
+    document.getElementById('dashboardFeedbackModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDashboardFeedback();
+    });
+
+    // Infinite Scroll for Dashboard Projects
+    let dashOffset = {{ next_offset|default:12 }};
+    let dashHasMore = {{ has_more|yesno:"true,false" }};
+    let dashLoading = false;
+
+    const dashGrid = document.getElementById('dashboard-project-grid');
+    const dashTrigger = document.getElementById('dashboard-load-trigger');
+
+    if (dashTrigger && dashGrid) {
+        const dashObserver = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && dashHasMore && !dashLoading) {
+                dashLoading = true;
+                
+                const url = new URL('{% url "dashboard:projects_load_more" %}', window.location.origin);
+                url.searchParams.set('offset', dashOffset);
+                {% if query %}url.searchParams.set('q', '{{ query }}');{% endif %}
+                {% if selected_status %}url.searchParams.set('status', '{{ selected_status }}');{% endif %}
+                {% if selected_request %}url.searchParams.set('project_request', '{{ selected_request }}');{% endif %}
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        dashGrid.insertAdjacentHTML('beforeend', data.items);
+                        dashHasMore = data.has_more;
+                        dashOffset = data.next_offset;
+                        dashLoading = false;
+                        if (!dashHasMore) {
+                            dashTrigger.classList.add('hidden');
+                        }
+                    })
+                    .catch(() => {
+                        dashLoading = false;
+                    });
+            }
+        }, { rootMargin: '200px' });
+
+        dashObserver.observe(dashTrigger);
+    }
+</script>
 {% endblock %}

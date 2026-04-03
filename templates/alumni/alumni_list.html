@@ -149,7 +149,7 @@
         </select>
         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button>
     </form>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="alumni-grid">
         {% for alumni in alumni_list %}
             <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-5 flex flex-col justify-between h-full">
             <a href="{% url 'alumni:alumni_detail' alumni.user.username %}">
@@ -219,6 +219,18 @@
         <div class="col-span-full text-center font-semibold py-8">Hiç mezun bulunamadı.</div>
         {% endfor %}
     </div>
+    
+    {% if has_more %}
+    <div id="alumni-load-trigger" class="flex justify-center py-6">
+        <div class="flex items-center gap-3 text-gray-400">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Yükleniyor...</span>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 
@@ -236,8 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   skillTags.forEach((tag) => {
     const color = tag.dataset.skillColor;
-    
-    // Apply dynamic colors
     tag.style.setProperty('--skill-bg', color + '20');
     tag.style.setProperty('--skill-color', color);
     tag.style.setProperty('--skill-border', color + '40');
@@ -247,12 +257,69 @@ document.addEventListener('DOMContentLoaded', function() {
   
   alumniBadges.forEach((badge) => {
     const color = badge.dataset.badgeColor;
-    
-    // Apply dynamic colors
     badge.style.setProperty('--badge-bg', color + '20');
     badge.style.setProperty('--badge-color', color);
     badge.style.setProperty('--badge-border', color + '40');
   });
+  
+  // Infinite Scroll
+  const loadTrigger = document.getElementById('alumni-load-trigger');
+  const alumniGrid = document.getElementById('alumni-grid');
+  
+  if (loadTrigger && alumniGrid) {
+    let alumniOffset = {{ next_offset|default:12 }};
+    let alumniHasMore = {{ has_more|yesno:"true,false" }};
+    let alumniLoading = false;
+
+    const observer = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting && alumniHasMore && !alumniLoading) {
+        alumniLoading = true;
+        
+        let url = `/alumni/load-more/?offset=${alumniOffset}`;
+        {% if query %}url += `&q={{ query }}`;{% endif %}
+        {% if selected_experience_level %}url += `&experience_level={{ selected_experience_level }}`;{% endif %}
+        {% if selected_graduation_year %}url += `&graduation_year={{ selected_graduation_year }}`;{% endif %}
+        {% if selected_category %}url += `&category={{ selected_category }}`;{% endif %}
+        {% if selected_technology %}url += `&technology={{ selected_technology }}`;{% endif %}
+        
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            alumniGrid.insertAdjacentHTML('beforeend', data.items);
+            
+            const newTags = alumniGrid.querySelectorAll('.alumni-skill-tag[data-skill-color]');
+            newTags.forEach((tag) => {
+              const color = tag.dataset.skillColor;
+              tag.style.setProperty('--skill-bg', color + '20');
+              tag.style.setProperty('--skill-color', color);
+              tag.style.setProperty('--skill-border', color + '40');
+            });
+            
+            const newBadges = alumniGrid.querySelectorAll('.alumni-badge[data-badge-color]');
+            newBadges.forEach((badge) => {
+              const color = badge.dataset.badgeColor;
+              badge.style.setProperty('--badge-bg', color + '20');
+              badge.style.setProperty('--badge-color', color);
+              badge.style.setProperty('--badge-border', color + '40');
+            });
+            
+            alumniHasMore = data.has_more;
+            alumniOffset = data.next_offset;
+            alumniLoading = false;
+            
+            if (!alumniHasMore) {
+              loadTrigger.classList.add('hidden');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alumniLoading = false;
+          });
+      }
+    }, { rootMargin: '200px' });
+    
+    observer.observe(loadTrigger);
+  }
 });
 </script>
 {% endblock %}

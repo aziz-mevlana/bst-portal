@@ -44,7 +44,7 @@
                         Yeni Proje İsteği Oluştur
                     {% endif %}
                 </h2>
-                <p class="text-gray-400 text-sm mt-1">Öğrencilerin görebileceği bir proje isteği oluşturun.</p>
+                <p class="text-gray-400 text-sm mt-1">Öğrencilerin proje göndermesi için proje başlığı açın.</p>
             </div>
         </div>
 
@@ -110,6 +110,42 @@
                                     <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.status.errors }}</div>
                                 {% endif %}
                                 {{ form.status }}
+                            </div>
+                        </div>
+
+                        <!-- Denetim Türü -->
+                        <div class="space-y-3">
+                            <label class="text-sm font-medium text-gray-300">Denetim Türü</label>
+                            {% if form.supervision_type.errors %}
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ form.supervision_type.errors }}</div>
+                            {% endif %}
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="supervision-option cursor-pointer relative" data-value="unsupervised">
+                                    <input type="radio" name="supervision_type" value="unsupervised" class="sr-only"
+                                           {% if form.supervision_type.value == 'unsupervised' or not form.supervision_type.value %}checked{% endif %}>
+                                    <div class="p-4 rounded-xl border-2 border-gray-600 bg-[#181e29] hover:border-gray-500 transition-all supervision-card">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <div class="w-8 h-8 rounded-full bg-green-900/50 flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                            </div>
+                                            <span class="font-semibold text-white">Denetimsiz</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">Öğrenci proje oluşturduğunda direkt onaylanır. Öğrenciler projeye başlayabilir.</p>
+                                    </div>
+                                </label>
+                                <label class="supervision-option cursor-pointer relative" data-value="supervised">
+                                    <input type="radio" name="supervision_type" value="supervised" class="sr-only"
+                                           {% if form.supervision_type.value == 'supervised' %}checked{% endif %}>
+                                    <div class="p-4 rounded-xl border-2 border-gray-600 bg-[#181e29] hover:border-gray-500 transition-all supervision-card">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <div class="w-8 h-8 rounded-full bg-yellow-900/50 flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                            </div>
+                                            <span class="font-semibold text-white">Denetimli</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">Öğrenci proje oluşturduğunda öğretmen onayı gerekir. Geri bildirim gönderilebilir.</p>
+                                    </div>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -405,6 +441,31 @@
     document.addEventListener('DOMContentLoaded', function() {
         updateCategoryDisplay();
         updateTechnologyDisplay();
+
+        // Supervision type toggle
+        document.querySelectorAll('.supervision-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.supervision-card').forEach(function(card) {
+                    card.classList.remove('border-blue-500');
+                    card.classList.add('border-gray-600');
+                });
+                var card = this.querySelector('.supervision-card');
+                card.classList.remove('border-gray-600');
+                card.classList.add('border-blue-500');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+
+        // Initialize selected state
+        var checked = document.querySelector('input[name="supervision_type"]:checked');
+        if (checked) {
+            var selectedOption = checked.closest('.supervision-option');
+            if (selectedOption) {
+                var card = selectedOption.querySelector('.supervision-card');
+                card.classList.remove('border-gray-600');
+                card.classList.add('border-blue-500');
+            }
+        }
     });
 </script>
 {% endblock %}

@@ -47,6 +47,10 @@ class ProjectRequest(models.Model):
         ('closed', 'Kapandı'),
         ('completed', 'Tamamlandı'),
     ]
+    SUPERVISION_CHOICES = [
+        ('unsupervised', 'Denetimsiz'),
+        ('supervised', 'Denetimli'),
+    ]
 
     title = models.CharField(max_length=200)
     course = models.CharField(max_length=200, blank=True, null=True)
@@ -57,6 +61,7 @@ class ProjectRequest(models.Model):
     deadline = models.DateField(blank=True, null=True, verbose_name='Son Başvuru Tarihi')
     team_size = models.PositiveSmallIntegerField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=REQUEST_STATUS_CHOICES, default='active', verbose_name='Durum')
+    supervision_type = models.CharField(max_length=15, choices=SUPERVISION_CHOICES, default='unsupervised', verbose_name='Denetim Türü')
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='project_requests')
     categories = models.ManyToManyField(ProjectCategory, related_name='project_requests', blank=True, verbose_name='Kategoriler')
     technologies = models.ManyToManyField(Technology, related_name='project_requests', blank=True, verbose_name='Teknolojiler')
@@ -91,6 +96,9 @@ class Project(models.Model):
     """Main project model"""
     STATUS_CHOICES = [
         ('draft', 'Taslak'),
+        ('in_review', 'Değerlendirme Aşamasında'),
+        ('approved', 'Fikir Onaylandı'),
+        ('in_progress', 'Devam Ediyor'),
         ('completed', 'Tamamlandı'),
     ]
     project_request = models.ForeignKey(ProjectRequest, on_delete=models.CASCADE, related_name='projects')
@@ -116,6 +124,22 @@ class Project(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.created_by.get_full_name()}"
+
+
+class ProjectFeedback(models.Model):
+    """Teacher feedback for supervised projects"""
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='feedback')
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_feedbacks')
+    content = models.TextField(verbose_name='Geri Bildirim')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Project Feedback"
+        verbose_name_plural = "Project Feedbacks"
+
+    def __str__(self):
+        return f"Feedback for {self.project.title} by {self.teacher.get_full_name()}"
 
 
 class ProjectUpdate(models.Model):
@@ -149,79 +173,3 @@ class ProjectComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author.get_full_name()} on {self.project.title}"
-
-
-# Keep old models for backward compatibility during migration
-class Request(models.Model):
-    """Deprecated: Use ProjectRequest instead"""
-    title = models.CharField(max_length=200)
-    course = models.CharField(max_length=200, blank=True, null=True)
-    duration = models.CharField(max_length=100, blank=True, null=True)
-    team_size = models.PositiveSmallIntegerField(blank=True, null=True)
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='requests')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        if self.teacher:
-            return f"{self.title} - {self.teacher.get_full_name()}"
-        else:
-            return self.title
-
-
-class Respons(models.Model):
-    """Deprecated: Use Project instead"""
-    STATUS_CHOICES = [
-        ('draft', 'Taslak'),
-        ('completed', 'Tamamlandı'),
-    ]
-    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='responses')
-    title = models.CharField(max_length=200)
-    advisor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='advised_responses')
-    description = models.TextField(blank=True, null=True)
-    team = models.ManyToManyField(User, related_name='responses', blank=True)
-    project_link = models.URLField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_responses')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    categories = models.ManyToManyField(ProjectCategory, related_name='old_projects', blank=True)
-    technologies = models.ManyToManyField(Technology, related_name='old_projects', blank=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.title} - {self.created_by.get_full_name()}"
-
-
-class ResponsUpdate(models.Model):
-    """Deprecated: Use ProjectUpdate instead"""
-    respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='updates')
-    title = models.CharField(max_length=200, blank=True, null=True)
-    note = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='respons_updates')
-    updated_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-updated_at']
-
-    def __str__(self):
-        return f"Update for {self.respons.title} at {self.updated_at}"
-
-
-class Comment(models.Model):
-    """Deprecated: Use ProjectComment instead"""
-    respons = models.ForeignKey(Respons, on_delete=models.CASCADE, related_name='comments')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='respons_comments')
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['created_at']
-
-    def __str__(self):
-        return f"Comment by {self.author.get_full_name()} on {self.respons.title}"

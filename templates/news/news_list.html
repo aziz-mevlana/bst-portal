@@ -91,10 +91,14 @@
     </div>
     
     {% if has_more %}
-    <div class="text-center mt-8">
-        <button id="load-more-news" data-offset="{{ next_offset }}" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg">
-            Daha Fazla Yükle
-        </button>
+    <div id="news-load-trigger" class="flex justify-center py-6">
+        <div class="flex items-center gap-3 text-gray-400">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Yükleniyor...</span>
+        </div>
     </div>
     {% endif %}
 </div>
@@ -105,49 +109,53 @@ document.addEventListener('DOMContentLoaded', function() {
   
   technologyTags.forEach((tag) => {
     const color = tag.dataset.technologyColor;
-    
     tag.style.setProperty('--technology-bg', color + '20');
     tag.style.setProperty('--technology-color', color);
     tag.style.setProperty('--technology-border', color + '40');
   });
   
-  const loadMoreBtn = document.getElementById('load-more-news');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
-      const offset = this.dataset.offset;
-      const btn = this;
-      
-      btn.textContent = 'Yükleniyor...';
-      btn.disabled = true;
-      
-      fetch(`/news/load-more/?offset=${offset}`)
-        .then(response => response.json())
-        .then(data => {
-          const gridContainer = document.querySelector('.grid');
-          gridContainer.insertAdjacentHTML('beforeend', data.items);
-          
-          const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
-          newTags.forEach((tag) => {
-            const color = tag.dataset.technologyColor;
-            tag.style.setProperty('--technology-bg', color + '20');
-            tag.style.setProperty('--technology-color', color);
-            tag.style.setProperty('--technology-border', color + '40');
+  // Infinite Scroll
+  const loadTrigger = document.getElementById('news-load-trigger');
+  const gridContainer = document.querySelector('.grid');
+  
+  if (loadTrigger && gridContainer) {
+    let newsOffset = {{ next_offset|default:12 }};
+    let newsHasMore = {{ has_more|yesno:"true,false" }};
+    let newsLoading = false;
+
+    const observer = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting && newsHasMore && !newsLoading) {
+        newsLoading = true;
+        
+        fetch(`/news/load-more/?offset=${newsOffset}`)
+          .then(response => response.json())
+          .then(data => {
+            gridContainer.insertAdjacentHTML('beforeend', data.items);
+            
+            const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
+            newTags.forEach((tag) => {
+              const color = tag.dataset.technologyColor;
+              tag.style.setProperty('--technology-bg', color + '20');
+              tag.style.setProperty('--technology-color', color);
+              tag.style.setProperty('--technology-border', color + '40');
+            });
+            
+            newsHasMore = data.has_more;
+            newsOffset = data.next_offset;
+            newsLoading = false;
+            
+            if (!newsHasMore) {
+              loadTrigger.classList.add('hidden');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            newsLoading = false;
           });
-          
-          if (data.has_more) {
-            btn.dataset.offset = data.next_offset;
-            btn.textContent = 'Daha Fazla Yükle';
-            btn.disabled = false;
-          } else {
-            btn.remove();
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          btn.textContent = 'Daha Fazla Yükle';
-          btn.disabled = false;
-        });
-    });
+      }
+    }, { rootMargin: '200px' });
+    
+    observer.observe(loadTrigger);
   }
 });
 </script>

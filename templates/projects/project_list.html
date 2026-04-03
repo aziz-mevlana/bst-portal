@@ -148,7 +148,12 @@
                             <i class="fas fa-lock text-red-400 text-sm"></i>
                         {% endif %}
                     </h3>
-                    <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full whitespace-nowrap">{{ project.get_status_display }}</span>
+                    <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap font-semibold
+                      {% if project.status == 'in_review' %}bg-yellow-900 text-yellow-300
+                      {% elif project.status == 'approved' %}bg-blue-900 text-blue-300
+                      {% elif project.status == 'in_progress' %}bg-green-900 text-green-300
+                      {% elif project.status == 'completed' %}bg-purple-900 text-purple-300
+                      {% else %}bg-gray-700 text-gray-300{% endif %}">{{ project.get_status_display }}</span>
                 </div>
                 <p class="mb-4 line-clamp-3">{{ project.description|truncatewords:30 }}</p>
                 
@@ -194,19 +199,16 @@
         {% endfor %}
     </div>
     
-    {% if has_more %}
-    <div class="text-center mt-8">
-        <button id="load-more-projects" 
-                data-offset="{{ next_offset }}" 
-                data-q="{{ request.GET.q|default:'' }}"
-                data-category="{{ request.GET.category|default:'' }}"
-                data-technology="{{ request.GET.technology|default:'' }}"
-                data-status="{{ request.GET.status|default:'' }}"
-                class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg">
-            Daha Fazla Yükle
-        </button>
+    <!-- Load More Trigger -->
+    <div id="project-load-trigger" class="flex justify-center py-6 {% if not has_more %}hidden{% endif %}">
+        <div class="flex items-center gap-3 text-gray-400">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Yükleniyor...</span>
+        </div>
     </div>
-    {% endif %}
 </div>
 
 <script>
@@ -230,58 +232,54 @@ document.addEventListener('DOMContentLoaded', function() {
     tag.style.setProperty('--technology-border', color + '40');
   });
   
-  const loadMoreBtn = document.getElementById('load-more-projects');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
-      const offset = this.dataset.offset;
-      const q = this.dataset.q;
-      const category = this.dataset.category;
-      const technology = this.dataset.technology;
-      const status = this.dataset.status;
-      const btn = this;
-      
-      btn.textContent = 'Yükleniyor...';
-      btn.disabled = true;
-      
-      let url = `/projects/load-more/?offset=${offset}`;
-      if (q) url += `&q=${encodeURIComponent(q)}`;
-      if (category) url += `&category=${category}`;
-      if (technology) url += `&technology=${technology}`;
-      if (status) url += `&status=${status}`;
-      
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          const gridContainer = document.getElementById('project-grid');
-          if (!gridContainer) {
-            btn.textContent = 'Daha Fazla Yükle';
-            btn.disabled = false;
-            return;
-          }
-          gridContainer.insertAdjacentHTML('beforeend', data.items);
-          
-          const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
-          newTags.forEach((tag) => {
-            const color = tag.dataset.technologyColor;
-            tag.style.setProperty('--technology-bg', color + '20');
-            tag.style.setProperty('--technology-color', color);
-            tag.style.setProperty('--technology-border', color + '40');
+  // Infinite Scroll
+  const gridContainer = document.getElementById('project-grid');
+  const loadTrigger = document.getElementById('project-load-trigger');
+  
+  if (loadTrigger && gridContainer) {
+    let projectOffset = {{ next_offset|default:12 }};
+    let projectHasMore = {{ has_more|yesno:"true,false" }};
+    let projectLoading = false;
+
+    const observer = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting && projectHasMore && !projectLoading) {
+        projectLoading = true;
+        
+        let url = `/projects/load-more/?offset=${projectOffset}`;
+        {% if request.GET.q %}url += `&q={{ request.GET.q }}`;{% endif %}
+        {% if request.GET.category %}url += `&category={{ request.GET.category }}`;{% endif %}
+        {% if request.GET.technology %}url += `&technology={{ request.GET.technology }}`;{% endif %}
+        {% if request.GET.status %}url += `&status={{ request.GET.status }}`;{% endif %}
+        
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            gridContainer.insertAdjacentHTML('beforeend', data.items);
+            
+            const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
+            newTags.forEach((tag) => {
+              const color = tag.dataset.technologyColor;
+              tag.style.setProperty('--technology-bg', color + '20');
+              tag.style.setProperty('--technology-color', color);
+              tag.style.setProperty('--technology-border', color + '40');
+            });
+            
+            projectHasMore = data.has_more;
+            projectOffset = data.next_offset;
+            projectLoading = false;
+            
+            if (!projectHasMore) {
+              loadTrigger.classList.add('hidden');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            projectLoading = false;
           });
-          
-          if (data.has_more) {
-            btn.dataset.offset = data.next_offset;
-            btn.textContent = 'Daha Fazla Yükle';
-            btn.disabled = false;
-          } else {
-            btn.remove();
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          btn.textContent = 'Daha Fazla Yükle';
-          btn.disabled = false;
-        });
-    });
+      }
+    }, { rootMargin: '200px' });
+    
+    observer.observe(loadTrigger);
   }
 });
 </script>

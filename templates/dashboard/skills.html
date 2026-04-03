@@ -1,0 +1,272 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Yetenekler</h1>
+        <p class="text-gray-400 hidden sm:block">Kategoriler ve teknolojileri yönetin.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Categories -->
+    <div class="dashboard-card rounded-xl shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Kategoriler</h2>
+            <button onclick="openSkillModal('category')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                + Ekle
+            </button>
+        </div>
+        <div class="space-y-3">
+            {% for cat in categories %}
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-4 h-4 rounded-full" style="background-color: {{ cat.color }}"></div>
+                    <span class="font-medium">{{ cat.name }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSkillModal('category', {{ cat.id }}, '{{ cat.name|escapejs }}', '{{ cat.color }}')" class="p-1.5 text-gray-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <button onclick="deleteSkill('category', {{ cat.id }})" class="p-1.5 text-gray-400 hover:text-red-400 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">Henüz kategori eklenmemiş.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Technologies -->
+    <div class="dashboard-card rounded-xl shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Teknolojiler</h2>
+            <button onclick="openSkillModal('technology')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                + Ekle
+            </button>
+        </div>
+        <div class="space-y-3">
+            {% for tech in technologies %}
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-4 h-4 rounded-full" style="background-color: {{ tech.color }}"></div>
+                    <span class="font-medium">{{ tech.name }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSkillModal('technology', {{ tech.id }}, '{{ tech.name|escapejs }}', '{{ tech.color }}')" class="p-1.5 text-gray-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <button onclick="deleteSkill('technology', {{ tech.id }})" class="p-1.5 text-gray-400 hover:text-red-400 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">Henüz teknoloji eklenmemiş.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Skill Modal -->
+<div id="skillModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-md mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 class="text-base font-semibold text-white" id="skillModalTitle">Ekle</h3>
+            <button onclick="closeSkillModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="skillForm" class="p-4 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="skillType" name="type">
+            <input type="hidden" id="skillId" name="id">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">İsim</label>
+                <input type="text" id="skillName" name="name" required
+                       class="w-full px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Renk</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" id="skillColor" name="color" value="#3B82F6"
+                           class="w-12 h-10 rounded cursor-pointer border-0">
+                    <input type="text" id="skillColorText" value="#3B82F6"
+                           class="flex-1 px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                           onchange="document.getElementById('skillColor').value = this.value">
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeSkillModal()" class="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition font-medium">
+                    İptal
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                    Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="relative w-full max-w-sm mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 bg-red-600/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-red-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Emin misin?</h3>
+            <p class="text-gray-400 text-sm mb-6">
+                Bu <span id="deleteItemName" class="font-medium text-white"></span> silinecek. Bu işlem geri alınamaz.
+            </p>
+            <form id="deleteSkillForm" class="flex gap-3">
+                {% csrf_token %}
+                <input type="hidden" id="deleteItemType" name="type">
+                <input type="hidden" id="deleteItemId" name="id">
+                <button type="button" onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition font-medium">
+                    İptal
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                    Sil
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentSkillType = null;
+
+    function openSkillModal(type, id = null, name = '', color = '#3B82F6') {
+        currentSkillType = type;
+        document.getElementById('skillType').value = type;
+        document.getElementById('skillId').value = id || '';
+        document.getElementById('skillName').value = name;
+        document.getElementById('skillColor').value = color;
+        document.getElementById('skillColorText').value = color;
+        
+        document.getElementById('skillModalTitle').textContent = id ? (type === 'category' ? 'Kategori Düzenle' : 'Teknoloji Düzenle') : (type === 'category' ? 'Kategori Ekle' : 'Teknoloji Ekle');
+        
+        const modal = document.getElementById('skillModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeSkillModal() {
+        const modal = document.getElementById('skillModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.getElementById('skillColor').addEventListener('input', function(e) {
+        document.getElementById('skillColorText').value = e.target.value;
+    });
+
+    document.getElementById('skillForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('{% url "dashboard:skills" %}', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeSkillModal();
+                window.location.reload();
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+            }
+        })
+        .catch(() => alert('Bir hata oluştu.'));
+    });
+
+    function deleteSkill(type, id) {
+        if (!confirm('Silmek istediğinize emin misiniz?')) return;
+        
+        fetch('{% url "dashboard:delete_skill" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ type: type, id: id })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+            }
+        })
+        .catch(() => alert('Bir hata oluştu.'));
+    }
+
+    document.getElementById('skillModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSkillModal();
+    });
+
+    // Delete Confirmation Modal
+    function deleteSkill(type, id) {
+        document.getElementById('deleteItemType').value = type;
+        document.getElementById('deleteItemId').value = id;
+        document.getElementById('deleteItemName').textContent = type === 'category' ? 'kategori' : 'teknoloji';
+        
+        const modal = document.getElementById('deleteModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+
+    document.getElementById('deleteSkillForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const type = document.getElementById('deleteItemType').value;
+        const id = document.getElementById('deleteItemId').value;
+
+        fetch('{% url "dashboard:delete_skill" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ type: type, id: id })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeDeleteModal();
+                window.location.reload();
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+            }
+        })
+        .catch(() => alert('Bir hata oluştu.'));
+    });
+
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
+{% endblock %}

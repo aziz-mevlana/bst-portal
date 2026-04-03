@@ -86,6 +86,8 @@ body {
     flex-direction: column;
     margin: 0;
     padding: 0;
+    padding-top: env(safe-area-inset-top);
+    -webkit-padding-top: env(safe-area-inset-top);
 }
 
 /* Header Styles */
@@ -96,6 +98,10 @@ header {
     width: 100%;
     background-color: #1f2937;
     transition: all 0.3s ease;
+    padding-top: env(safe-area-inset-top);
+    -webkit-padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-padding-bottom: env(safe-area-inset-bottom);
 }
 
 
@@ -120,6 +126,27 @@ header.scrolled {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
+}
+
+/* When user is not logged in, the nav-actions div is empty */
+/* This causes space-between to push nav-links to the center */
+/* We add a fixed-width spacer to maintain balance */
+.nav-actions:empty::before {
+    content: '';
+    display: block;
+    width: 100px;
+    flex-shrink: 0;
+}
+
+/* Alternative: force both sides to have equal width when logged out */
+body:not(.user-logged-in) .nav-logo {
+    width: 100px;
+}
+
+body:not(.user-logged-in) .nav-actions {
+    width: 100px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .bg-thema {
@@ -157,6 +184,18 @@ header.scrolled {
     font-weight: 600;
     color: #60a5fa;
     transition: color 0.2s;
+}
+
+/* Responsive brand text - hidden below 320px, visible above */
+@media (max-width: 319px) {
+    .nav-logo span {
+        display: none;
+    }
+}
+@media (min-width: 320px) {
+    .nav-logo span {
+        display: inline;
+    }
 }
 
 /* Desktop Navigation */
@@ -201,7 +240,7 @@ header.scrolled {
     gap: 1rem;
     flex-shrink: 0;
     /* Prevent shrinking */
-    min-width: 0;
+    min-width: 100px;
     /* Fixed width to prevent expansion */
     justify-content: flex-end;
 }
@@ -378,7 +417,7 @@ header.scrolled {
 
 /* Mobile Menu Button */
 .mobile-menu-button {
-    display: flex !important;
+    display: flex ;
     align-items: center;
     justify-content: center;
     width: 2.5rem;
@@ -429,7 +468,7 @@ header.scrolled {
 
 @media (min-width: 768px) {
     .mobile-menu-button {
-        display: none !important;
+        display: none ;
     }
 }
 
@@ -442,14 +481,14 @@ header.scrolled {
     bottom: 0;
     z-index: 40;
     background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    display: none !important;
+    display: none ;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     overflow-y: auto;
 }
 
 .mobile-menu.active {
-    display: block !important;
+    display: block ;
     animation: slideInRight 0.3s ease-out;
 }
 
@@ -466,11 +505,11 @@ header.scrolled {
 
 @media (min-width: 768px) {
     .mobile-menu {
-        display: none !important;
+        display: none ;
     }
     
     .mobile-menu.active {
-        display: none !important;
+        display: none ;
     }
 }
 
@@ -498,6 +537,14 @@ header.scrolled {
 .mobile-menu li:nth-child(3) { animation-delay: 0.2s; }
 .mobile-menu li:nth-child(4) { animation-delay: 0.25s; }
 .mobile-menu li:nth-child(5) { animation-delay: 0.3s; }
+.mobile-menu li:nth-child(6) { animation-delay: 0.35s; }
+.mobile-menu li:nth-child(7) { animation-delay: 0.4s; }
+.mobile-menu li:nth-child(8) { animation-delay: 0.45s; }
+.mobile-menu li:nth-child(9) { animation-delay: 0.5s; }
+
+.mobile-menu li.hidden-dashboard {
+    display: none;
+}
 
 @keyframes fadeInSlide {
     to {
@@ -897,7 +944,7 @@ footer {
     min-height: 1.25em;
     vertical-align: middle;
     margin-left: 0.2em;
-    stroke-width: 1.5 !important;
+    stroke-width: 1.5 ;
     display: inline-block;
     filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
 }
@@ -1478,9 +1525,9 @@ a:active {
 
 @media (max-width: 768px) {
     .hero-carousel {
-        height: 350px !important;
+        height: 350px ;
         border-radius: 0.75rem;
-        width: 100% !important;
+        width: 100% ;
         max-width: 100vw;
     }
 
@@ -1493,13 +1540,13 @@ a:active {
     }
 
     .hero-carousel .swiper-wrapper {
-        width: 100% !important;
-        height: 100% !important;
+        width: 100% ;
+        height: 100% ;
     }
 
     .hero-carousel .swiper-slide {
-        width: 100% !important;
-        height: 100% !important;
+        width: 100% ;
+        height: 100% ;
     }
 
     .hero-carousel .slide-image {
@@ -1543,8 +1590,6 @@ a:active {
     }
 }
 
-/* Mobil tema değiştirme butonu */
-/* Mobile Theme Toggle Removed */
 
 /* Mobil profil bölümü */
 .mobile-profile-section {
@@ -1753,9 +1798,9 @@ a:active {
 /* Mobile carousel styles - like news websites */
 @media (max-width: 767px) {
     .hero-carousel {
-        height: 260px !important;
+        height: 260px ;
         border-radius: 0.5rem;
-        width: 100% !important;
+        width: 100% ;
         max-width: 100vw;
     }
 
@@ -1768,13 +1813,13 @@ a:active {
     }
 
     .hero-carousel .swiper-wrapper {
-        width: 100% !important;
-        height: 100% !important;
+        width: 100% ;
+        height: 100% ;
     }
 
     .hero-carousel .swiper-slide {
-        width: 100% !important;
-        height: 100% !important;
+        width: 100% ;
+        height: 100% ;
     }
 
     .hero-carousel .slide-image {
@@ -1785,7 +1830,7 @@ a:active {
 
     .hero-carousel .swiper-button-prev,
     .hero-carousel .swiper-button-next {
-        display: none !important;
+        display: none ;
     }
 
     .hero-carousel .slide-content {

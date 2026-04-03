@@ -16,4 +16,11 @@ urlpatterns = [
     path('<int:project_id>/add-comment/', views.add_comment, name='add_comment'),
     path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),
     path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
-] 
+    # Approval flow URLs
+    path('<int:project_id>/approve/', views.approve_project, name='approve_project'),
+    path('<int:project_id>/feedback/', views.send_feedback, name='send_feedback'),
+    path('<int:project_id>/feedback/get/', views.get_feedback, name='get_feedback'),
+    path('<int:project_id>/start/', views.start_project, name='start_project'),
+    path('<int:project_id>/complete/', views.complete_project, name='complete_project'),
+    path('<int:project_id>/change-status/', views.change_project_status, name='change_project_status'),
+]

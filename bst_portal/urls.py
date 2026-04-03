@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+import os
 
 urlpatterns = [
     path('', include('portal.urls')),
@@ -30,6 +31,9 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
 ]
 
+# Serve linkedin profile photos in debug mode
 if settings.DEBUG:
+    photos_dir = os.path.join(settings.BASE_DIR, 'linkedin_profile_photos')
+    urlpatterns += static('/linkedin_profile_photos/', document_root=photos_dir)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

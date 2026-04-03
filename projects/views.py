@@ -4,16 +4,16 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
-from .models import Project, ProjectRequest, ProjectCategory, Technology, ProjectUpdate, ProjectComment
-from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm
+from .models import Project, ProjectRequest, ProjectCategory, Technology, ProjectUpdate, ProjectComment, ProjectFeedback
+from .forms import ProjectForm, ProjectUpdateForm, ProjectCommentForm, ProjectFeedbackForm
 from .forms import RequestForm
 from django.template.loader import render_to_string
 import json
 
-PAGE_SIZE = 14
+PAGE_SIZE = 12
 
 def get_student_users():
-    return User.objects.filter(Q(profile__user_type='student') | Q(old_profile__user_type='student')).distinct()
+    return User.objects.filter(Q(profile__user_type='student')).distinct()
 
 # Create your views here.
 
@@ -32,13 +32,14 @@ def project_list(request):
     
     # Privacy Filter: Teachers and Staff can see all projects, others need permission
     if user_type not in ['teacher', 'staff_student']:
-        # For non-teachers/staff, show only public and completed projects (hide drafts)
-        projects = projects.filter(is_private=False, status='completed')
-    # Note: We don't filter by user relationships for non-authenticated users
-    
-    # Role-based filtering (only for teachers)
-    if user_type == 'teacher':
-        projects = projects.filter(advisor=user)
+        if user and user.is_authenticated:
+            projects = projects.filter(
+                Q(is_private=False, status__in=['in_progress', 'completed']) |
+                Q(team=user) |
+                Q(created_by=user)
+            ).distinct()
+        else:
+            projects = projects.filter(is_private=False, status__in=['in_progress', 'completed'])
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -49,9 +50,13 @@ def project_list(request):
     if status:
         projects = projects.filter(status=status)
     
+    # First page: minus 1 if "Yeni Proje" card is shown (fills row evenly on 3-col grid)
+    show_create_card = request.user.is_authenticated
+    page_size = PAGE_SIZE - 1 if (offset == 0 and show_create_card) else PAGE_SIZE
+    
     total_count = projects.distinct().count()
-    projects = projects.distinct()[offset:offset + PAGE_SIZE]
-    has_more = offset + PAGE_SIZE < total_count
+    projects = projects.distinct()[offset:offset + page_size]
+    has_more = offset + page_size < total_count
     
     context = {
         'projects': projects,
@@ -62,7 +67,7 @@ def project_list(request):
         'selected_technology': technology_id,
         'selected_status': status,
         'has_more': has_more,
-        'next_offset': offset + PAGE_SIZE,
+        'next_offset': offset + page_size,
         'total_count': total_count,
         'is_authenticated': request.user.is_authenticated,  # Pass to template
     }
@@ -85,13 +90,14 @@ def project_load_more(request):
     
     # Privacy Filter: Teachers and Staff can see all projects, others need permission
     if user_type not in ['teacher', 'staff_student']:
-        # For non-teachers/staff, show only public and completed projects (hide drafts)
-        projects = projects.filter(is_private=False, status='completed')
-    # Note: We don't filter by user relationships for non-authenticated users
-    
-    # Role-based filtering (only for teachers)
-    if user_type == 'teacher':
-        projects = projects.filter(advisor=user)
+        if user and user.is_authenticated:
+            projects = projects.filter(
+                Q(is_private=False, status__in=['in_progress', 'completed']) |
+                Q(team=user) |
+                Q(created_by=user)
+            ).distinct()
+        else:
+            projects = projects.filter(is_private=False, status__in=['in_progress', 'completed'])
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -198,6 +204,19 @@ def project_detail(request, project_id):
         messages.error(request, 'Bu proje henüz tamamlanmamış ve görüntülemek için yetkiniz bulunmuyor.')
         return redirect('projects:project_list')
     
+    # Block access to in_review/approved projects for non-involved users
+    if project.status in ['in_review', 'approved']:
+        if not user or not user.is_authenticated:
+            messages.error(request, 'Bu proje değerlendirme aşamasında ve görüntülemek için giriş yapmanız gerekiyor.')
+            return redirect('projects:project_list')
+        is_team_member = user in project.team.all()
+        is_advisor = user == project.advisor
+        is_creator = user == project.created_by
+        is_staff_or_teacher = user_type in ('staff_student', 'teacher')
+        if not (is_team_member or is_advisor or is_creator or is_staff_or_teacher):
+            messages.error(request, 'Bu proje değerlendirme aşamasında ve size görüntüleme yetkisi verilmedi.')
+            return redirect('projects:project_list')
+    
     # Access control for private projects
     if project.is_private:
         # Handle anonymous users
@@ -217,6 +236,24 @@ def project_detail(request, project_id):
     updates = project.updates.all()
     comments = project.comments.all()
     
+    # Check if user can see feedback (team members, advisor, staff)
+    can_see_feedback = False
+    feedback_form = None
+    feedback_obj = None
+    if request.user.is_authenticated:
+        is_team_member = user in project.team.all()
+        is_advisor = user == project.advisor
+        is_staff_or_teacher = hasattr(user, 'profile') and user.profile.user_type in ('staff_student', 'teacher')
+        can_see_feedback = is_team_member or is_advisor or is_staff_or_teacher
+        
+        try:
+            feedback_obj = project.feedback
+        except ProjectFeedback.DoesNotExist:
+            feedback_obj = None
+        
+        if is_advisor or is_staff_or_teacher:
+            feedback_form = ProjectFeedbackForm(instance=feedback_obj)
+    
     # Only show comment form for authenticated users
     if request.user.is_authenticated:
         comment_form = ProjectCommentForm()
@@ -228,6 +265,9 @@ def project_detail(request, project_id):
         'updates': updates,
         'comments': comments,
         'comment_form': comment_form,
+        'feedback_form': feedback_form,
+        'feedback_obj': feedback_obj,
+        'can_see_feedback': can_see_feedback,
     }
     return render(request, 'projects/project_detail.html', context)
 
@@ -242,8 +282,18 @@ def project_create(request):
             project = form.save(commit=False)
             project.created_by = request.user
             project.advisor = project.project_request.teacher  # assign teacher from selected ProjectRequest
+            
+            # Set status based on supervision type
+            if project.project_request.supervision_type == 'supervised':
+                project.status = 'in_review'
+            else:
+                project.status = 'in_progress'
+            
             project.save()
             form.save_m2m()
+
+            # Add creator to team
+            project.team.add(request.user)
 
             messages.success(request, 'Proje başarıyla oluşturuldu.')
             return redirect('projects:project_detail', project_id=project.id)
@@ -423,7 +473,139 @@ def delete_comment(request, comment_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Bu yorumu silme yetkiniz yok.'})
         messages.error(request, 'Bu yorumu silme yetkiniz yok.')
-        return redirect('projects:project_detail', project_id=project_id)
+    return redirect('projects:project_detail', project_id=project_id)
+
+
+@login_required
+def approve_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    if request.user != project.advisor and not request.user.is_staff:
+        messages.error(request, 'Bu projeyi onaylama yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if project.status != 'in_review':
+        messages.error(request, 'Bu proje onay aşamasında değil.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        project.status = 'approved'
+        project.save()
+        messages.success(request, 'Proje fikri onaylandı.')
+    
+    return redirect('projects:project_detail', project_id=project.id)
+
+
+@login_required
+def send_feedback(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    if request.user != project.advisor and not request.user.is_staff:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Geri bildirim gönderme yetkiniz yok.'})
+        messages.error(request, 'Geri bildirim gönderme yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if project.status not in ['in_review']:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Bu proje değerlendirme aşamasında değil.'})
+        messages.error(request, 'Bu proje değerlendirme aşamasında değil.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        try:
+            feedback = project.feedback
+            form = ProjectFeedbackForm(request.POST, instance=feedback)
+        except ProjectFeedback.DoesNotExist:
+            form = ProjectFeedbackForm(request.POST)
+        
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.project = project
+            feedback.teacher = request.user
+            feedback.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+            
+            messages.success(request, 'Geri bildirim gönderildi.')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                errors = {}
+                for field, field_errors in form.errors.items():
+                    errors[field] = field_errors[0] if field_errors else 'Bu alan geçersiz.'
+                return JsonResponse({'success': False, 'error': 'Form doğrulama hatası', 'errors': errors})
+    
+    return redirect('projects:project_detail', project_id=project.id)
+
+
+@login_required
+def start_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    is_team_member = request.user in project.team.all()
+    if request.user != project.created_by and not is_team_member:
+        messages.error(request, 'Bu projeyi başlatma yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if project.status != 'approved':
+        messages.error(request, 'Bu proje henüz fikir onay aşamasında değil.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        project.status = 'in_progress'
+        project.save()
+        messages.success(request, 'Proje başlatıldı! Çalışmalara başlayabilirsiniz.')
+    
+    return redirect('projects:project_detail', project_id=project.id)
+
+
+@login_required
+def complete_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    is_team_member = request.user in project.team.all()
+    is_advisor = request.user == project.advisor
+    if request.user != project.created_by and not is_team_member and not is_advisor and not request.user.is_staff:
+        messages.error(request, 'Bu projeyi tamamlama yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if project.status != 'in_progress':
+        messages.error(request, 'Bu proje devam ediyor durumunda değil.')
+        return redirect('projects:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        project.status = 'completed'
+        project.save()
+        messages.success(request, 'Proje tamamlandı!')
+    
+    return redirect('projects:project_detail', project_id=project.id)
+
+
+@login_required
+def get_feedback(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    user = request.user
+    is_team_member = user in project.team.all()
+    is_advisor = user == project.advisor
+    is_staff_or_teacher = hasattr(user, 'profile') and user.profile.user_type in ('staff_student', 'teacher')
+    
+    if not (is_team_member or is_advisor or is_staff_or_teacher):
+        return JsonResponse({'success': False, 'error': 'Geri bildirimi görüntüleme yetkiniz yok.'})
+    
+    try:
+        feedback = project.feedback
+        return JsonResponse({
+            'success': True,
+            'content': feedback.content,
+            'teacher_name': feedback.teacher.get_full_name(),
+            'teacher_id': feedback.teacher.id,
+            'created_at': feedback.created_at.strftime('%d.%m.%Y %H:%M'),
+            'updated_at': feedback.updated_at.strftime('%d.%m.%Y %H:%M'),
+        })
+    except ProjectFeedback.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Henüz geri bildirim yok.'})
     
     if request.method == 'POST':
         comment.delete()
@@ -432,3 +614,46 @@ def delete_comment(request, comment_id):
         messages.success(request, 'Yorumunuz başarıyla silindi.')
     
     return redirect('projects:project_detail', project_id=project_id)
+
+
+@login_required
+def change_project_status(request, project_id):
+    import json
+    project = get_object_or_404(Project, id=project_id)
+    
+    user = request.user
+    is_team_member = user in project.team.all()
+    is_advisor = user == project.advisor
+    is_staff_or_teacher = hasattr(user, 'profile') and user.profile.user_type in ('staff_student', 'teacher')
+    
+    if not (is_advisor or is_staff_or_teacher or is_team_member or user.is_staff):
+        return JsonResponse({'success': False, 'error': 'Durum değiştirme yetkiniz yok.'})
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        # Valid transitions
+        transitions = {
+            'in_review': ['approved', 'in_progress', 'completed'],
+            'approved': ['in_review', 'in_progress', 'completed'],
+            'in_progress': ['completed'],
+            'completed': ['in_progress'],
+        }
+        
+        current = project.status
+        allowed = transitions.get(current, [])
+        
+        if new_status not in allowed:
+            return JsonResponse({'success': False, 'error': f"'{project.get_status_display()}' durumundan geçiş yapılamaz."})
+        
+        project.status = new_status
+        project.save()
+        
+        return JsonResponse({
+            'success': True,
+            'new_status': new_status,
+            'new_status_display': project.get_status_display(),
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})

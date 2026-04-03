@@ -73,20 +73,20 @@
         </div>
         <div class="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 md:ms-11 sm:ms-0 items-center sm:items-end justify-center sm:justify-start">
           {% if profile.linkedin_url %}
-            <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-3 sm:px-4 py-2 h-9 sm:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition">
-              <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-4 h-4 filter invert brightness-0">
+            <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+              <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 filter invert brightness-0">
               LinkedIn
             </a>
           {% endif %}
           {% if profile.github_url %}
-            <a href="{{ profile.github_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-3 sm:px-4 py-2 h-9 sm:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition">
-              <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-4 h-4 filter invert brightness-0">
+            <a href="{{ profile.github_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+              <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 filter invert brightness-0">
               GitHub
             </a>
           {% endif %}
           {% if profile.personal_website %}
-            <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-3 sm:px-4 py-2 h-9 sm:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition">
-              <img src="{% static 'images/icons/profile.svg' %}" alt="Website" class="w-4 h-4 filter invert brightness-0">
+            <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+              <img src="{% static 'images/icons/profile.svg' %}" alt="Website" class="w-5 h-5 filter invert brightness-0">
               Web Sitesi
             </a>
           {% endif %}
@@ -102,7 +102,7 @@
                 </span>
                 {% elif profile.user.profile.user_type == 'teacher' %}
                 <span class="alumni-badge px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold" style="--badge-bg:#f59e0b20;--badge-color:#f59e0b;--badge-border:#f59e0b40;" data-badge-color="#f59e0b">
-                  Öğretim Üyesi
+                  {% if profile.user.profile.teacher_title %}{{ profile.user.profile.get_teacher_title_display }}{% else %}Akademisyen{% endif %}
                 </span>
                 {% endif %}
                 <span class="alumni-badge px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold" style="--badge-bg:#ffffff20;--badge-color:#ffffff;--badge-border:#ffffff40;" data-badge-color="#ffffff">

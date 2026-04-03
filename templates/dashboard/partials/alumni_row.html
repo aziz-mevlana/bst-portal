@@ -1,0 +1,53 @@
+{% for alumni in alumni_list %}
+<tr class="hover:bg-gray-700/50 cursor-pointer" onclick="window.location='{% url 'alumni:alumni_detail_by_id' alumni.id %}'">
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 h-10 w-10">
+                {% if alumni.get_profile_photo_url %}
+                    <img class="h-10 w-10 rounded-full object-cover" src="{{ alumni.get_profile_photo_url }}" alt="" onerror="this.style.display='none'">
+                {% else %}
+                    <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
+                        <span class="text-gray-300 text-sm">{{ alumni.get_display_name|first|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium">{{ alumni.get_display_name }}</div>
+                {% if alumni.user %}
+                    <div class="text-sm text-gray-400">{{ alumni.user.email }}</div>
+                {% else %}
+                    <div class="text-sm text-yellow-500/70">Eşleşmemiş</div>
+                {% endif %}
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm truncate max-w-[180px]" title="{{ alumni.current_position }}">{{ alumni.current_position|default:"-"|truncatechars:25 }}</div>
+        <div class="text-sm text-gray-400 truncate max-w-[180px]">{{ alumni.company|default:""|truncatechars:20 }}</div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-gray-400">{{ alumni.graduation_year|default:"-" }}</div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if alumni.experience_level == 'junior' %}
+            <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">Junior</span>
+        {% elif alumni.experience_level == 'mid_level' %}
+            <span class="px-2 py-1 text-xs rounded-full bg-yellow-900 text-yellow-300">Mid-Level</span>
+        {% elif alumni.experience_level == 'senior' %}
+            <span class="px-2 py-1 text-xs rounded-full bg-purple-900 text-purple-300">Senior</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        {% if alumni.user %}
+            <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">Eşleşmiş</span>
+        {% else %}
+            <span class="px-2 py-1 text-xs rounded-full bg-yellow-900 text-yellow-300">Eşleşmemiş</span>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
+        <button onclick="openActionModal({{ alumni.id }}, '{{ alumni.get_display_name|escapejs }}', '{{ alumni.user.username|default:'' }}', {% if alumni.user %}true{% else %}false{% endif %})" class="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+        </button>
+    </td>
+</tr>
+{% endfor %}

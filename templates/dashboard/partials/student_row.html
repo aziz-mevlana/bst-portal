@@ -1,0 +1,32 @@
+{% for student in students %}
+<tr class="hover:bg-gray-700/50">
+    <td class="px-6 py-4 whitespace-nowrap cursor-pointer" onclick="window.location='{% url 'accounts:user_profile' student.id %}'">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 h-10 w-10">
+                {% if student.profile.profile_picture %}
+                    <img class="h-10 w-10 rounded-full object-cover" src="{{ student.profile.profile_picture.url }}" alt="">
+                {% else %}
+                    <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
+                        <span class="text-gray-300 text-sm">{{ student.first_name|first }}{{ student.last_name|first }}</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium">{{ student.get_full_name }}</div>
+                <div class="text-sm text-gray-400">{{ student.email }}</div>
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-gray-400">{{ student.profile.get_class_level_display|default:"-" }}</div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-gray-400">{{ student.profile.department|default:"-" }}</div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
+        <button onclick="openStudentActionModal({{ student.id }}, '{{ student.get_full_name|escapejs }}', '{{ student.profile.class_level|default:'' }}')" class="p-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+        </button>
+    </td>
+</tr>
+{% endfor %}

@@ -11,13 +11,72 @@ import base64
 from django.core.files.base import ContentFile
 from django.http import Http404
 from projects.models import ProjectCategory, Technology
+from datetime import datetime
+
+
+def calculate_class_level(student_number):
+    """Öğrenci numarasından sınıfı hesapla (örn: 23 -> 1.sınıf, 24 -> 1.sınıf)"""
+    if not student_number or len(student_number) < 2:
+        return '1'
+    
+    try:
+        entry_year = int(student_number[:2])
+        if entry_year >= 90:
+            entry_year = 1900 + entry_year
+        else:
+            entry_year = 2000 + entry_year
+        
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        
+        if current_month >= 8:
+            years_since_entry = current_year - entry_year + 1
+        else:
+            years_since_entry = current_year - entry_year
+        
+        if years_since_entry <= 0:
+            return '1'
+        elif years_since_entry == 1:
+            return '1'
+        elif years_since_entry == 2:
+            return '2'
+        elif years_since_entry == 3:
+            return '3'
+        elif years_since_entry == 4:
+            return '4'
+        else:
+            return 'alt'
+    except:
+        return '1'
+
 
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, email=email, password=password)
         
+        # Öğretim üyesi kontrolü için önce user'ı bul
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
+            return render(request, 'accounts/login.html')
+        
+        # Şifre kontrolü
+        if not user.check_password(password):
+            messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
+            return render(request, 'accounts/login.html')
+        
+        # Öğretim üyesi ve inactive ise bekleme sayfasına
+        try:
+            if hasattr(user, 'profile') and user.profile.user_type == 'teacher' and not user.is_active:
+                request.session['pending_teacher_email'] = user.email
+                return redirect('accounts:pending_approval')
+        except Exception:
+            pass  # Profile doesn't exist, continue with login
+        
+        # Normal giriş
+        user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
             messages.success(request, 'Başarıyla giriş yaptınız.')
@@ -26,6 +85,13 @@ def login_view(request):
             messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
     
     return render(request, 'accounts/login.html')
+
+
+def pending_approval_view(request):
+    email = request.session.get('pending_teacher_email')
+    if not email:
+        return redirect('accounts:login')
+    return render(request, 'accounts/pending_approval.html', {'email': email})
 
 def logout_view(request):
     logout(request)
@@ -37,28 +103,60 @@ def register_view(request):
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
-        student_number = request.POST.get('student_number')
+        student_number = request.POST.get('student_number', '')
         password_1 = request.POST.get('password_1')
         password_2 = request.POST.get('password_2')
+        user_type = request.POST.get('user_type', 'student')
+        teacher_title = request.POST.get('teacher_title', '')
 
-        if Profile.objects.filter(student_number=student_number).exists():
-            messages.error(request, 'Bu öğrenci numarası zaten kayıtlı.')
-            return redirect('accounts:register')
+        # Öğretim üyesi için öğrenci numarası zorunlu değil
+        if user_type != 'teacher':
+            if not student_number:
+                messages.error(request, 'Öğrenci numarası gereklidir.')
+                return redirect('accounts:register')
+            if len(student_number) != 10:
+                messages.error(request, 'Öğrenci numarası 10 hane olmalıdır.')
+                return redirect('accounts:register')
+            if Profile.objects.filter(student_number=student_number).exists():
+                messages.error(request, 'Bu öğrenci numarası zaten kayıtlı.')
+                return redirect('accounts:register')
+        
         if password_1 != password_2:
             messages.error(request, 'Şifreler eşleşmiyor.')
             return redirect('accounts:register')
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Bu email zaten kayıtlı.')
-            return redirect('accounts:register')
+        
+        # Öğretim üyesi için email kontrolü
+        if user_type == 'teacher':
+            # Öğretim üyeleri için email kontrolü - daha esnek
+            existing = User.objects.filter(email=email)
+            if existing.exists():
+                existing_user = existing.first()
+                # Profile kontrolü
+                try:
+                    if hasattr(existing_user, 'profile') and existing_user.profile.user_type == 'teacher':
+                        messages.error(request, 'Bu email zaten bir öğretim üyesi hesabına kayıtlı.')
+                        return redirect('accounts:register')
+                except Exception:
+                    pass  # Profile doesn't exist, continue
+        else:
+            if User.objects.filter(email=email).exists():
+                messages.error(request, 'Bu email zaten kayıtlı.')
+                return redirect('accounts:register')
 
+        # Username oluştur
         cleaned_first_name = first_name.strip().lower().replace(' ', '.')
         cleaned_last_name = last_name.strip().lower().replace(' ', '.')
-        part_student_number = student_number[1:3]
-        base_username = f"@{cleaned_first_name}{cleaned_last_name}{part_student_number}"
+        
+        if student_number:
+            part_student_number = student_number[1:3]  # 10. hane için [1:3] = 2. ve 3. rakam
+            base_username = f"@{cleaned_first_name}{cleaned_last_name}{part_student_number}"
+        else:
+            base_username = f"@{cleaned_first_name}{cleaned_last_name}"
+        
         username = base_username
         counter = 1
         while User.objects.filter(username=username).exists():
-            username = f"{base_username}{student_number[-2:]}{counter}"
+            username = f"{base_username}{counter}"
             counter += 1
 
         try:
@@ -74,23 +172,52 @@ def register_view(request):
                     'student_number': student_number,
                     'password': password_1,
                     'username': username,
+                    'user_type': user_type,
+                    'teacher_title': teacher_title if user_type == 'teacher' else '',
                 }
             )
-        except Exception as e:
-            messages.error(request, f'Veritabanı hatası: {e}')
+        except Exception:
+            messages.error(request, 'Bir hata oluştu. Lütfen tekrar deneyin.')
             return redirect('accounts:register')
+
+        # Email içeriği user_type'a göre değişir
+        if user_type == 'teacher':
+            subject = 'BST Akademi - Akademisyen Kayıt Talebi'
+            message = f"""Merhaba {first_name} {last_name},
+
+BST Akademi'ye akademisyen olarak kayıt talebinde bulundunuz.
+
+Doğrulama kodunuz: {code}
+
+Bu kod 10 dakika geçerlidir.
+
+Akademisyen kaydınız admin onayından geçecektir. Doğrulama sonrasında 
+hesabınız admin tarafından aktif edildiğinde sisteme giriş yapabileceksiniz.
+
+BST Akademi
+"""
+        else:
+            subject = 'BST Akademi - Email Doğrulama Kodu'
+            message = f"""Merhaba {first_name},
+
+Kayıt işlemini tamamlamak için doğrulama kodunuz: {code}
+
+Bu kod 10 dakika geçerlidir.
+
+BST Akademi
+"""
 
         try:
             send_mail(
-                'BST Akademi - Email Doğrulama Kodu',
-                f'Merhaba {first_name},\n\nKayıt işlemini tamamlamak için doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Akademi',
+                subject,
+                message,
                 settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,
             )
             messages.info(request, f'{email} adresine doğrulama kodu gönderildi.')
-        except Exception as e:
-            messages.error(request, f'Mail gönderilemedi: {e}')
+        except Exception:
+            messages.error(request, 'Doğrulama kodu gönderilemedi. Lütfen tekrar deneyin.')
             return redirect('accounts:register')
 
         request.session['verify_email'] = email
@@ -127,49 +254,89 @@ def verify_email_view(request):
             return redirect('accounts:verify_email')
 
         data = verification.session_data
-        user = User.objects.create_user(
+        user_type = data.get('user_type', 'student')
+        
+        # Signal çalışmasın diye manually_created = True flag ekle
+        user = User(
             username=data['username'],
             email=data['email'],
-            password=data['password'],
             first_name=data['first_name'],
             last_name=data['last_name'],
+            is_active=(user_type != 'teacher'),
         )
-        if not Profile.objects.filter(user=user).exists():
-            Profile.objects.create(
-                user=user,
-                student_number=data['student_number'],
-            )
+        user.set_password(data['password'])
+        user._creating_profile = True  # Signal için flag
+        user.save()
+        
+        # Profile oluştur - sınıfı otomatik hesapla
+        student_number = data.get('student_number', '')
+        class_level = calculate_class_level(student_number) if user_type == 'student' else None
+        teacher_title = data.get('teacher_title', '')
+        
+        Profile.objects.create(
+            user=user,
+            user_type=user_type,
+            teacher_title=teacher_title if user_type == 'teacher' else None,
+            student_number=student_number,
+            class_level=class_level or '1',
+        )
 
-        verification.is_verified = True
-        verification.save()
-
+        verification.delete()
         request.session.pop('verify_email', None)
-        messages.success(request, 'Kayıt başarılı. Giriş yapabilirsiniz.')
-        return redirect('accounts:login')
+        
+        if user_type == 'teacher':
+            messages.success(request, 'Kaydınız yapıldı. Yönetici onayı bekleniyor. Onaylandığında giriş yapabilirsiniz.')
+            return redirect('accounts:pending_approval')
+        else:
+            messages.success(request, 'Kaydınız başarıyla tamamlandı. Giriş yapabilirsiniz.')
+            return redirect('accounts:login')
 
     return render(request, 'accounts/verify_email.html', {'email': email})
 
 
-def resend_code_view(request):
+def resend_verification_view(request):
     email = request.session.get('verify_email')
     if not email:
-        messages.error(request, 'Önce kayıt formunu doldurun.')
+        messages.error(request, 'Oturum süresi dolmuş. Lütfen tekrar kayıt olun.')
         return redirect('accounts:register')
-
+    
     verification = EmailVerification.objects.filter(email=email, is_verified=False).first()
     if not verification:
-        messages.error(request, 'Doğrulama kaydı bulunamadı.')
-        request.session.pop('verify_email', None)
+        messages.error(request, 'Doğrulama kaydı bulunamadı. Lütfen tekrar kayıt olun.')
         return redirect('accounts:register')
-
+    
     code = EmailVerification.generate_code()
     verification.code = code
     verification.save()
-
+    
+    data = verification.session_data
+    user_type = data.get('user_type', 'student')
+    
     try:
+        if user_type == 'teacher':
+            subject = 'BST Akademi - Akademisyen Kayıt Talebi (Yeni Kod)'
+            message = f"""Merhaba {data['first_name']} {data['last_name']},
+
+BST Akademi'ye akademisyen olarak kayıt talebinde bulundunuz.
+
+Yeni doğrulama kodunuz: {code}
+
+Bu kod 10 dakika geçerlidir.
+"""
+        else:
+            subject = 'BST Akademi - Doğrulama Kodu'
+            message = f"""Merhaba {data['first_name']},
+
+BST Akademi'ye hoş geldiniz!
+
+Doğrulama kodunuz: {code}
+
+Bu kod 10 dakika geçerlidir.
+"""
+        
         send_mail(
-            'BST Akademi - Yeni Doğrulama Kodu',
-            f'Merhaba,\n\nYeni doğrulama kodunuz: {code}\n\nBu kod 10 dakika geçerlidir.\n\nBST Akademi',
+            subject,
+            message,
             settings.EMAIL_HOST_USER,
             [email],
             fail_silently=False,
@@ -177,7 +344,7 @@ def resend_code_view(request):
         messages.success(request, 'Yeni doğrulama kodu gönderildi.')
     except Exception:
         messages.error(request, 'Kod gönderilemedi. Lütfen tekrar deneyin.')
-
+    
     return redirect('accounts:verify_email')
 
 
@@ -315,7 +482,19 @@ def profile_view(request, user_id=None):
         user.last_name = request.POST.get('last_name', user.last_name)
         user.save()
 
-        profile = user.profile        
+        # Ensure profile exists
+        profile, _ = Profile.objects.get_or_create(user=user)
+        
+        # Update class_level if provided
+        class_level = request.POST.get('class_level')
+        if class_level:
+            profile.class_level = class_level
+        
+        # Update teacher_title if provided (for teachers)
+        teacher_title = request.POST.get('teacher_title')
+        if teacher_title is not None:
+            profile.teacher_title = teacher_title if teacher_title != '' else None
+        
         # Base64 resim verisini işle
         cropped_image_data = request.POST.get('profile_picture')
         if cropped_image_data and cropped_image_data.startswith('data:image'):
@@ -340,8 +519,8 @@ def profile_view(request, user_id=None):
                 profile.profile_picture.save(file_name, data, save=True)
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
                 
-            except Exception as e:
-                messages.error(request, f'Profil fotoğrafı güncellenirken hata oluştu: {str(e)}')
+            except Exception:
+                messages.error(request, 'Profil fotoğrafı güncellenirken bir hata oluştu.')
         
         # Normal dosya yükleme (fallback)
         elif 'profile_picture_file' in request.FILES:
@@ -349,8 +528,8 @@ def profile_view(request, user_id=None):
                 profile.profile_picture = request.FILES['profile_picture_file']
                 profile.save()
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
-            except Exception as e:
-                messages.error(request, f'Dosya yüklenirken hata oluştu: {str(e)}')
+            except Exception:
+                messages.error(request, 'Dosya yüklenirken bir hata oluştu.')
         
         profile.save()
         
@@ -376,10 +555,16 @@ def profile_view(request, user_id=None):
 
 @login_required
 def profile_edit_view(request):
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    
     if request.method == 'POST':
-        profile = request.user.profile
         profile.user_type = request.POST.get('user_type', profile.user_type)
+        
+        if profile.user_type == 'teacher':
+            profile.teacher_title = request.POST.get('teacher_title', profile.teacher_title)
+        
         profile.student_number = request.POST.get('student_number', profile.student_number)
+        profile.class_level = request.POST.get('class_level', profile.class_level)
         profile.department = request.POST.get('department', profile.department)
         profile.phone_number = request.POST.get('phone_number', profile.phone_number)
         

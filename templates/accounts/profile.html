@@ -94,12 +94,16 @@
                 {% elif view_user.profile.user_type == 'staff_student' %}
                   Görevli Öğrenci
                 {% elif view_user.profile.user_type == 'teacher' %}
-                  Öğretim Üyesi
+                  {% if view_user.profile.teacher_title %}{{ view_user.profile.get_teacher_title_display }}{% else %}Akademisyen{% endif %}
                 {% elif view_user.profile.user_type == 'alumni' %}
                   Mezun
                 {% endif %}
               </span>
-              {% if view_user.profile.user_type == 'student' or view_user.profile.user_type == 'staff_student' %}
+              {% if view_user.profile.user_type == 'teacher' and view_user.profile.teacher_title %}
+              <span class="profile-badge inline-flex items-center px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold" style="--badge-bg:#f59e0b20;--badge-color:#f59e0b;--badge-border:#f59e0b40;" data-badge-color="#f59e0b">
+                Akademisyen
+              </span>
+              {% elif view_user.profile.user_type == 'student' or view_user.profile.user_type == 'staff_student' %}
               <span class="profile-badge inline-flex items-center px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold" style="--badge-bg:#3b82f620;--badge-color:#3b82f6;--badge-border:#3b82f640;" data-badge-color="#3b82f6">
                 {{ view_user.profile.class_level }}
               </span>
@@ -162,7 +166,7 @@
         {% elif view_user.profile.user_type == 'teacher' %}
         <div class="project-detail-item rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
           <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
-            <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Öğretim Üyesi Bilgileri</h3>
+            <h3 class="text-xl sm:text-2xl font-semibold text-blue-400">Akademisyen Bilgileri</h3>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div>
@@ -279,6 +283,35 @@
                 </div>
               </div>
 
+              {% if view_user.profile.user_type == 'student' %}
+              <div>
+                <label for="id_class_level" class="block text-sm font-medium mb-2">Sınıf</label>
+                <select name="class_level" id="id_class_level" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">
+                  <option value="1" {% if view_user.profile.class_level == '1' %}selected{% endif %}>1. Sınıf</option>
+                  <option value="2" {% if view_user.profile.class_level == '2' %}selected{% endif %}>2. Sınıf</option>
+                  <option value="3" {% if view_user.profile.class_level == '3' %}selected{% endif %}>3. Sınıf</option>
+                  <option value="4" {% if view_user.profile.class_level == '4' %}selected{% endif %}>4. Sınıf</option>
+                  <option value="alt" {% if view_user.profile.class_level == 'alt' %}selected{% endif %}>Altdan Devam Ediyor</option>
+                  <option value="bitir" {% if view_user.profile.class_level == 'bitir' %}selected{% endif %}>Bitirdi</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Öğrenci numaranıza göre otomatik hesaplanır, manuel değiştirebilirsiniz.</p>
+              </div>
+              {% elif view_user.profile.user_type == 'teacher' %}
+              <div>
+                <label for="id_teacher_title" class="block text-sm font-medium mb-2">Ünvan</label>
+                <select name="teacher_title" id="id_teacher_title" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">
+                  <option value="">Ünvan Seçin</option>
+                  <option value="prof_dr" {% if view_user.profile.teacher_title == 'prof_dr' %}selected{% endif %}>Prof. Dr.</option>
+                  <option value="doc_dr" {% if view_user.profile.teacher_title == 'doc_dr' %}selected{% endif %}>Doç. Dr.</option>
+                  <option value="dr" {% if view_user.profile.teacher_title == 'dr' %}selected{% endif %}>Dr.</option>
+                  <option value="arastirma_gorevlisi" {% if view_user.profile.teacher_title == 'arastirma_gorevlisi' %}selected{% endif %}>Araştırma Görevlisi</option>
+                  <option value="ogretim_gorevlisi" {% if view_user.profile.teacher_title == 'ogretim_gorevlisi' %}selected{% endif %}>Öğretim Görevlisi</option>
+                  <option value="okutman" {% if view_user.profile.teacher_title == 'okutman' %}selected{% endif %}>Okutman</option>
+                  <option value="uzman" {% if view_user.profile.teacher_title == 'uzman' %}selected{% endif %}>Uzman</option>
+                </select>
+              </div>
+              {% endif %}
+
               <div>
                 <label for="id_profile_picture" class="block text-sm font-medium mb-2">Profil Fotoğrafı</label>
                 <div class="space-y-4">
@@ -363,6 +396,12 @@
             <h3 class="text-xl font-semibold text-blue-400">Profil Özeti</h3>
           </div>
           <dl class="space-y-4 text-gray-200">
+            {% if view_user.profile.user_type == 'teacher' and view_user.profile.teacher_title %}
+            <div class="flex items-center justify-between">
+              <dt class="text-sm text-gray-400">Ünvan</dt>
+              <dd class="text-base font-semibold">{{ view_user.profile.get_teacher_title_display }}</dd>
+            </div>
+            {% endif %}
             <div class="flex items-center justify-between">
               <dt class="text-sm text-gray-400">Kullanıcı Türü</dt>
               <dd class="text-base font-semibold">{{ view_user.profile.get_user_type_display }}</dd>

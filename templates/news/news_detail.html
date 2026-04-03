@@ -7,8 +7,8 @@
 <div class="max-w-4xl mx-auto px-4 py-8 page-container-large">
     <!-- Haber Başlığı ve Meta Bilgileri -->
     <div class="mb-8">
-        <div class="flex items-center justify-between gap-4 mb-4">
-            <div class="flex items-center gap-2">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div class="flex flex-wrap items-center gap-2">
                 <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
                     {{ news.news_type|default:"Genel" }}
                 </span>
@@ -19,7 +19,7 @@
                 {% endif %}
             </div>
             {% if user.is_authenticated and user == news.created_by or user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
-            <a href="{% url 'news:edit_news' news.id %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm">
+            <a href="{% url 'news:edit_news' news.id %}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm w-full sm:w-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -32,7 +32,7 @@
             <span class="flex items-center gap-1 card-link">
                 <div class="flex items-center gap-1">
                     <img src="{% static 'images/icons/calendar.svg' %}" alt="Tarih" class="w-4 h-4">
-                    {{ news.date|date:"d.m.Y H:i" }}
+                    {{ news.date|date:"d.m.Y" }}
                 </div>
             </span>
             <span class="flex items-center gap-1 card-link">

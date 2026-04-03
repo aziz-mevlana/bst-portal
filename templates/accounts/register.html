@@ -21,31 +21,63 @@
 
         <form method="post" class="flex flex-col gap-4">
             {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium mb-2">Kullanıcı Tipi</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center justify-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700/50 transition {% if request.POST.user_type != 'teacher' %}border-blue-500 bg-blue-500/20{% endif %}">
+                        <input type="radio" name="user_type" value="student" class="hidden" {% if request.POST.user_type != 'teacher' %}checked{% endif %}>
+                        <div class="text-center">
+                            <svg class="w-6 h-6 mx-auto mb-1 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <span class="text-sm font-medium">Öğrenci</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center justify-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700/50 transition {% if request.POST.user_type == 'teacher' %}border-yellow-500 bg-yellow-500/20{% endif %}">
+                        <input type="radio" name="user_type" value="teacher" class="hidden" {% if request.POST.user_type == 'teacher' %}checked{% endif %}>
+                        <div class="text-center">
+                            <svg class="w-6 h-6 mx-auto mb-1 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            <span class="text-sm font-medium">Akademisyen</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="id_first_name" class="block text-sm font-medium mb-1">İsim</label>
-                    <input type="text" name="first_name" id="id_first_name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required autofocus>
+                    <input type="text" name="first_name" id="id_first_name" autocomplete="given-name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required autofocus>
                 </div>
                 <div>
                     <label for="id_last_name" class="block text-sm font-medium mb-1">Soyisim</label>
-                    <input type="text" name="last_name" id="id_last_name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
+                    <input type="text" name="last_name" id="id_last_name" autocomplete="family-name" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
                 </div>
             </div>
-            <div>
+            <div id="studentNumberField">
                 <label for="id_student_number" class="block text-sm font-medium mb-1 sm:mb-2">Öğrenci Numarası</label>
-                <input type="text" name="student_number" id="id_student_number" placeholder="9 Haneli" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
+                <input type="text" name="student_number" id="id_student_number" autocomplete="off" placeholder="10 Haneli" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base">
+            </div>
+            <div id="teacherTitleField" class="hidden">
+                <label for="id_teacher_title" class="block text-sm font-medium mb-1 sm:mb-2">Ünvan</label>
+                <select name="teacher_title" id="id_teacher_title" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base">
+                    <option value="">Ünvan Seçin</option>
+                    <option value="prof_dr">Prof. Dr.</option>
+                    <option value="doc_dr">Doç. Dr.</option>
+                    <option value="dr">Dr.</option>
+                    <option value="arastirma_gorevlisi">Araştırma Görevlisi</option>
+                    <option value="ogretim_gorevlisi">Öğretim Görevlisi</option>
+                    <option value="okutman">Okutman</option>
+                    <option value="uzman">Uzman</option>
+                </select>
             </div>
             <div>
                 <label for="id_email" class="block text-sm font-medium mb-1 sm:mb-2">E-posta</label>
-                <input type="email" name="email" id="id_email" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
+                <input type="email" name="email" id="id_email" autocomplete="email" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <div>
                 <label for="id_password_1" class="block text-sm font-medium mb-1 sm:mb-2">Şifre</label>
-                <input type="password" name="password_1" id="id_password_1" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
+                <input type="password" name="password_1" id="id_password_1" autocomplete="new-password" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <div>
                 <label for="id_password_2" class="block text-sm font-medium mb-1 sm:mb-2">Şifre (Tekrar)</label>
-                <input type="password" name="password_2" id="id_password_2" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
+                <input type="password" name="password_2" id="id_password_2" autocomplete="new-password" class="project-form-input block w-full px-3 py-2.5 sm:py-3 rounded-lg shadow-sm text-sm sm:text-base" required>
             </div>
             <button type="submit" class="w-full mt-1 sm:mt-2 py-2.5 sm:py-3 px-6 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base transition-colors">
                 Kayıt Ol
@@ -58,4 +90,56 @@
         </p>
     </div>
 </div>
+
+<script>
+    const userTypeInputs = document.querySelectorAll('input[name="user_type"]');
+    const studentNumberField = document.getElementById('studentNumberField');
+    const studentNumberInput = document.getElementById('id_student_number');
+    const labels = document.querySelectorAll('label[for="id_first_name"], label[for="id_last_name"]');
+
+    function updateFields() {
+        const isTeacher = document.querySelector('input[name="user_type"]:checked').value === 'teacher';
+        
+        if (isTeacher) {
+            studentNumberField.classList.add('hidden');
+            studentNumberInput.removeAttribute('required');
+            studentNumberInput.value = '';
+            document.getElementById('teacherTitleField').classList.remove('hidden');
+        } else {
+            studentNumberField.classList.remove('hidden');
+            studentNumberInput.setAttribute('required', 'required');
+            document.getElementById('teacherTitleField').classList.add('hidden');
+            document.getElementById('id_teacher_title').value = '';
+        }
+        
+        // Update label styles
+        document.querySelectorAll('input[name="user_type"]').forEach((input, index) => {
+            const label = input.parentElement;
+            if (input.value === 'teacher') {
+                if (input.checked) {
+                    label.classList.add('border-yellow-500', 'bg-yellow-500/20');
+                    label.classList.remove('border-gray-600');
+                } else {
+                    label.classList.remove('border-yellow-500', 'bg-yellow-500/20');
+                    label.classList.add('border-gray-600');
+                }
+            } else {
+                if (input.checked) {
+                    label.classList.add('border-blue-500', 'bg-blue-500/20');
+                    label.classList.remove('border-gray-600');
+                } else {
+                    label.classList.remove('border-blue-500', 'bg-blue-500/20');
+                    label.classList.add('border-gray-600');
+                }
+            }
+        });
+    }
+
+    userTypeInputs.forEach(input => {
+        input.addEventListener('change', updateFields);
+    });
+
+    // Initial state
+    updateFields();
+</script>
 {% endblock %}
