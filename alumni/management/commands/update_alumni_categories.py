@@ -1,7 +1,8 @@
 import os
 import re
+import sqlite3
 from django.core.management.base import BaseCommand
-from alumni.models import Alumni
+from alumni.models import Alumni, WorkExperience
 from projects.models import ProjectCategory, Technology
 
 
@@ -15,36 +16,47 @@ POSITION_CATEGORY_MAP = {
     'yapay zeka': 'Data Science',
     'ai engineer': 'Data Science',
     'deep learning': 'Data Science',
+    'data engineer': 'Data Science',
+    'veri mühendisi': 'Data Science',
     
     'blockchain': 'Blockchain',
     'blockchain developer': 'Blockchain',
     'crypto': 'Blockchain',
+    'solidity': 'Blockchain',
     
-    'mobile': 'Mobil Uygulama',
-    'ios': 'Mobil Uygulama',
-    'android': 'Mobil Uygulama',
-    'flutter': 'Mobil Uygulama',
-    'react native': 'Mobil Uygulama',
-    'swift': 'Mobil Uygulama',
-    'kotlin': 'Mobil Uygulama',
-    'mobil': 'Mobil Uygulama',
+    'mobile': 'Mobil',
+    'ios': 'Mobil',
+    'android': 'Mobil',
+    'flutter': 'Mobil',
+    'react native': 'Mobil',
+    'swift': 'Mobil',
+    'kotlin': 'Mobil',
+    'mobil': 'Mobil',
+    'mobile developer': 'Mobil',
+    'Mobil': 'Mobil',
     
-    'web': 'Web Geliştirme',
-    'frontend': 'Web Geliştirme',
-    'backend': 'Web Geliştirme',
-    'full stack': 'Web Geliştirme',
-    'full-stack': 'Web Geliştirme',
-    'web developer': 'Web Geliştirme',
+    'web': 'Web',
+    'frontend': 'Web',
+    'backend': 'Web',
+    'full stack': 'Web',
+    'full-stack': 'Web',
+    'web developer': 'Web',
+    'fullstack': 'Web',
+    'front end': 'Web',
+    'back end': 'Web',
     
-    'game': 'Oyun Geliştirme',
-    'oyun': 'Oyun Geliştirme',
-    'unity': 'Oyun Geliştirme',
-    'unreal': 'Oyun Geliştirme',
+    'game': 'Oyun',
+    'oyun': 'Oyun',
+    'unity': 'Oyun',
+    'unreal': 'Oyun',
+    'game developer': 'Oyun',
+    'oyun geliştirici': 'Oyun',
     
     'cyber': 'Siber Güvenlik',
     'security': 'Siber Güvenlik',
     'güvenlik': 'Siber Güvenlik',
     'penetration': 'Siber Güvenlik',
+    'siber': 'Siber Güvenlik',
     
     'iot': 'IoT',
     'gömülü': 'Gömülü Sistem',
@@ -52,10 +64,24 @@ POSITION_CATEGORY_MAP = {
     'firmware': 'Gömülü Sistem',
     'arduino': 'Gömülü Sistem',
     'raspberry': 'Gömülü Sistem',
+    'embedded systems': 'Gömülü Sistem',
     
     'desktop': 'Masaüstü Uygulama',
     'masaüstü': 'Masaüstü Uygulama',
     'desktop app': 'Masaüstü Uygulama',
+    'desktop developer': 'Masaüstü Uygulama',
+    'windows': 'Masaüstü Uygulama',
+    
+    'devops': 'DevOps',
+    'sre': 'DevOps',
+    'ci/cd': 'DevOps',
+    'infrastructure': 'DevOps',
+    
+    'cloud': 'Cloud',
+    'aws': 'Cloud',
+    'azure': 'Cloud',
+    'gcp': 'Cloud',
+    'google cloud': 'Cloud',
 }
 
 POSITION_TECH_MAP = {
@@ -64,12 +90,17 @@ POSITION_TECH_MAP = {
     'javascript': 'JavaScript',
     'js': 'JavaScript',
     'typescript': 'TypeScript',
+    'ts': 'TypeScript',
     'react': 'React',
+    'reactjs': 'React',
     'angular': 'Angular',
+    'angularjs': 'Angular',
     'vue': 'Vue.js',
     'vue.js': 'Vue.js',
+    'vuejs': 'Vue.js',
     'node': 'Node.js',
     'node.js': 'Node.js',
+    'nodejs': 'Node.js',
     'django': 'Django',
     'flask': 'Flask',
     'flutter': 'Flutter',
@@ -78,29 +109,49 @@ POSITION_TECH_MAP = {
     'c++': 'C++',
     'c#': 'C#',
     '.net': '.NET',
+    'dotnet': '.NET',
+    'dot net': '.NET',
     'sql': 'SQL',
     'mysql': 'MySQL',
     'postgresql': 'PostgreSQL',
+    'postgres': 'PostgreSQL',
     'mongodb': 'MongoDB',
+    'mongo': 'MongoDB',
     'docker': 'Docker',
     'kubernetes': 'Kubernetes',
+    'k8s': 'Kubernetes',
     'aws': 'AWS',
+    'amazon web services': 'AWS',
     'azure': 'Azure',
-    'git': 'Git',
-    'html': 'HTML/CSS',
-    'css': 'HTML/CSS',
+    'microsoft azure': 'Azure',
+    'html/css': 'HTML/CSS',
     'tensorflow': 'TensorFlow',
     'pytorch': 'PyTorch',
-    'keras': 'Keras',
     'pandas': 'Pandas',
     'numpy': 'NumPy',
-    'flutter': 'Flutter',
+    'scikit': 'Scikit-learn',
+    'sklearn': 'Scikit-learn',
     'react native': 'React Native',
+    'ionic': 'Ionic',
+    'xamarin': 'Xamarin',
+    'spring': 'Spring',
+    'spring boot': 'Spring',
+    'springboot': 'Spring',
+    'redis': 'Redis',
+    'nginx': 'Nginx',
+    'go': 'Go',
+    'golang': 'Go',
+    'rust': 'Rust',
+    'ruby': 'Ruby',
+    'ruby on rails': 'Ruby',
+    'rails': 'Ruby',
+    'php': 'PHP',
+    'wordpress': 'WordPress',
 }
 
 
 class Command(BaseCommand):
-    help = 'Mezunların pozisyonlarına göre kategorilerini ve teknolojilerini günceller'
+    help = 'Mezunların pozisyon, şirket ve deneyim açıklamalarına göre kategorilerini ve teknolojilerini günceller'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -108,9 +159,71 @@ class Command(BaseCommand):
             action='store_true',
             help='Değişiklik yapma, sadece ne olacağını göster',
         )
+        parser.add_argument(
+            '--db-path',
+            type=str,
+            default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), 'linkedin_data.db'),
+            help='LinkedIn veritabanı dosya yolu (eğitim açıklamaları için)',
+        )
+
+    def get_alumni_descriptions(self, alumni, db_path=None):
+        """Mezunun tüm metin bilgilerini topla"""
+        texts = []
+        
+        # Position ve company
+        texts.append(alumni.current_position or '')
+        texts.append(alumni.company or '')
+        
+        # WorkExperience descriptions
+        experiences = WorkExperience.objects.filter(person=alumni)
+        for exp in experiences:
+            texts.append(exp.description or '')
+            texts.append(exp.position or '')
+            texts.append(exp.company or '')
+        
+        # LinkedIn veritabanından eğitim bilgilerini al
+        if db_path and os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                # Profil ID'sini bul
+                cursor.execute(
+                    "SELECT id FROM profiles WHERE name = ?",
+                    (alumni.full_name,)
+                )
+                profile = cursor.fetchone()
+                
+                if profile:
+                    # Eğitim açıklamalarını al
+                    cursor.execute(
+                        "SELECT description, degree FROM education WHERE profile_id = ?",
+                        (profile['id'],)
+                    )
+                    for edu in cursor.fetchall():
+                        texts.append(edu['description'] or '')
+                        texts.append(edu['degree'] or '')
+                    
+                    # Deneyim açıklamalarını al
+                    cursor.execute(
+                        "SELECT description, position FROM experiences WHERE profile_id = ?",
+                        (profile['id'],)
+                    )
+                    for exp in cursor.fetchall():
+                        texts.append(exp['description'] or '')
+                        texts.append(exp['position'] or '')
+                
+                conn.close()
+            except Exception as e:
+                print(f"Veritabanı hatası: {e}")
+        
+        # Tüm metinleri birleştir
+        return ' '.join(texts).lower()
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
+        db_path = options.get('db_path')
         
         # Get or create categories by name
         existing_cats = {c.name.lower(): c for c in ProjectCategory.objects.all()}
@@ -124,24 +237,26 @@ class Command(BaseCommand):
         updated_count = 0
         
         for alumni in alumni_list:
-            position = (alumni.current_position or '').lower()
-            company = (alumni.company or '').lower()
+            # Tüm metin bilgilerini topla
+            all_text = self.get_alumni_descriptions(alumni, db_path)
             
             # Find matching categories (avoid duplicates)
             matched_cats = []
             seen_cat_names = set()
             for keyword, cat_name in POSITION_CATEGORY_MAP.items():
-                if keyword in position or keyword in company:
+                if keyword in all_text:
                     if cat_name.lower() in existing_cats and cat_name.lower() not in seen_cat_names:
                         matched_cats.append(existing_cats[cat_name.lower()])
                         seen_cat_names.add(cat_name.lower())
             
-            # Find matching technologies
+            # Find matching technologies (avoid duplicates)
             matched_techs = []
+            seen_tech_names = set()
             for keyword, tech_name in POSITION_TECH_MAP.items():
-                if keyword in position or keyword in company:
-                    if tech_name.lower() in existing_techs:
+                if keyword in all_text:
+                    if tech_name.lower() in existing_techs and tech_name.lower() not in seen_tech_names:
                         matched_techs.append(existing_techs[tech_name.lower()])
+                        seen_tech_names.add(tech_name.lower())
             
             if matched_cats or matched_techs:
                 if not dry_run:

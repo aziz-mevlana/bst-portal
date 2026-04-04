@@ -55,10 +55,13 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         
-        # Öğretim üyesi kontrolü için önce user'ı bul
+        # Kullanıcıyı bul - duplicate email durumunda ilkini al
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+            user = User.objects.filter(email=email).order_by('-date_joined').first()
+            if not user:
+                messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
+                return render(request, 'accounts/login.html')
+        except Exception:
             messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
             return render(request, 'accounts/login.html')
         
@@ -285,6 +288,7 @@ def verify_email_view(request):
         request.session.pop('verify_email', None)
         
         if user_type == 'teacher':
+            request.session['pending_teacher_email'] = email
             messages.success(request, 'Kaydınız yapıldı. Yönetici onayı bekleniyor. Onaylandığında giriş yapabilirsiniz.')
             return redirect('accounts:pending_approval')
         else:
