@@ -138,15 +138,21 @@ header.scrolled {
     flex-shrink: 0;
 }
 
-/* Alternative: force both sides to have equal width when logged out */
-body:not(.user-logged-in) .nav-logo {
-    width: 100px;
-}
+/* When logged out on desktop, center nav-links by using grid layout */
+@media (min-width: 768px) {
+    body:not(.user-logged-in) .nav-content:not(.user-logged-in) {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+    }
 
-body:not(.user-logged-in) .nav-actions {
-    width: 100px;
-    display: flex;
-    justify-content: flex-end;
+    body:not(.user-logged-in) .nav-links {
+        justify-self: center;
+    }
+
+    body:not(.user-logged-in) .nav-actions {
+        justify-self: end;
+    }
 }
 
 .bg-thema {
@@ -184,6 +190,7 @@ body:not(.user-logged-in) .nav-actions {
     font-weight: 600;
     color: #60a5fa;
     transition: color 0.2s;
+    white-space: nowrap;
 }
 
 /* Responsive brand text - hidden below 320px, visible above */
