@@ -1,0 +1,278 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Bilgi Kaynaklari</h1>
+        <p class="text-gray-400">AI asistaninin kullanacagi bilgi dokumanlari</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'ai_assistant:chat' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            AI Asistana Don
+        </a>
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Kaynak Ekleme Formu -->
+<div class="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <h2 class="text-lg font-semibold mb-3">Yeni Kaynak Ekle</h2>
+    <form id="sourceForm" onsubmit="addSource(event)">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Baslik *</label>
+                <input type="text" id="sourceTitle" required
+                    class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    placeholder="Orn: Staj Yonergesi">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Kategori</label>
+                <select id="sourceCategory"
+                    class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                    <option value="academic">Akademik</option>
+                    <option value="internship">Staj</option>
+                    <option value="course">Ders</option>
+                    <option value="project">Proje</option>
+                    <option value="general">Genel</option>
+                </select>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm text-gray-400 mb-1">Aciklama</label>
+            <input type="text" id="sourceDescription"
+                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                placeholder="Kisaca aciklama...">
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm text-gray-400 mb-1">Icerik (metin olarak)</label>
+            <textarea id="sourceContent" rows="5"
+                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                placeholder="Dokumanin metin icerigini buraya yapistirin veya PDF dosyasi yukleyin..."></textarea>
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm text-gray-400 mb-1">veya PDF Dosyasi Yukle</label>
+            <input type="file" id="sourceFile" accept=".pdf"
+                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white">
+        </div>
+        <button type="submit"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
+            Kaynak Ekle
+        </button>
+    </form>
+</div>
+
+<!-- Kaynak Listesi -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for source in sources %}
+    <div onclick="openSourceModal({{ source.id }}, '{{ source.title|escapejs }}', '{{ source.description|escapejs }}', '{{ source.content|escapejs }}', '{{ source.category }}', {{ source.is_active|yesno:"true,false" }})" 
+         class="dashboard-card rounded-xl p-4 cursor-pointer hover:border-blue-500 transition"
+         id="source-{{ source.id }}">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-1 text-xs rounded-full {% if source.category == 'academic' %}bg-blue-900 text-blue-300{% elif source.category == 'internship' %}bg-yellow-900 text-yellow-300{% elif source.category == 'course' %}bg-green-900 text-green-300{% elif source.category == 'project' %}bg-purple-900 text-purple-300{% else %}bg-gray-700 text-gray-300{% endif %}">
+                        {{ source.get_category_display }}
+                    </span>
+                    <span class="text-xs {% if source.is_active %}text-green-400{% else %}text-gray-500{% endif %}">
+                        {% if source.is_active %}Aktif{% else %}Pasif{% endif %}
+                    </span>
+                </div>
+                <h3 class="font-semibold mb-1">{{ source.title }}</h3>
+                {% if source.description %}
+                <p class="text-sm text-gray-400 mb-2">{{ source.description }}</p>
+                {% endif %}
+                <p class="text-xs text-gray-500">{{ source.content|length }} karakter</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-2 p-6 bg-gray-800 rounded-lg border border-gray-700 text-center">
+        <p class="text-gray-400">Henuz bilgi kaynagi eklenmemis.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Source Modal -->
+<div id="sourceModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/70" onclick="closeSourceModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold">Kaynagi Duzenle</h2>
+                    <button onclick="closeSourceModal()" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form id="editSourceForm" onsubmit="updateSource(event)">
+                    <input type="hidden" id="editSourceId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Baslik *</label>
+                            <input type="text" id="editSourceTitle" required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Kategori</label>
+                            <select id="editSourceCategory"
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                <option value="academic">Akademik</option>
+                                <option value="internship">Staj</option>
+                                <option value="course">Ders</option>
+                                <option value="project">Proje</option>
+                                <option value="general">Genel</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-400 mb-1">Aciklama</label>
+                        <input type="text" id="editSourceDescription"
+                            class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-400 mb-1">Icerik</label>
+                        <textarea id="editSourceContent" rows="8"
+                            class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="editSourceActive" class="w-4 h-4 rounded bg-gray-900 border-gray-700">
+                            <span class="text-sm text-gray-300">Aktif</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
+                            Guncelle
+                        </button>
+                        <button type="button" onclick="deleteSource()" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg transition">
+                            Sil
+                        </button>
+                        <button type="button" onclick="closeSourceModal()" class="px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                            Iptal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCsrf() {
+    return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+}
+
+function openSourceModal(id, title, description, content, category, isActive) {
+    document.getElementById('editSourceId').value = id;
+    document.getElementById('editSourceTitle').value = title;
+    document.getElementById('editSourceDescription').value = description;
+    document.getElementById('editSourceContent').value = content;
+    document.getElementById('editSourceCategory').value = category;
+    document.getElementById('editSourceActive').checked = isActive;
+    document.getElementById('sourceModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSourceModal() {
+    document.getElementById('sourceModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+async function addSource(e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('title', document.getElementById('sourceTitle').value);
+    formData.append('description', document.getElementById('sourceDescription').value);
+    formData.append('content', document.getElementById('sourceContent').value);
+    formData.append('category', document.getElementById('sourceCategory').value);
+    
+    const fileInput = document.getElementById('sourceFile');
+    if (fileInput.files[0]) {
+        formData.append('source_file', fileInput.files[0]);
+    }
+
+    try {
+        const response = await fetch('{% url "ai_assistant:source_add" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf() },
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    }
+}
+
+async function updateSource(e) {
+    e.preventDefault();
+    const id = document.getElementById('editSourceId').value;
+    
+    try {
+        const response = await fetch('{% url "ai_assistant:source_update" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({
+                source_id: id,
+                title: document.getElementById('editSourceTitle').value,
+                description: document.getElementById('editSourceDescription').value,
+                content: document.getElementById('editSourceContent').value,
+                category: document.getElementById('editSourceCategory').value,
+                is_active: document.getElementById('editSourceActive').checked
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    }
+}
+
+async function deleteSource() {
+    if (!confirm('Bu kaynagi silmek istediginize emin misiniz?')) return;
+    
+    const id = document.getElementById('editSourceId').value;
+    
+    try {
+        const response = await fetch('{% url "ai_assistant:source_delete" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ source_id: id })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('Kaynak silindi.');
+            window.location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    }
+}
+</script>
+
+<form style="display:none">{% csrf_token %}</form>
+{% endblock %}

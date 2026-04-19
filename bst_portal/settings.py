@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'accounts',
     'news',
     'dashboard',
+    'ai_assistant',
     'widget_tweaks',
 ]
 
@@ -153,3 +154,6 @@ AUTHENTICATION_BACKENDS = [
     'accounts.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# Gemini AI API
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')

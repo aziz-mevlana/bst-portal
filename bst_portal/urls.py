@@ -29,6 +29,7 @@ urlpatterns = [
     path('alumni/', include('alumni.urls')),
     path('news/', include('news.urls')),
     path('dashboard/', include('dashboard.urls')),
+    path('ai/', include('ai_assistant.urls')),
 ]
 
 # Serve linkedin profile photos in debug mode
