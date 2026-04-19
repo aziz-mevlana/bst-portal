@@ -37,8 +37,8 @@
             </span>
             <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/profile.svg' %}" alt="Yazar" class="w-4 h-4">
-                <a href="{% url 'accounts:user_profile' news.created_by.id %}" class="hover:text-blue-400 transition-colors">
-                    {{ news.created_by.get_full_name|default:news.created_by.username }}
+                <a href="{% if news.created_by %}{% url 'accounts:user_profile' news.created_by.id %}{% endif %}" class="hover:text-blue-400 transition-colors">
+                    {% if news.created_by %}{{ news.created_by.get_full_name|default:news.created_by.username }}{% else %}BST AI{% endif %}
                 </a>
             </span>
             {% if news.source %}

@@ -1,0 +1,60 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Mezun Paneli</h1>
+        <p class="text-gray-400">Hoş geldiniz, {{ request.user.get_full_name }}!</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+{% if not alumni %}
+<div class="mb-6 p-4 bg-yellow-900/30 border border-yellow-700 rounded-lg">
+    <p class="text-yellow-300">Profilinizi oluşturmak için aşağıdaki butonu kullanın.</p>
+    <a href="{% url 'alumni:alumni_profile' %}" class="inline-block mt-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition">
+        Profil Oluştur
+    </a>
+</div>
+{% else %}
+<div class="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-lg">
+    <p class="text-green-300">Profiliniz aktif. <span class="font-semibold">{{ alumni.full_name }}</span></p>
+    {% if alumni.current_position %} - {{ alumni.current_position }} @ {{ alumni.company }}{% endif %}
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="dashboard-card rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Hızlı Erişim</h3>
+        <div class="space-y-3">
+            <a href="{% url 'dashboard:projects' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                <span>Tüm Projeler</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+            <a href="{% url 'alumni:alumni_list' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                <span>Mezunlar Ağı</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+            {% if alumni %}
+            <a href="{% url 'alumni:alumni_profile_edit' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                <span>Profilini Düzenle</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-card rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Bilgi</h3>
+        <div class="space-y-3 text-sm text-gray-400">
+            <p>• Mezunlar ağına kayıtlısınız.</p>
+            <p>• Profilinizi güncel tutarak diğer mezunlarla bağlantı kurabilirsiniz.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

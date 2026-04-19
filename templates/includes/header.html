@@ -13,10 +13,16 @@
                     <li><a href="{% url 'portal:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Ana Sayfa</a></li>
                     <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                     <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
-                    {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
+                    {% if user.is_authenticated %}
+                    {% if user.profile.user_type == 'staff_student' %}
                     <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
-                    {% else %}
-                    <li id="dashboard-nav-link" class="hidden"></li>
+                    {% elif user.profile.user_type == 'teacher' %}
+                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Akademisyen Paneli</a></li>
+                    {% elif user.profile.user_type == 'student' %}
+                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Öğrenci Paneli</a></li>
+                    {% elif user.profile.user_type == 'alumni' %}
+                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Mezun Paneli</a></li>
+                    {% endif %}
                     {% endif %}
                 </ul>
             </nav>
@@ -76,10 +82,16 @@
                 <li><a href="{% url 'news:news_list' %}" {% if 'news' in request.path %}class="active"{% endif %}>Haberler</a></li>
                 <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
                 <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
-                {% if user.is_authenticated and user.profile.user_type == 'teacher' %}
+                {% if user.is_authenticated %}
+                {% if user.profile.user_type == 'staff_student' %}
                 <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
-                {% else %}
-                <li class="hidden-dashboard"></li>
+                {% elif user.profile.user_type == 'teacher' %}
+                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Akademisyen Paneli</a></li>
+                {% elif user.profile.user_type == 'student' %}
+                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Öğrenci Paneli</a></li>
+                {% elif user.profile.user_type == 'alumni' %}
+                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Mezun Paneli</a></li>
+                {% endif %}
                 {% endif %}
 
                 <!-- Mobile Auth Actions -->

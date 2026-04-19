@@ -1,0 +1,334 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Haber Yönetimi</h1>
+        <p class="text-gray-400">AI tarafından çekilen haberler</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Fetch News Button -->
+<div class="mb-6 flex gap-3">
+    <button onclick="fetchNews()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.582 0A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Haberleri Güncelle
+    </button>
+    {% if pending_news %}
+    <button onclick="approveAll()" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Tümünü Onayla
+    </button>
+    {% endif %}
+</div>
+
+<!-- Keywords Section -->
+<div class="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <h2 class="text-lg font-semibold mb-3">Anahtar Kelimeler</h2>
+    <p class="text-sm text-gray-400 mb-3">Haber çekerken kullanılacak anahtar kelimeler</p>
+    <div class="flex gap-2 mb-3">
+        <input type="text" id="newKeyword" placeholder="Yeni anahtar kelime..." class="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500">
+        <button onclick="addKeyword()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">Ekle</button>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        {% for kw in keywords %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 bg-gray-700 rounded-full text-sm">
+            {{ kw.keyword }}
+            <button onclick="deleteKeyword({{ kw.id }})" class="text-gray-400 hover:text-red-400 ml-1">&times;</button>
+        </span>
+        {% empty %}
+        <p class="text-sm text-gray-500">Henüz anahtar kelime yok</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Fetch Output -->
+<div id="fetchOutput" class="hidden mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <pre class="text-sm text-green-400 whitespace-pre-wrap" id="fetchOutputText"></pre>
+</div>
+
+<!-- Pending News -->
+{% if pending_news %}
+<div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4 text-yellow-400">Onay Bekleyenler ({{ pending_news.count }})</h2>
+    <div class="space-y-3">
+        {% for news in pending_news %}
+        <div class="dashboard-card rounded-xl p-4 border border-yellow-700 cursor-pointer hover:border-yellow-500 transition"
+             data-title="{{ news.title|escapejs }}" data-summary="{{ news.summary|escapejs }}" data-content="{{ news.content|escapejs }}" data-source="{{ news.source|escapejs }}" data-source-url="{{ news.url|escapejs }}" data-category="{{ news.get_category_display|default:news.category|default:"Belirsiz" }}" data-date="{{ news.date|date:"d.m.Y H:i" }}"
+             onclick="openNewsModal(this)">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 text-xs rounded-full bg-yellow-900 text-yellow-300">{{ news.get_category_display|default:news.category|default:"Belirsiz" }}</span>
+                        <span class="text-xs text-gray-500">{{ news.source }}</span>
+                        <span class="text-xs text-gray-600">{{ news.date|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">{{ news.title }}</h3>
+                    <p class="text-sm text-gray-400 mb-3 line-clamp-2">{{ news.summary }}</p>
+                    {% if news.url %}
+                    <a href="{{ news.url }}" target="_blank" class="text-sm text-blue-400 hover:text-blue-300" onclick="event.stopPropagation()">Kaynağa git &rarr;</a>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2 ml-4">
+                    <button onclick="event.stopPropagation(); approveNews({{ news.id }})" class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-lg text-sm">
+                        Onayla
+                    </button>
+                    <button onclick="event.stopPropagation(); rejectNews({{ news.id }})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
+                        Reddet
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="mb-8 p-6 bg-gray-800 rounded-lg border border-gray-700 text-center">
+    <p class="text-gray-400">Onay bekleyen haber yok.</p>
+</div>
+{% endif %}
+
+<!-- Approved News -->
+{% if approved_news %}
+<div>
+    <h2 class="text-xl font-semibold mb-4 text-green-400">Onaylanmış Haberler</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for news in approved_news %}
+        <div class="dashboard-card rounded-xl p-4 border border-green-700 cursor-pointer hover:border-green-500 transition"
+             data-title="{{ news.title|escapejs }}" data-summary="{{ news.summary|escapejs }}" data-content="{{ news.content|escapejs }}" data-source="{{ news.source|escapejs }}" data-source-url="{{ news.url|escapejs }}" data-category="{{ news.get_category_display|default:news.category|default:"Belirsiz" }}" data-date="{{ news.date|date:"d.m.Y H:i" }}"
+             onclick="openNewsModal(this)">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">{{ news.get_category_display|default:news.category|default:"Belirsiz" }}</span>
+                        <span class="text-xs text-gray-500">{{ news.source }}</span>
+                    </div>
+                    <h3 class="font-semibold mb-2">{{ news.title }}</h3>
+                    <p class="text-sm text-gray-400 mb-2 line-clamp-2">{{ news.summary }}</p>
+                    {% if news.url %}
+                    <a href="{{ news.url }}" target="_blank" class="text-sm text-blue-400 hover:text-blue-300" onclick="event.stopPropagation()">Kaynağa git &rarr;</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+function openNewsModal(el) {
+    document.getElementById('newsModalTitle').textContent = el.dataset.title;
+    document.getElementById('newsModalCategory').textContent = el.dataset.category;
+    document.getElementById('newsModalDate').textContent = el.dataset.date;
+    document.getElementById('newsModalSource').textContent = el.dataset.source;
+    document.getElementById('newsModalSummary').textContent = el.dataset.summary;
+    document.getElementById('newsModalContent').textContent = el.dataset.content;
+
+    var sourceLink = document.getElementById('newsModalSourceLink');
+    if (el.dataset.sourceUrl) {
+        sourceLink.href = el.dataset.sourceUrl;
+        sourceLink.classList.remove('hidden');
+    } else {
+        sourceLink.classList.add('hidden');
+    }
+
+    document.getElementById('newsModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeNewsModal() {
+    document.getElementById('newsModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeNewsModal();
+});
+
+function addKeyword() {
+    var input = document.getElementById('newKeyword');
+    var keyword = input.value.trim();
+    if (!keyword) return;
+
+    fetch('{% url "dashboard:news_keywords" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        },
+        body: JSON.stringify({ keyword: keyword })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Hata');
+        }
+    });
+}
+
+function deleteKeyword(id) {
+    if (!confirm('Bu anahtar kelimeyi silmek istediğinize emin misiniz?')) return;
+
+    fetch('{% url "dashboard:delete_keyword" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        },
+        body: JSON.stringify({ keyword_id: id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Hata');
+        }
+    });
+}
+</script>
+
+<!-- News Modal -->
+<div id="newsModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black/70" onclick="closeNewsModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span id="newsModalCategory" class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300"></span>
+                        <span id="newsModalDate" class="text-xs text-gray-500"></span>
+                    </div>
+                    <button onclick="closeNewsModal()" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <h2 id="newsModalTitle" class="text-xl font-bold mb-2"></h2>
+                <div class="text-xs text-gray-500 mb-4">Kaynak: <span id="newsModalSource"></span></div>
+                <div class="mb-4 p-4 bg-gray-900 rounded-lg">
+                    <p id="newsModalSummary" class="text-gray-300"></p>
+                </div>
+                <div class="prose prose-invert max-w-none">
+                    <p id="newsModalContent" class="text-gray-300 whitespace-pre-wrap"></p>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <a id="newsModalSourceLink" href="#" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
+                        Kaynağı Oku
+                    </a>
+                    <button onclick="closeNewsModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                        Kapat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCsrf() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function fetchNews() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = 'Güncelleniyor...';
+
+    fetch('{% url "dashboard:fetch_news" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const output = document.getElementById('fetchOutput');
+        const outputText = document.getElementById('fetchOutputText');
+        output.classList.remove('hidden');
+        outputText.textContent = data.output || 'Tamamlandı';
+        btn.disabled = false;
+        btn.innerHTML = 'Haberleri Güncelle';
+        setTimeout(() => window.location.reload(), 2000);
+    })
+    .catch(e => {
+        btn.disabled = false;
+        btn.innerHTML = 'Haberleri Güncelle';
+        alert('Hata: ' + e);
+    });
+}
+
+function approveNews(id) {
+    fetch('{% url "dashboard:news_approve" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        },
+        body: JSON.stringify({ news_id: id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Hata');
+        }
+    });
+}
+
+function rejectNews(id) {
+    if (!confirm('Bu haberi silmek istediğinize emin misiniz?')) return;
+
+    fetch('{% url "dashboard:news_reject" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        },
+        body: JSON.stringify({ news_id: id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Hata');
+        }
+    });
+}
+
+function approveAll() {
+    if (!confirm('Tüm bekleyen haberleri onaylamak istediğinize emin misiniz?')) return;
+
+    fetch('{% url "dashboard:news_approve_all" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrf(),
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.count + ' haber onaylandı');
+            window.location.reload();
+        } else {
+            alert(data.error || 'Hata');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -133,6 +133,9 @@ def request_list(request):
 
 @login_required
 def request_create(request):
+    if hasattr(request.user, 'profile') and request.user.profile.user_type == 'student':
+        return render(request, 'dashboard/access_denied.html')
+
     if request.method == 'POST':
         form = RequestForm(request.POST)
         if form.is_valid():
@@ -542,38 +545,48 @@ def send_feedback(request, project_id):
 @login_required
 def start_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    
+
+    # Prevent alumni from changing project status
+    if hasattr(request.user, 'profile') and request.user.profile.user_type == 'alumni':
+        messages.error(request, 'Mezunlar proje durumunu değiştiremez.')
+        return redirect('projects:project_detail', project_id=project.id)
+
     is_team_member = request.user in project.team.all()
     if request.user != project.created_by and not is_team_member:
         messages.error(request, 'Bu projeyi başlatma yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
-    
+
     if project.status != 'approved':
         messages.error(request, 'Bu proje henüz fikir onay aşamasında değil.')
         return redirect('projects:project_detail', project_id=project.id)
-    
+
     if request.method == 'POST':
         project.status = 'in_progress'
         project.save()
         messages.success(request, 'Proje başlatıldı! Çalışmalara başlayabilirsiniz.')
-    
+
     return redirect('projects:project_detail', project_id=project.id)
 
 
 @login_required
 def complete_project(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    
+
+    # Prevent alumni from changing project status
+    if hasattr(request.user, 'profile') and request.user.profile.user_type == 'alumni':
+        messages.error(request, 'Mezunlar proje durumunu değiştiremez.')
+        return redirect('projects:project_detail', project_id=project.id)
+
     is_team_member = request.user in project.team.all()
     is_advisor = request.user == project.advisor
     if request.user != project.created_by and not is_team_member and not is_advisor and not request.user.is_staff:
         messages.error(request, 'Bu projeyi tamamlama yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
-    
+
     if project.status != 'in_progress':
         messages.error(request, 'Bu proje devam ediyor durumunda değil.')
         return redirect('projects:project_detail', project_id=project.id)
-    
+
     if request.method == 'POST':
         project.status = 'completed'
         project.save()
@@ -620,12 +633,17 @@ def get_feedback(request, project_id):
 def change_project_status(request, project_id):
     import json
     project = get_object_or_404(Project, id=project_id)
-    
+
     user = request.user
+
+    # Prevent alumni from changing project status
+    if hasattr(user, 'profile') and user.profile.user_type == 'alumni':
+        return JsonResponse({'success': False, 'error': 'Mezunlar proje durumunu değiştiremez.'})
+
     is_team_member = user in project.team.all()
     is_advisor = user == project.advisor
     is_staff_or_teacher = hasattr(user, 'profile') and user.profile.user_type in ('staff_student', 'teacher')
-    
+
     if not (is_advisor or is_staff_or_teacher or is_team_member or user.is_staff):
         return JsonResponse({'success': False, 'error': 'Durum değiştirme yetkiniz yok.'})
     

@@ -20,6 +20,8 @@ class IndexView(TemplateView):
         ).order_by('-date')
         
         # Fetch all news for the news section (not just homepage)
-        context['all_news'] = Article.objects.all().order_by('-date')[:4]
+        context['all_news'] = Article.objects.filter(
+            is_approved=True
+        ).order_by('-date')[:4]
         
         return context 

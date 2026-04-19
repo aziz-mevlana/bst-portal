@@ -1,0 +1,56 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Projeler</h1>
+        <p class="text-gray-400">Tamamlanmış projeler</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+{% if projects %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for project in projects %}
+    <a href="{% url 'projects:project_detail' project.id %}" class="dashboard-card rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition">
+        <div class="flex items-start justify-between mb-3">
+            <h3 class="font-semibold text-lg">{{ project.title }}</h3>
+            <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">
+                {{ project.get_status_display }}
+            </span>
+        </div>
+        <p class="text-sm text-gray-400 mb-4 line-clamp-3">{{ project.description|truncatechars:150 }}</p>
+
+        {% if project.categories.exists %}
+        <div class="flex flex-wrap gap-2 mb-3">
+            {% for category in project.categories.all|slice:3 %}
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-700 text-gray-300">
+                {{ category.name }}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="flex items-center justify-between text-sm text-gray-500">
+            {% if project.advisor %}
+            <span>Danışman: {{ project.advisor.get_full_name }}</span>
+            {% else %}
+            <span>Danışman: Belirtilmemiş</span>
+            {% endif %}
+            <span class="text-gray-400">{% if project.team.count %}{{ project.team.count }}{% else %}0{% endif %} üye</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="dashboard-card rounded-xl p-12 text-center">
+    <svg class="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+    <h3 class="text-xl font-semibold mb-2">Proje Yok</h3>
+    <p class="text-gray-400">Henüz tamamlanmış proje bulunmuyor.</p>
+</div>
+{% endif %}
+{% endblock %}

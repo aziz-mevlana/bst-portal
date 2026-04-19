@@ -2,14 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Profile, EmailVerification, PasswordReset
 from django.contrib.auth.models import User
 import base64
 from django.core.files.base import ContentFile
-from django.http import Http404
 from projects.models import ProjectCategory, Technology
 from datetime import datetime
 

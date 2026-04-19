@@ -22,8 +22,8 @@ def _user_can_manage_news(user, article=None):
 def news_list(request):
     show_create_card = request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.user_type in ('staff_student', 'teacher')
     page_size = PAGE_SIZE - 1 if show_create_card else PAGE_SIZE
-    news = Article.objects.all()[:page_size]
-    total_count = Article.objects.count()
+    news = Article.objects.filter(is_approved=True)[:page_size]
+    total_count = Article.objects.filter(is_approved=True).count()
     has_more = total_count > page_size
     return render(request, 'news/news_list.html', {
         'news': news,
@@ -35,9 +35,9 @@ def news_list(request):
 def news_load_more(request):
     offset = int(request.GET.get('offset', 0))
     limit = PAGE_SIZE
-    
-    news = Article.objects.all()[offset:offset + limit]
-    total_count = Article.objects.count()
+
+    news = Article.objects.filter(is_approved=True)[offset:offset + limit]
+    total_count = Article.objects.filter(is_approved=True).count()
     has_more = offset + limit < total_count
     
     html = render_to_string('news/partials/news_item.html', {'news': news})
@@ -81,7 +81,8 @@ def create_news(request):
             created_by=request.user,
             article_type=article_type,
             article_category=article_category,
-            is_homepage=is_homepage
+            is_homepage=is_homepage,
+            is_approved=True
         )
         messages.success(request, 'Haber başarıyla oluşturuldu.')
         return redirect('news:news_list')

@@ -210,6 +210,7 @@
     function openProjectModal(el) {
         currentProjectId = el.dataset.id;
         const statusValue = el.dataset.statusValue;
+        const userType = '{{ user_type }}';
 
         document.getElementById('modalProjectTitle').textContent = el.dataset.title;
         document.getElementById('modalDescription').textContent = el.dataset.description || 'Açıklama bulunmuyor.';
@@ -235,23 +236,23 @@
         const techs = el.dataset.tech;
         if (techs) {
             techSection.classList.remove('hidden');
-            techContainer.innerHTML = techs.split(', ').map(t => 
+            techContainer.innerHTML = techs.split(', ').map(t =>
                 '<span class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">' + t + '</span>'
             ).join('');
         } else {
             techSection.classList.add('hidden');
         }
 
-        // Approval actions - only for in_review
+        // Approval actions - only for in_review and teacher/staff
         const approvalActions = document.getElementById('modalApprovalActions');
-        if (statusValue === 'in_review') {
+        if (statusValue === 'in_review' && (userType === 'teacher' || userType === 'staff_student')) {
             approvalActions.classList.remove('hidden');
             document.getElementById('modalApproveForm').action = '/projects/' + currentProjectId + '/approve/';
         } else {
             approvalActions.classList.add('hidden');
         }
 
-        // Populate status change dropdown
+        // Populate status change dropdown - hide for alumni
         const statusOptions = {
             'in_review': [
                 { value: 'approved', label: 'Fikir Onaylandı', color: 'text-blue-400' },
@@ -271,8 +272,11 @@
             ],
         };
 
+        // For alumni, hide status change options
+        const isAlumni = userType === 'alumni';
+
         const dropdown = document.getElementById('statusDropdown');
-        const options = statusOptions[statusValue] || [];
+        const options = isAlumni ? [] : (statusOptions[statusValue] || []);
         if (options.length > 0) {
             document.getElementById('modalStatusActions').classList.remove('hidden');
             dropdown.innerHTML = options.map(opt =>

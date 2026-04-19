@@ -1,0 +1,103 @@
+{% extends 'dashboard/base.html' %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Öğrenci Paneli</h1>
+        <p class="text-gray-400">Hoş geldiniz, {{ request.user.get_full_name }}!</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+{% if student_class %}
+<div class="mb-4 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+    <p class="text-blue-300">Sınıfınız: <span class="font-semibold">Sınıf {{ student_class }}</span></p>
+</div>
+{% endif %}
+
+<!-- My Projects -->
+<div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4">Projelerim</h2>
+    {% if my_projects %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for project in my_projects %}
+                <a href="{% url 'projects:project_detail' project.id %}" class="dashboard-card rounded-xl p-4 border border-gray-700 hover:border-blue-500 transition block">
+                    <div class="flex items-start justify-between mb-2">
+                        <h3 class="font-semibold text-lg">{{ project.title }}</h3>
+                        <span class="px-2 py-1 text-xs rounded-full
+                            {% if project.status == 'completed' %}bg-green-900 text-green-300
+                            {% elif project.status == 'in_progress' %}bg-blue-900 text-blue-300
+                            {% elif project.status == 'in_review' %}bg-yellow-900 text-yellow-300
+                            {% else %}bg-gray-700 text-gray-300{% endif %}">
+                            {{ project.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-3 line-clamp-2">{{ project.description|truncatechars:100 }}</p>
+                    {% if project.advisor %}
+                        <p class="text-xs text-gray-500">Danışman: {{ project.advisor.get_full_name }}</p>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="dashboard-card rounded-xl p-6 text-center">
+            <p class="text-gray-400 mb-4">Henüz bir projeniz yok.</p>
+            <a href="{% url 'projects:project_list' %}" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
+                Proje Bul
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Available Project Requests -->
+<div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4">Müsait Proje İstekleri</h2>
+    {% if available_requests %}
+        <div class="space-y-3">
+            {% for req in available_requests %}
+                <div class="dashboard-card rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-semibold">{{ req.title }}</h3>
+                            <p class="text-sm text-gray-400 mt-1">{{ req.description|truncatechars:120 }}</p>
+                            {% if req.teacher %}
+                                <p class="text-xs text-gray-500 mt-2">Danışman: {{ req.teacher.get_full_name }}</p>
+                            {% endif %}
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">Açık</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="dashboard-card rounded-xl p-6 text-center">
+            <p class="text-gray-400">Şu anda müsait proje isteği yok.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="dashboard-card rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Hızlı Erişim</h3>
+        <div class="space-y-3">
+            <a href="{% url 'projects:project_list' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                <span>Tüm Projeler</span>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+        </div>
+    </div>
+
+    <div class="dashboard-card rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Bilgi</h3>
+        <div class="space-y-3 text-sm text-gray-400">
+            <p>• {{ my_projects.count }} projeye katılıyorsunuz.</p>
+            <p>• Projelerinizi takip etmek için paneli kullanabilirsiniz.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

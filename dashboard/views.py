@@ -20,34 +20,281 @@ def is_teacher_or_staff(user):
     return user.profile.user_type in ['teacher', 'staff_student']
 
 
+def is_student(user):
+    """Check if user is a student"""
+    if not user.is_authenticated:
+        return False
+    if not hasattr(user, 'profile'):
+        return False
+    return user.profile.user_type == 'student'
+
+
+def is_alumni(user):
+    """Check if user is an alumni"""
+    if not user.is_authenticated:
+        return False
+    if not hasattr(user, 'profile'):
+        return False
+    return user.profile.user_type == 'alumni'
+
+
+def is_admin(user):
+    """Check if user is admin (staff student) or teacher"""
+    if not user.is_authenticated:
+        return False
+    if not hasattr(user, 'profile'):
+        return False
+    return user.profile.user_type in ['staff_student', 'teacher']
+
+
 DASHBOARD_PAGE_SIZE = 12
 
 
 def dashboard_home(request):
+    """Main dashboard that routes to role-specific home page"""
+    user = request.user
+
+    if not user.is_authenticated:
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(request.get_full_path())
+
+    if not hasattr(user, 'profile'):
+        return render(request, 'dashboard/access_denied.html')
+
+    user_type = user.profile.user_type
+
+    if user_type in ['teacher', 'staff_student']:
+        return teacher_dashboard_home(request)
+    elif user_type == 'student':
+        return student_dashboard_home(request)
+    elif user_type == 'alumni':
+        return alumni_dashboard_home(request)
+    else:
+        return render(request, 'dashboard/access_denied.html')
+
+
+def student_dashboard_home(request):
+    """Student dashboard home"""
+    if not is_student(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
+    user = request.user
+    student_class = user.profile.class_level if hasattr(user.profile, 'class_level') else None
+
+    my_projects = Project.objects.filter(team=user).select_related('advisor', 'project_request').prefetch_related('team', 'categories', 'technologies')
+
+    available_requests = ProjectRequest.objects.filter(
+        status='open'
+    ).select_related('teacher', 'teacher__profile')[:5]
+
+    context = {
+        'user_type': 'student',
+        'student_class': student_class,
+        'my_projects': my_projects,
+        'available_requests': available_requests,
+    }
+    return render(request, 'dashboard/home_student.html', context)
+
+
+def student_my_projects(request):
+    """Student's own projects list"""
+    if not is_student(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
+    user = request.user
+    my_projects = Project.objects.filter(team=user).select_related('advisor', 'project_request').prefetch_related('team', 'categories', 'technologies')
+
+    return render(request, 'dashboard/student_projects.html', {
+        'projects': my_projects,
+    })
+
+
+def alumni_projects(request):
+    """Redirect alumni to projects list"""
+    from django.shortcuts import redirect
+    if not is_alumni(request.user):
+        return render(request, 'dashboard/access_denied.html')
+    return redirect('dashboard:projects')
+
+
+def alumni_dashboard_home(request):
+    """Alumni dashboard home"""
+    if not is_alumni(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
+    user = request.user
+
+    try:
+        alumni = Alumni.objects.get(user=user)
+    except Alumni.DoesNotExist:
+        alumni = None
+
+    context = {
+        'user_type': 'alumni',
+        'alumni': alumni,
+    }
+    return render(request, 'dashboard/home_alumni.html', context)
+
+
+def dashboard_news(request):
+    """Manage AI fetched news"""
     if not is_teacher_or_staff(request.user):
         return render(request, 'dashboard/access_denied.html')
-    
+
+    from news.models import Article, NewsKeyword
+
+    pending_news = Article.objects.filter(is_approved=False).order_by('-date')
+    approved_news = Article.objects.filter(is_approved=True).order_by('-date')[:20]
+    keywords = NewsKeyword.objects.all()
+
+    context = {
+        'pending_news': pending_news,
+        'approved_news': approved_news,
+        'keywords': keywords,
+    }
+    return render(request, 'dashboard/news_list.html', context)
+
+
+@login_required
+def approve_news(request):
+    """Approve a news article"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        news_id = data.get('news_id')
+
+        from news.models import Article
+        try:
+            article = Article.objects.get(id=news_id)
+            article.is_approved = True
+            article.save()
+            return JsonResponse({'success': True})
+        except Article.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Haber bulunamadı.'})
+
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek.'})
+
+
+@login_required
+def reject_news(request):
+    """Reject/delete a news article"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        news_id = data.get('news_id')
+
+        from news.models import Article
+        try:
+            article = Article.objects.get(id=news_id)
+            article.delete()
+            return JsonResponse({'success': True})
+        except Article.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Haber bulunamadı.'})
+
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek.'})
+
+
+@login_required
+def delete_news(request):
+    """Delete a news article"""
+    return reject_news(request)
+
+
+@login_required
+def approve_all_news(request):
+    """Approve all pending news"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    from news.models import Article
+    count = Article.objects.filter(is_approved=False).update(is_approved=True)
+
+    return JsonResponse({'success': True, 'count': count})
+
+
+@login_required
+def news_keywords(request):
+    """Add or update news keywords"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        keyword = data.get('keyword', '').strip()
+
+        if not keyword:
+            return JsonResponse({'success': False, 'error': 'Anahtar kelime gerekli.'})
+
+        from news.models import NewsKeyword
+        NewsKeyword.objects.get_or_create(keyword=keyword)
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek.'})
+
+
+@login_required
+def delete_keyword(request):
+    """Delete a news keyword"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        keyword_id = data.get('keyword_id')
+
+        from news.models import NewsKeyword
+        NewsKeyword.objects.get(id=keyword_id).delete()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek.'})
+
+
+@login_required
+def fetch_news_command(request):
+    """Trigger news fetch command"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    import subprocess
+    result = subprocess.run(
+        ['python3', 'manage.py', 'fetch_news'],
+        capture_output=True,
+        text=True,
+        cwd='/Users/azizalim/Projects/bst-portal'
+    )
+
+    return JsonResponse({
+        'success': result.returncode == 0,
+        'output': result.stdout + result.stderr
+    })
+
+
+def teacher_dashboard_home(request):
+    """Teacher/Admin dashboard home"""
+    if not is_teacher_or_staff(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
     user = request.user
     user_type = user.profile.user_type
-    
-    # Toplam Mezun Sayısı
+
     total_alumni = Alumni.objects.count()
-    
-    # Danışmanı olduğu projeler
+
     advised_projects = Project.objects.filter(advisor=user)
     total_projects = advised_projects.count()
-    
-    # Toplam Öğrenci Sayısı (Danışmanı olduğu projelerdeki takım üyeleri)
+
     total_students = User.objects.filter(
         projects__in=advised_projects,
         profile__user_type='student'
     ).distinct().count()
-    
-    # Bekleyen Onaylamalar (Değerlendirme aşamasındaki projeler)
+
     pending_approvals = Project.objects.filter(
         advisor=user, status='in_review'
     ).count()
-    
+
     context = {
         'total_alumni': total_alumni,
         'total_projects': total_projects,
@@ -55,7 +302,7 @@ def dashboard_home(request):
         'pending_approvals': pending_approvals,
         'user_type': user_type,
     }
-    return render(request, 'dashboard/home.html', context)
+    return render(request, 'dashboard/home_teacher.html', context)
 
 
 def dashboard_skills(request):
@@ -231,16 +478,22 @@ def dashboard_projects(request):
     is_teacher_or_staff = False
     if user and hasattr(user, 'profile'):
         is_teacher_or_staff = user.profile.user_type in ['teacher', 'staff_student']
-    
+
+    # User type for template
+    user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
+
     # Get filter parameters
     query = request.GET.get('q', '')
     status = request.GET.get('status', '')
     request_id = request.GET.get('project_request', '')
     
-    # Base query: if user is teacher/staff, show all projects
-    # Otherwise, show only completed projects
+    # Base query: if user is teacher/staff, show all projects (except draft)
+    # If alumni, show all except draft
+    # If student, show only completed
     if is_teacher_or_staff:
         projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
+    elif is_alumni(user):
+        projects = Project.objects.exclude(status='draft').prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor')
     else:
         projects = Project.objects.filter(status='completed').prefetch_related('team', 'categories', 'technologies', 'project_request')
     
@@ -271,6 +524,7 @@ def dashboard_projects(request):
         'teacher_requests': teacher_requests,
         'selected_request': request_id,
         'is_teacher_or_staff': is_teacher_or_staff,
+        'user_type': user_type,
         'has_more': has_more,
         'next_offset': DASHBOARD_PAGE_SIZE,
     }
@@ -290,9 +544,11 @@ def dashboard_projects_load_more(request):
     
     if is_teacher_or_staff:
         projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
+    elif hasattr(user, 'profile') and user.profile.user_type == 'alumni':
+        projects = Project.objects.exclude(status='draft').prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor')
     else:
         projects = Project.objects.filter(status='completed').prefetch_related('team', 'categories', 'technologies', 'project_request')
-    
+
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
     if status:
@@ -301,7 +557,7 @@ def dashboard_projects_load_more(request):
             projects = Project.objects.none()
     if request_id:
         projects = projects.filter(project_request_id=request_id)
-    
+
     total_count = projects.count()
     projects = projects[offset:offset + DASHBOARD_PAGE_SIZE]
     has_more = offset + DASHBOARD_PAGE_SIZE < total_count
@@ -552,15 +808,6 @@ def update_student_class(request):
         return JsonResponse({'success': True})
 
     return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})
-
-
-def is_admin(user):
-    """Check if user is admin (staff student) or teacher"""
-    if not user.is_authenticated:
-        return False
-    if not hasattr(user, 'profile'):
-        return False
-    return user.profile.user_type in ['staff_student', 'teacher']
 
 
 @login_required
