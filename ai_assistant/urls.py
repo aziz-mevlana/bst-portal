@@ -10,4 +10,7 @@ urlpatterns = [
     path('sources/add/', views.source_add, name='source_add'),
     path('sources/update/', views.source_update, name='source_update'),
     path('sources/delete/', views.source_delete, name='source_delete'),
+    path('faq/', views.faq_stats, name='faq_stats'),
+    path('faq/delete/', views.faq_delete, name='faq_delete'),
+    path('faq/clear/', views.faq_clear_all, name='faq_clear_all'),
 ]

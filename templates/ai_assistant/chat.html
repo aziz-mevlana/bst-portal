@@ -11,6 +11,10 @@
         </div>
         <div class="flex items-center gap-3">
             {% if user_type == 'teacher' or user_type == 'staff_student' %}
+            <a href="{% url 'ai_assistant:faq_stats' %}" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                FAQ Istatistikleri
+            </a>
             <a href="{% url 'ai_assistant:source_list' %}" class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition text-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Bilgi Kaynaklari
@@ -39,7 +43,6 @@
 
         <!-- Sik Sorulanlar -->
         <div class="border-t border-gray-700 px-4 py-3">
-            <p class="text-xs text-gray-500 mb-2">Sik Sorulanlar:</p>
             <div class="flex flex-wrap gap-2">
                 <button onclick="askQuestion('Staj kacinci sinifta yapilir?')" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-full text-sm text-gray-300 transition">
                     Staj kacinci sinifta?
@@ -83,7 +86,7 @@ function getCsrf() {
            document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 }
 
-function addMessage(text, isUser, sources) {
+function addMessage(text, isUser, sources, cached) {
     const container = document.getElementById('chatMessages');
     const div = document.createElement('div');
     div.className = 'flex gap-3 ' + (isUser ? 'justify-end' : '');
@@ -99,12 +102,16 @@ function addMessage(text, isUser, sources) {
         if (sources && sources.length > 0) {
             sourceTag = `<p class="text-xs text-gray-500 mt-2">Kaynaklar: ${sources.join(', ')}</p>`;
         }
+        let cacheTag = '';
+        if (cached) {
+            cacheTag = `<span class="text-xs text-green-400 ml-2">(Hizli cevap)</span>`;
+        }
         div.innerHTML = `
             <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             </div>
             <div class="bg-gray-700 rounded-xl rounded-tl-none px-4 py-3 max-w-[80%]">
-                <p class="text-sm text-gray-100 whitespace-pre-wrap">${escapeHtml(text)}</p>
+                <p class="text-sm text-gray-100 whitespace-pre-wrap">${escapeHtml(text)}${cacheTag}</p>
                 ${sourceTag}
             </div>
         `;
@@ -180,7 +187,7 @@ async function sendMessage() {
         removeLoading();
 
         if (data.success) {
-            addMessage(data.response, false, data.sources_used);
+            addMessage(data.response, false, data.sources_used, data.cached);
         } else {
             addMessage('Hata: ' + (data.error || 'Bilinmeyen hata'), false);
         }

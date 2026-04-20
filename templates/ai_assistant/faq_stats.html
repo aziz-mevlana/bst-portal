@@ -1,0 +1,178 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="mb-6 flex flex-row justify-between items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">FAQ Istatistikleri</h1>
+        <p class="text-gray-400">Onceden cevaplanmis sorular ve kullanilma verileri</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <a href="{% url 'ai_assistant:chat' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            AI Asistana Don
+        </a>
+        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Istatistik Kartlari -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3">
+            <div class="p-3 bg-blue-900/50 rounded-lg">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Toplam Cache</p>
+                <p class="text-2xl font-bold">{{ total_cache }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3">
+            <div class="p-3 bg-green-900/50 rounded-lg">
+                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">Toplam Kullanim</p>
+                <p class="text-2xl font-bold">{{ total_hits }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+        <div class="flex items-center gap-3">
+            <div class="p-3 bg-yellow-900/50 rounded-lg">
+                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-400">En Cok Sorulan</p>
+                <p class="text-lg font-bold truncate max-w-[200px]">{% if most_asked %}{{ most_asked.hit_count }} kez{% else %}-{% endif %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Temizle Butonu -->
+{% if caches %}
+<div class="mb-4">
+    <button onclick="clearAllCache()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-sm">
+        Tum Cache Temizle
+    </button>
+</div>
+{% endif %}
+
+<!-- Cache Listesi -->
+<div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+    <table class="w-full">
+        <thead>
+            <tr class="bg-gray-700">
+                <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Soru</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-20">Hit</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-32">Olusturulma</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-32">Son Kullanim</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-24">Islem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cache in caches %}
+            <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                <td class="px-4 py-3">
+                    <div class="cursor-pointer" onclick="toggleResponse({{ cache.id }})">
+                        <p class="text-sm font-medium">{{ cache.question|truncatechars:80 }}</p>
+                        <div id="response-{{ cache.id }}" class="hidden mt-2 p-3 bg-gray-900 rounded-lg">
+                            <p class="text-xs text-gray-400 whitespace-pre-wrap">{{ cache.response|truncatechars:500 }}</p>
+                            {% if cache.sources_used %}
+                            <p class="text-xs text-gray-500 mt-2">Kaynaklar: {{ cache.sources_used|join:", " }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <span class="px-2 py-1 text-xs rounded-full {% if cache.hit_count > 5 %}bg-green-900 text-green-300{% elif cache.hit_count > 2 %}bg-yellow-900 text-yellow-300{% else %}bg-gray-700 text-gray-300{% endif %}">
+                        {{ cache.hit_count }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-center text-sm text-gray-400">
+                    {{ cache.created_at|date:"d.m.Y H:i" }}
+                </td>
+                <td class="px-4 py-3 text-center text-sm text-gray-400">
+                    {{ cache.last_used_at|date:"d.m.Y H:i" }}
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <button onclick="deleteCache({{ cache.id }})" class="text-gray-400 hover:text-red-400 p-1" title="Sil">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                    Henuz cache'lenmis soru yok. AI Asistan'a soru sorarak cache olusturabilirsiniz.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function getCsrf() {
+    return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+}
+
+function toggleResponse(id) {
+    const el = document.getElementById('response-' + id);
+    el.classList.toggle('hidden');
+}
+
+async function deleteCache(id) {
+    if (!confirm('Bu cache kaydini silmek istediginize emin misiniz?')) return;
+
+    try {
+        const response = await fetch('{% url "ai_assistant:faq_delete" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ cache_id: id })
+        });
+        const data = await response.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    }
+}
+
+async function clearAllCache() {
+    if (!confirm('Tum cache kayitlarini silmek istediginize emin misiniz?')) return;
+
+    try {
+        const response = await fetch('{% url "ai_assistant:faq_clear_all" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Hata: ' + data.error);
+        }
+    } catch (e) {
+        alert('Hata: ' + e.message);
+    }
+}
+</script>
+
+<form style="display:none">{% csrf_token %}</form>
+{% endblock %}

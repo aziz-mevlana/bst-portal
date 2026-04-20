@@ -84,19 +84,21 @@ def chat_send(request):
         if not all_sources.exists():
             return JsonResponse({
                 'success': True,
-                'response': 'Henuz bilgi kaynagi eklenmemis. Yonetici panelinden bilgi kaynagi eklenmesini talep edin.'
+                'response': 'Henuz bilgi kaynagi eklenmemis. Yonetici panelinden bilgi kaynagi eklenmesini talep edin.',
+                'cached': False
             })
 
         # Sadece ilgili kaynaklari sec
         sources = filter_relevant_sources(all_sources, message)
 
-        # Gemini'den cevap al
-        response = get_gemini_response(message, sources)
+        # Gemini'den cevap al (cache kontrol dahil)
+        result = get_gemini_response(message, sources)
 
         return JsonResponse({
             'success': True,
-            'response': response,
-            'sources_used': list(set([s.title for s in sources]))
+            'response': result['response'],
+            'sources_used': result['sources_used'],
+            'cached': result['cached']
         })
 
     except json.JSONDecodeError:
@@ -230,5 +232,69 @@ def source_update(request):
 
     except KnowledgeSource.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Kaynak bulunamadi.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def faq_stats(request):
+    """FAQ istatistikleri sayfasi"""
+    if not is_teacher_or_staff(request.user):
+        return render(request, 'dashboard/access_denied.html')
+
+    from .models import ChatCache
+    
+    caches = ChatCache.objects.all()
+    total_cache = caches.count()
+    total_hits = sum(c.hit_count for c in caches)
+    most_asked = caches.order_by('-hit_count').first()
+
+    context = {
+        'caches': caches,
+        'total_cache': total_cache,
+        'total_hits': total_hits,
+        'most_asked': most_asked,
+    }
+    return render(request, 'ai_assistant/faq_stats.html', context)
+
+
+@login_required
+def faq_delete(request):
+    """FAQ cache sil"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Sadece POST desteklenir.'})
+
+    try:
+        data = json.loads(request.body)
+        cache_id = data.get('cache_id')
+
+        from .models import ChatCache
+        cache = ChatCache.objects.get(id=cache_id)
+        cache.delete()
+
+        return JsonResponse({'success': True, 'message': 'Cache silindi.'})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def faq_clear_all(request):
+    """Tum FAQ cache temizle"""
+    if not is_teacher_or_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Sadece POST desteklenir.'})
+
+    try:
+        from .models import ChatCache
+        count = ChatCache.objects.all().delete()[0]
+
+        return JsonResponse({'success': True, 'message': f'{count} cache silindi.'})
+
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
