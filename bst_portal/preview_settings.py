@@ -12,6 +12,7 @@ if not secret_file.exists():
 
 # Override local development values before importing the normal settings.
 os.environ['DJANGO_DEBUG'] = 'False'
+os.environ['DJANGO_ISOLATED_PREVIEW'] = 'True'
 os.environ['DJANGO_SECRET_KEY'] = secret_file.read_text(encoding='utf-8').strip()
 os.environ['DJANGO_SECURE_SSL_REDIRECT'] = 'True'
 os.environ['USE_S3'] = 'False'

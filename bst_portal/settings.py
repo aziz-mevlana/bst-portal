@@ -245,7 +245,8 @@ GEMINI_MODELS = [
 ]
 
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
-if not DEBUG and not REDIS_URL:
+ISOLATED_PREVIEW = env_bool('DJANGO_ISOLATED_PREVIEW', False)
+if not DEBUG and not REDIS_URL and not ISOLATED_PREVIEW:
     raise ImproperlyConfigured('REDIS_URL canlı ortamda ortak rate-limit ve görev kuyruğu için zorunludur.')
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', REDIS_URL or 'memory://')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', REDIS_URL or 'cache+memory://')
