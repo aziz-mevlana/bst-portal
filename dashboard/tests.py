@@ -16,7 +16,8 @@ class PublicPageSmokeTests(TestCase):
     def test_public_shell_loads_cache_safe_ui_layer(self):
         response = self.client.get('/')
 
-        self.assertContains(response, 'css/bst-ui-v2.css?v=20260827.1')
+        self.assertContains(response, 'css/bst-ui-v2.css?v=20260830.2')
+        self.assertContains(response, 'css/mobile-ui.css?v=20260830.1')
 
 
 class AcademicApprovalPermissionTests(TestCase):

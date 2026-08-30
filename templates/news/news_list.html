@@ -3,9 +3,9 @@
 {% block title %}Haberler ve Duyurular | BST Akademi{% endblock %}
 
 {% block content %}
-<main class="min-h-screen bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
+<main class="mobile-page min-h-screen bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
   <div class="mx-auto max-w-7xl">
-    <header class="border-b border-[var(--border)] pb-8">
+    <header class="news-page-hero border-b border-[var(--border)] pb-8">
       <div class="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div>
           <p class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">BST gündemi</p>
@@ -16,7 +16,7 @@
           <a href="{% url 'news:create_news' %}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Yeni haber</a>
         {% endif %}
       </div>
-      <form method="get" class="mt-7 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-[1fr_15rem_auto]" role="search">
+      <form method="get" class="news-filter-form mt-7 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-[1fr_15rem_auto]" role="search">
         <label class="sr-only" for="news-search">Haberlerde ara</label>
         <input id="news-search" name="q" value="{{ query }}" placeholder="Başlık veya içerikte ara…" class="min-h-11 rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] px-4 text-white placeholder:text-gray-500">
         <label class="sr-only" for="news-category">Kategori</label>

@@ -125,7 +125,7 @@ class DashboardStatisticsTests(TestCase):
         self.assertContains(response, 'Proje Analitiği')
         self.assertContains(response, 'Yönetim Paneli')
         self.assertNotContains(response, 'Öğrenci Paneli')
-        self.assertContains(response, 'static/js/dashboard.js?v=20260830.2')
+        self.assertContains(response, 'static/js/dashboard.js?v=20260830.3')
         self.assertNotContains(response, 'data-mobile-search')
         self.assertEqual(response.content.count(b'data-sidebar-open class='), 1)
         for heading in ('İçerik', 'Kullanıcılar', 'Moderasyon', 'Kurumsal', 'Araçlar'):

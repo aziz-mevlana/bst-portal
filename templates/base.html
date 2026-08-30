@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="{% static 'css/community-tools.css' %}?v=20260830.1">
     
     {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/mobile-ui.css' %}?v=20260830.1">
 </head>
 <body class="{% if user.is_authenticated %}user-logged-in{% endif %}">
     {% include 'includes/header.html' %}

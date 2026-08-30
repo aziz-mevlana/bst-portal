@@ -1,0 +1,310 @@
+/*
+ * Mobile-only refinement layer.
+ * Loaded after page styles so the established desktop visual language remains intact.
+ */
+
+@media (max-width: 1179px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: clip;
+    }
+
+    #site-content {
+        min-width: 0;
+        overflow-x: clip;
+    }
+
+    #site-content img,
+    #site-content video,
+    #site-content iframe {
+        max-width: 100%;
+    }
+
+    .mobile-menu {
+        top: var(--header-height, 4.25rem) !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: auto !important;
+        overflow: hidden !important;
+        background: rgb(3 8 18 / 72%) !important;
+        animation: none !important;
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    .mobile-menu nav {
+        width: min(88vw, 22.5rem) !important;
+        max-width: none !important;
+        height: 100%;
+        margin: 0 0 0 auto !important;
+        padding: 0.85rem !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--navbar-bg, #0c1422);
+        border-left: 1px solid var(--border, #26344a);
+        box-shadow: -24px 0 55px rgb(0 0 0 / 38%);
+    }
+
+    .mobile-menu.active nav {
+        animation: bst-mobile-drawer-in 220ms ease-out both;
+    }
+
+    .mobile-menu ul {
+        gap: 0.15rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .mobile-menu li,
+    .mobile-menu li:nth-child(n) {
+        min-width: 0;
+        opacity: 1 !important;
+        transform: none !important;
+        animation: none !important;
+    }
+
+    .mobile-menu a,
+    .mobile-menu button {
+        position: relative;
+        display: flex;
+        width: 100%;
+        min-height: 2.75rem;
+        align-items: center;
+        padding: 0.65rem 0.8rem !important;
+        overflow: hidden;
+        border: 0 !important;
+        border-radius: 0.65rem !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--text-secondary, #aab5c5) !important;
+        font-size: 0.92rem !important;
+        font-weight: 600 !important;
+        line-height: 1.25;
+        text-align: left;
+        text-overflow: ellipsis;
+        transform: none !important;
+    }
+
+    .mobile-menu a::before,
+    .mobile-menu a::after {
+        display: none !important;
+    }
+
+    .mobile-menu a:hover,
+    .mobile-menu a:focus-visible,
+    .mobile-menu button:hover,
+    .mobile-menu button:focus-visible,
+    .mobile-menu a.active {
+        background: rgb(255 255 255 / 6%) !important;
+        color: var(--text-primary, #f5f7fb) !important;
+    }
+
+    .mobile-auth-button,
+    .mobile-account {
+        margin-top: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        border-top: 1px solid var(--border, #26344a);
+    }
+
+    .mobile-profile-header {
+        min-width: 0;
+        padding: 0.3rem 0.75rem 0.65rem;
+    }
+
+    .mobile-profile-header span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-account form button {
+        min-height: 2.75rem !important;
+        padding: 0.65rem 0.8rem !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: #fca5a5 !important;
+        font-size: 0.92rem !important;
+    }
+
+    @keyframes bst-mobile-drawer-in {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+}
+
+@media (max-width: 767px) {
+    .dashboard-content,
+    .settings-shell {
+        overflow-x: hidden !important;
+    }
+
+    .settings-hero::after {
+        right: 0 !important;
+    }
+
+    .mobile-page {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+    }
+
+    .mobile-page-hero {
+        margin-bottom: 1.65rem !important;
+    }
+
+    .mobile-page-hero h1,
+    .career-page-hero h1,
+    .news-page-hero h1 {
+        font-size: clamp(1.85rem, 8.5vw, 2.35rem) !important;
+        line-height: 1.08 !important;
+        letter-spacing: -0.025em;
+    }
+
+    .mobile-page-hero > p:last-child,
+    .career-page-hero h1 + p,
+    .news-page-hero h1 + p {
+        margin-top: 0.75rem !important;
+        font-size: 0.92rem !important;
+        line-height: 1.6 !important;
+    }
+
+    .talent-filter-form,
+    .career-filter-form,
+    .news-filter-form {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.55rem !important;
+        padding: 0.7rem !important;
+        border-radius: 0.9rem !important;
+    }
+
+    .talent-filter-form > *,
+    .career-filter-form > *,
+    .news-filter-form > * {
+        min-width: 0;
+        min-height: 2.75rem !important;
+        padding: 0.6rem 0.7rem !important;
+        border-radius: 0.65rem !important;
+        font-size: 0.82rem !important;
+    }
+
+    .talent-filter-form > input[type="search"],
+    .talent-filter-form > button,
+    .talent-filter-form > a,
+    .career-filter-form > input[type="search"],
+    .career-filter-form > button,
+    .news-filter-form > input:not([type="hidden"]) {
+        grid-column: 1 / -1;
+    }
+
+    .career-filter-form > select[name="technology"] {
+        grid-column: 1 / -1;
+    }
+
+    .news-filter-form > select,
+    .news-filter-form > button {
+        grid-column: auto;
+    }
+
+    .career-page-hero {
+        padding: 1.1rem !important;
+        border-radius: 1rem !important;
+    }
+
+    .career-page-hero > div {
+        gap: 1rem !important;
+    }
+
+    .news-page-hero {
+        padding-bottom: 1.5rem !important;
+    }
+
+    .news-filter-form,
+    .career-filter-form {
+        margin-top: 1.25rem !important;
+    }
+
+    .academic-directory-grid .academic-search-target {
+        padding: 1rem !important;
+    }
+
+    .event-empty-state {
+        padding-top: 2.5rem !important;
+        padding-bottom: 2.5rem !important;
+    }
+
+    .home-container {
+        width: min(100% - 1.5rem, 80rem) !important;
+    }
+
+    .home-hero {
+        padding: 2.75rem 0 3.25rem !important;
+    }
+
+    .home-hero h1 {
+        font-size: clamp(2.35rem, 11.5vw, 3.15rem) !important;
+        line-height: 0.98 !important;
+        letter-spacing: -0.045em;
+    }
+
+    .home-hero-lead {
+        font-size: 0.92rem !important;
+        line-height: 1.65 !important;
+    }
+
+    .home-section {
+        padding-top: 3.5rem !important;
+        padding-bottom: 3.5rem !important;
+    }
+
+    .site-footer .footer-container {
+        width: min(100% - 2rem, 75rem);
+        padding-top: 2.25rem;
+    }
+
+    .site-footer .footer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.75rem 1.25rem;
+    }
+
+    .site-footer .footer-brand,
+    .site-footer .footer-column:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .site-footer .footer-description {
+        margin-top: 0.8rem;
+    }
+
+    .site-footer .footer-heading {
+        margin-bottom: 0.65rem;
+    }
+
+    .site-footer .footer-links {
+        gap: 0.55rem;
+    }
+
+    .site-footer .footer-bottom {
+        margin-top: 2rem;
+    }
+
+    #toastContainer {
+        right: 1rem !important;
+        left: 1rem !important;
+    }
+
+    #toastContainer > div {
+        width: 100%;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-menu.active nav {
+        animation: none !important;
+    }
+}

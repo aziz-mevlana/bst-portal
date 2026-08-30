@@ -4,6 +4,7 @@
         const overlay = document.getElementById('sidebar-overlay');
         const openButton = document.querySelector('[data-sidebar-open]');
         const closeButton = document.querySelector('[data-sidebar-close]');
+        const desktopQuery = window.matchMedia('(min-width: 768px)');
 
         if (!sidebar || !overlay || !openButton || openButton.dataset.sidebarReady === 'true') return;
         openButton.dataset.sidebarReady = 'true';
@@ -34,8 +35,8 @@
                 openButton.focus();
             }
         });
-        window.addEventListener('resize', function () {
-            if (window.innerWidth >= 768) setSidebar(false);
+        desktopQuery.addEventListener('change', function (event) {
+            if (event.matches) setSidebar(false);
         });
     }
 

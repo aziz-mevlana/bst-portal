@@ -3,9 +3,9 @@
 {% block title %}Kariyer Fırsatları | BST Portal{% endblock %}
 
 {% block content %}
-<main class="min-h-screen bg-[#080d18] px-4 py-10 sm:py-12">
+<main class="mobile-page min-h-screen bg-[#080d18] px-4 py-10 sm:py-12">
   <div class="mx-auto max-w-7xl">
-    <header class="rounded-3xl border border-gray-800 bg-gradient-to-br from-blue-950/30 to-transparent p-6 sm:p-8">
+    <header class="career-page-hero rounded-3xl border border-gray-800 bg-gradient-to-br from-blue-950/30 to-transparent p-6 sm:p-8">
       <div class="flex flex-wrap items-end justify-between gap-5">
         <div><p class="text-sm font-semibold uppercase tracking-widest text-blue-400">BST Kariyer</p><h1 class="mt-2 text-4xl font-black text-white">İş, staj ve ekip fırsatları</h1><p class="mt-3 max-w-3xl leading-7 text-gray-400">Topluluk tarafından paylaşılan, başvuru bilgileri doğrulanan ve moderasyondan geçen güncel fırsatları keşfedin.</p></div>
         <div class="flex flex-wrap gap-3">{% if user.is_authenticated %}<a href="{% url 'career:mentorship_dashboard' %}" class="inline-flex min-h-11 items-center rounded-xl border border-gray-600 px-4 py-3 text-sm font-semibold text-gray-200 hover:bg-gray-800">Mentorluk alanı</a>{% endif %}{% if can_publish %}<a href="{% url 'career:opportunity_create' %}" class="inline-flex min-h-11 items-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-500">Yeni kariyer ilanı</a>{% endif %}</div>
@@ -15,7 +15,7 @@
       {% endif %}
     </header>
 
-    <form method="get" class="mt-7 grid gap-3 rounded-2xl border border-gray-700 bg-[#111827] p-5 md:grid-cols-[minmax(14rem,1.4fr)_repeat(3,minmax(10rem,1fr))_auto]">
+    <form method="get" class="career-filter-form mt-7 grid gap-3 rounded-2xl border border-gray-700 bg-[#111827] p-5 md:grid-cols-[minmax(14rem,1.4fr)_repeat(3,minmax(10rem,1fr))_auto]">
       {% if selected_scope %}<input type="hidden" name="scope" value="{{ selected_scope }}">{% endif %}
       <label class="sr-only" for="career-query">İlan veya kurum ara</label><input id="career-query" type="search" name="q" value="{{ selected.q }}" placeholder="İlan veya kurum ara…" class="rounded-xl border border-gray-600 bg-gray-900 p-3 text-white">
       <label class="sr-only" for="career-type">İlan türü</label><select id="career-type" name="type" class="rounded-xl border border-gray-600 bg-gray-900 p-3 text-gray-300"><option value="">Tüm ilan türleri</option>{% for value,label in types %}<option value="{{ value }}" {% if selected.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>

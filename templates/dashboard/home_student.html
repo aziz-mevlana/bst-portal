@@ -5,7 +5,7 @@
 {% block dashboard_content %}
 <div class="space-y-7">
   <header class="relative overflow-hidden rounded-3xl border border-blue-900/50 bg-gradient-to-br from-blue-950/70 via-[#101827] to-[#101827] p-6 sm:p-8">
-    <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-600/15 blur-3xl"></div>
+    <div class="pointer-events-none absolute right-0 -top-20 h-56 w-56 rounded-full bg-blue-600/15 blur-3xl md:-right-16" aria-hidden="true"></div>
     <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
       <div class="max-w-3xl">
         <div class="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.16em]"><span class="text-blue-300">Öğrenci çalışma alanı</span>{% if user_type == 'staff_student' %}<span class="rounded-full border border-violet-700/60 bg-violet-950/50 px-3 py-1 text-violet-300">BST Yetkilisi</span>{% endif %}{% if student_class %}<span class="rounded-full border border-gray-700 bg-gray-900/70 px-3 py-1 text-gray-400">{{ student_class }}. sınıf</span>{% endif %}</div>
