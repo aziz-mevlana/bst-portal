@@ -112,7 +112,7 @@ main[class*="min-h-screen"] {
 /* Tum uygulama formlarinin eski CSS'te gorunmez kalmasini engelle. */
 .project-form-input,
 .bst-field,
-#site-content form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+#site-content form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not(.bst-multiselect-search),
 #site-content form select:not(.bst-multiselect-native),
 #site-content form textarea {
     display: block;
