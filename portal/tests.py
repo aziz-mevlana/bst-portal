@@ -77,7 +77,43 @@ class AcademicProfileTests(TestCase):
 
         self.assertContains(response, 'Akademik profili görüntüle')
         self.assertContains(response, reverse('portal:academic_detail', args=[self.teacher.profile.public_slug]))
+        self.assertContains(response, 'Akademik profili düzenle')
+        self.assertContains(response, 'name="teacher_title"')
+        self.assertContains(response, 'name="department"')
         self.assertContains(response, 'Kısa tanıtım')
+
+    def test_academic_can_update_role_specific_profile_fields(self):
+        self.client.force_login(self.teacher)
+        technology = self.teacher.profile.technologies.get()
+        category = self.teacher.profile.categories.get()
+
+        response = self.client.post(reverse('accounts:portfolio_settings'), {
+            'teacher_title': 'doc_dr',
+            'department': 'Yapay Zekâ Anabilim Dalı',
+            'headline': 'Güncellenmiş akademik tanıtım',
+            'bio': 'Güncellenmiş akademik biyografi',
+            'categories': [category.pk],
+            'technologies': [technology.pk],
+        })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.teacher.profile.refresh_from_db()
+        self.assertEqual(self.teacher.profile.teacher_title, 'doc_dr')
+        self.assertEqual(self.teacher.profile.department, 'Yapay Zekâ Anabilim Dalı')
+        self.assertEqual(self.teacher.profile.headline, 'Güncellenmiş akademik tanıtım')
+
+    def test_academic_profile_menu_opens_public_page_and_showcase_remains_manageable(self):
+        self.client.force_login(self.teacher)
+        detail_url = reverse('portal:academic_detail', args=[self.teacher.profile.public_slug])
+
+        response = self.client.get(reverse('accounts:profile'))
+        manage = self.client.get(reverse('accounts:profile'), {'manage': 'showcase'})
+        detail = self.client.get(detail_url)
+
+        self.assertRedirects(response, detail_url)
+        self.assertEqual(manage.status_code, 200)
+        self.assertContains(manage, 'Profilimde hangi projeler görünsün?')
+        self.assertContains(detail, '?manage=showcase#manage-showcase')
 
 
 class GlobalSearchTests(TestCase):

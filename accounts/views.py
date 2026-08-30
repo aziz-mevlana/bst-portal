@@ -777,6 +777,14 @@ def profile_showcase_view(request, user_id=None):
         is_own_profile = True
 
     profile, _ = Profile.objects.get_or_create(user=view_user)
+    if (
+        is_own_profile
+        and profile.user_type == 'teacher'
+        and request.method == 'GET'
+        and request.GET.get('manage') != 'showcase'
+    ):
+        return redirect(profile.get_absolute_url())
+
     eligible_projects = Project.objects.filter(
         Q(created_by=view_user)
         | Q(team=view_user)

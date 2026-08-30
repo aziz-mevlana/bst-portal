@@ -31,7 +31,7 @@
       </div>
       <a href="{% url 'accounts:profile' %}" class="settings-hero-action">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Proje sergime git</span>
+        <span>{% if profile.user_type == 'teacher' %}Akademik profilime git{% else %}Proje sergime git{% endif %}</span>
       </a>
     </header>
 
@@ -60,7 +60,7 @@
         <nav class="settings-nav">
           <span class="settings-nav-label">Ayar bölümleri</span>
           <a class="settings-nav-link" href="#account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Hesap</a>
-          <a class="settings-nav-link" href="#profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V4.8A1.8 1.8 0 0 1 5.8 3h12.4A1.8 1.8 0 0 1 20 4.8v14.7M8 7h8M8 11h5M3 21h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Profil</a>
+          <a class="settings-nav-link" href="#profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V4.8A1.8 1.8 0 0 1 5.8 3h12.4A1.8 1.8 0 0 1 20 4.8v14.7M8 7h8M8 11h5M3 21h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>{% if profile.user_type == 'teacher' %}Akademik profil{% else %}Profil{% endif %}</a>
           {% if profile.user_type == 'visitor' or profile.user_type == 'approved_member' %}<a class="settings-nav-link" href="#approved-member"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6zM9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Onaylı Üye Başvurusu</a>{% endif %}
           <a class="settings-nav-link" href="#security"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.2c0 4.8 3 8 7.5 9.8 4.5-1.8 7.5-5 7.5-9.8V6L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9.5 12 1.7 1.7 3.6-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Güvenlik</a>
           <a class="settings-nav-link" href="#privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v11H5V10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 14v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Gizlilik</a>
@@ -86,7 +86,7 @@
         </section>
 
         <section id="profile" class="settings-card">
-          <div class="settings-section-header"><div class="settings-section-heading"><span class="settings-section-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V4.8A1.8 1.8 0 0 1 5.8 3h12.4A1.8 1.8 0 0 1 20 4.8v14.7M8 7h8M8 11h5M3 21h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h2>Profil ve portfolyo</h2><p>Kendinizi, hedeflerinizi ve teknik yetkinliklerinizi tanıtın.</p></div></div>{% if not user.is_staff and not user.is_superuser %}{% if profile.user_type == 'student' or profile.user_type == 'staff_student' %}<a href="{% url 'portal:portfolio_detail' slug=profile.public_slug %}" class="settings-inline-link">Portfolyoyu görüntüle →</a>{% elif profile.user_type == 'teacher' %}<a href="{% url 'portal:academic_detail' slug=profile.public_slug %}" class="settings-inline-link">Akademik profili görüntüle →</a>{% endif %}{% endif %}</div>
+          <div class="settings-section-header"><div class="settings-section-heading"><span class="settings-section-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V4.8A1.8 1.8 0 0 1 5.8 3h12.4A1.8 1.8 0 0 1 20 4.8v14.7M8 7h8M8 11h5M3 21h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h2>{% if profile.user_type == 'teacher' %}Akademik profili düzenle{% else %}Profil ve portfolyo{% endif %}</h2><p>{% if profile.user_type == 'teacher' %}Ünvanınızı, bölümünüzü, araştırma alanlarınızı ve akademik çalışmalarınızı tanıtın.{% else %}Kendinizi, hedeflerinizi ve teknik yetkinliklerinizi tanıtın.{% endif %}</p></div></div>{% if not user.is_staff and not user.is_superuser %}{% if profile.user_type == 'student' or profile.user_type == 'staff_student' %}<a href="{% url 'portal:portfolio_detail' slug=profile.public_slug %}" class="settings-inline-link">Portfolyoyu görüntüle →</a>{% elif profile.user_type == 'teacher' %}<a href="{% url 'portal:academic_detail' slug=profile.public_slug %}" class="settings-inline-link">Akademik profili görüntüle →</a>{% endif %}{% endif %}</div>
           <form method="post" class="settings-form-grid">
             {% csrf_token %}
             {% for field in form %}

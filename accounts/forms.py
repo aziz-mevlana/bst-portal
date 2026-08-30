@@ -52,11 +52,13 @@ class PortfolioSettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = [
-            'headline', 'bio', 'graduation_year', 'class_level', 'github_username', 'linkedin_slug',
+            'teacher_title', 'department', 'headline', 'bio', 'graduation_year', 'class_level', 'github_username', 'linkedin_slug',
             'website_url', 'is_looking_for_job', 'is_looking_for_internship',
             'is_open_to_mentoring', 'is_open_to_team_offers', 'categories', 'technologies',
         ]
         widgets = {
+            'teacher_title': forms.Select(attrs={'class': INPUT_CLASS}),
+            'department': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Bölüm veya anabilim dalı'}),
             'headline': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: Backend geliştirici ve veri bilimi öğrencisi'}),
             'bio': forms.Textarea(attrs={'rows': 5, 'class': INPUT_CLASS, 'placeholder': 'Kendinizi, ilgi alanlarınızı, deneyiminizi ve hedeflerinizi anlatın'}),
             'graduation_year': forms.NumberInput(attrs={'class': INPUT_CLASS, 'min': 2020, 'max': 2100, 'placeholder': 'Örn: 2027'}),
@@ -68,6 +70,7 @@ class PortfolioSettingsForm(forms.ModelForm):
             'technologies': forms.SelectMultiple(attrs={'data-enhance-multiselect': 'true', 'data-placeholder': 'Teknoloji ara…'}),
         }
         labels = {
+            'teacher_title': 'Akademik ünvan', 'department': 'Bölüm / Anabilim dalı',
             'headline': 'Kısa tanıtım', 'bio': 'Biyografi', 'graduation_year': 'Mezuniyet yılı',
             'class_level': 'Sınıf', 'github_username': 'GitHub kullanıcı adı',
             'linkedin_slug': 'LinkedIn profil kullanıcı adı',
@@ -83,6 +86,9 @@ class PortfolioSettingsForm(forms.ModelForm):
         technology_ids = self.instance.technologies.values_list('pk', flat=True) if self.instance.pk else []
         self.fields['categories'].queryset = ProjectCategory.objects.filter(Q(is_active=True) | Q(pk__in=category_ids)).distinct()
         self.fields['technologies'].queryset = Technology.objects.filter(Q(is_active=True) | Q(pk__in=technology_ids)).distinct()
+        if self.instance.user_type != 'teacher':
+            self.fields.pop('teacher_title', None)
+            self.fields.pop('department', None)
         if self.instance.user_type not in {'student', 'staff_student'}:
             self.fields.pop('class_level', None)
         else:
