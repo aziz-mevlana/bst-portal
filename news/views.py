@@ -130,8 +130,19 @@ def edit_news(request, pk):
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES, instance=article)
         if form.is_valid():
-            article = form.save()
-            messages.success(request, 'Haber başarıyla güncellendi.')
+            article = form.save(commit=False)
+            requires_review = not (request.user.is_staff or request.user.is_superuser)
+            if requires_review:
+                article.is_approved = False
+                article.is_homepage = False
+                article.is_featured = False
+            article.save()
+            form.save_m2m()
+            messages.success(
+                request,
+                'Haber güncellendi ve yeniden yönetici onayına gönderildi.'
+                if requires_review else 'Haber başarıyla güncellendi.',
+            )
             return redirect('news:news_detail', pk=article.pk)
         messages.error(request, 'Haber güncellenemedi. Lütfen işaretli alanları kontrol edin.')
     else:

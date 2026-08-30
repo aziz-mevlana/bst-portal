@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Dış bağlantı uyarısı | BST Portal{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-2xl px-4 py-16">
+  <section class="rounded-2xl border border-amber-500/40 bg-slate-900 p-8 text-white shadow-xl">
+    <p class="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-400">Dış bağlantı</p>
+    <h1 class="mb-4 text-2xl font-bold">BST Portal'dan ayrılıyorsunuz</h1>
+    <p class="mb-3 text-slate-300">
+      Bu bağlantı “{{ project.title }}” projesinin sahibi tarafından sağlanmıştır. BST Portal hedef sitenin
+      içeriğini veya güvenliğini garanti etmez.
+    </p>
+    <p class="mb-8 break-all rounded-lg bg-slate-950 p-3 font-mono text-sm text-slate-200">{{ target_host }}</p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ target_url }}" target="_blank" rel="noopener noreferrer nofollow ugc"
+         class="rounded-lg bg-amber-500 px-5 py-3 font-semibold text-slate-950 hover:bg-amber-400">
+        Dış siteye devam et
+      </a>
+      <a href="{{ project.get_absolute_url }}"
+         class="rounded-lg border border-slate-600 px-5 py-3 font-semibold text-white hover:bg-slate-800">
+        Projeye dön
+      </a>
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -26,8 +26,10 @@ from alumni.models import AlumniRegistrationRequest
 from .email_service import EmailConfigurationError, send_transactional_email
 from .validators import institutional_email_domain
 from .permissions import ensure_interactive_account
+from .image_utils import sanitize_profile_image
 from django.contrib.auth.models import User
 import base64
+import binascii
 import logging
 from django.core.files.base import ContentFile
 from projects.models import Project, ProjectCategory, Technology
@@ -41,6 +43,15 @@ PUBLIC_REGISTRATION_ROLES = {'student', 'teacher', 'alumni', 'other'}
 MAX_CODE_ATTEMPTS = 5
 RESEND_COOLDOWN_SECONDS = 60
 LEGAL_TEXT_VERSION = '2026-08-13-v2'
+_DUMMY_PASSWORD_HASH = make_password('bst-portal-login-timing-placeholder')
+
+
+def _clear_password_reset_session(request):
+    for key in (
+        'reset_email', 'reset_decoy', 'reset_decoy_attempts',
+        'reset_authorized_id', 'reset_verified',
+    ):
+        request.session.pop(key, None)
 
 
 def _notify_approved_member_reviewers(application):
@@ -63,19 +74,27 @@ def _notify_approved_member_reviewers(application):
 
 def login_view(request):
     if request.method == 'POST':
-        if is_rate_limited(request, scope='login', limit=10, window_seconds=300):
-            messages.error(request, 'Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.')
-            return render(request, 'accounts/login.html', status=429)
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password', '')
+        if (
+            is_rate_limited(request, scope='login-ip', limit=20, window_seconds=300)
+            or is_rate_limited(
+                request, scope='login-account', limit=7, window_seconds=300,
+                identifier=email,
+            )
+        ):
+            messages.error(request, 'Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.')
+            return render(request, 'accounts/login.html', status=429)
         
         # Kullanıcıyı bul - duplicate email durumunda ilkini al
         try:
             user = User.objects.filter(email__iexact=email).order_by('-date_joined').first()
             if not user:
+                check_password(password, _DUMMY_PASSWORD_HASH)
                 messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
                 return render(request, 'accounts/login.html')
         except Exception:
+            check_password(password, _DUMMY_PASSWORD_HASH)
             messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
             return render(request, 'accounts/login.html')
         
@@ -541,11 +560,17 @@ Bu kod 10 dakika geçerlidir.
 
 
 def forgot_password_view(request):
-    if request.method == 'POST' and is_rate_limited(request, scope='password-reset-request', limit=5, window_seconds=3600):
-        messages.error(request, 'Çok fazla şifre sıfırlama isteği yapıldı. Lütfen daha sonra tekrar deneyin.')
-        return render(request, 'accounts/forgot_password.html', status=429)
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
+        if (
+            is_rate_limited(request, scope='password-reset-request-ip', limit=10, window_seconds=3600)
+            or is_rate_limited(
+                request, scope='password-reset-request-account', limit=5,
+                window_seconds=3600, identifier=email,
+            )
+        ):
+            messages.error(request, 'Çok fazla şifre sıfırlama isteği yapıldı. Lütfen daha sonra tekrar deneyin.')
+            return render(request, 'accounts/forgot_password.html', status=429)
         user = User.objects.filter(email__iexact=email).first()
         generic_message = (
             'Bu adres sistemde kayıtlıysa şifre sıfırlama kodu e-posta ile gönderildi.'
@@ -664,7 +689,7 @@ def reset_password_verify_view(request):
             messages.error(request, f'Kod hatalı. {remaining} deneme hakkınız kaldı.')
             return redirect('accounts:reset_password_verify')
 
-        request.session['reset_verified'] = True
+        request.session['reset_authorized_id'] = reset.pk
         return redirect('accounts:reset_password')
 
     return render(request, 'accounts/reset_password_verify.html', {'email': email})
@@ -672,20 +697,25 @@ def reset_password_verify_view(request):
 
 def reset_password_view(request):
     email = request.session.get('reset_email')
-    verified = request.session.get('reset_verified')
+    reset_id = request.session.get('reset_authorized_id')
 
-    if not email or not verified:
+    if not email or not reset_id:
         messages.error(request, 'Önce doğrulama adımını tamamlayın.')
         return redirect('accounts:forgot_password')
 
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
-        request.session.pop('reset_email', None)
-        request.session.pop('reset_verified', None)
-        request.session.pop('reset_decoy', None)
-        request.session.pop('reset_decoy_attempts', None)
+        _clear_password_reset_session(request)
         messages.error(request, 'Kullanıcı bulunamadı.')
+        return redirect('accounts:forgot_password')
+
+    authorized_reset = PasswordReset.objects.filter(
+        pk=reset_id, user=user, is_used=False,
+    ).first()
+    if not authorized_reset or authorized_reset.is_expired():
+        _clear_password_reset_session(request)
+        messages.error(request, 'Sıfırlama yetkisinin süresi doldu veya daha önce kullanıldı.')
         return redirect('accounts:forgot_password')
 
     if request.method == 'POST':
@@ -702,16 +732,29 @@ def reset_password_view(request):
             messages.error(request, ' '.join(exc.messages))
             return redirect('accounts:reset_password')
 
-        user.set_password(password_1)
-        user.save()
-        if hasattr(user, 'profile') and user.profile.must_change_password:
-            user.profile.must_change_password = False
-            user.profile.save(update_fields=['must_change_password', 'updated_at'])
+        with transaction.atomic():
+            reset = PasswordReset.objects.select_for_update().filter(
+                pk=reset_id, user=user, is_used=False,
+            ).first()
+            if not reset or reset.is_expired():
+                _clear_password_reset_session(request)
+                messages.error(request, 'Sıfırlama yetkisinin süresi doldu veya daha önce kullanıldı.')
+                return redirect('accounts:forgot_password')
 
-        PasswordReset.objects.filter(user=user).update(is_used=True)
+            consumed = PasswordReset.objects.filter(pk=reset.pk, is_used=False).update(is_used=True)
+            if consumed != 1:
+                _clear_password_reset_session(request)
+                messages.error(request, 'Sıfırlama yetkisi daha önce kullanıldı.')
+                return redirect('accounts:forgot_password')
 
-        request.session.pop('reset_email', None)
-        request.session.pop('reset_verified', None)
+            user.set_password(password_1)
+            user.save(update_fields=['password'])
+            if hasattr(user, 'profile') and user.profile.must_change_password:
+                user.profile.must_change_password = False
+                user.profile.save(update_fields=['must_change_password', 'updated_at'])
+            PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+
+        _clear_password_reset_session(request)
 
         messages.success(request, 'Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.')
         return redirect('accounts:login')
@@ -786,19 +829,9 @@ def profile_view(request, user_id=None):
         
         # Update user information
         user = request.user
-        new_email = request.POST.get('email', user.email).strip().lower()
-        try:
-            validate_email(new_email)
-        except ValidationError:
-            messages.error(request, 'Geçerli bir e-posta adresi girin.')
-            return redirect('accounts:profile')
-        if User.objects.filter(email__iexact=new_email).exclude(pk=user.pk).exists():
-            messages.error(request, 'Bu e-posta adresi başka bir hesapta kullanılıyor.')
-            return redirect('accounts:profile')
-        user.email = new_email
         user.first_name = request.POST.get('first_name', user.first_name)
         user.last_name = request.POST.get('last_name', user.last_name)
-        user.save()
+        user.save(update_fields=['first_name', 'last_name'])
 
         # Ensure profile exists
         profile, _ = Profile.objects.get_or_create(user=user)
@@ -812,43 +845,39 @@ def profile_view(request, user_id=None):
         
         # Update teacher_title if provided (for teachers)
         teacher_title = request.POST.get('teacher_title')
-        if teacher_title is not None:
-            profile.teacher_title = teacher_title if teacher_title != '' else None
+        valid_teacher_titles = {value for value, _ in Profile.TEACHER_TITLE_CHOICES}
+        if profile.user_type == 'teacher' and teacher_title in valid_teacher_titles:
+            profile.teacher_title = teacher_title or None
         
         # Base64 resim verisini işle
         cropped_image_data = request.POST.get('profile_picture')
         if cropped_image_data and cropped_image_data.startswith('data:image'):
             try:
-                # Formatı doğru şekilde ayır
-                format, imgstr = cropped_image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                
-                # Desteklenen format kontrolü
-                if ext not in ['jpeg', 'png', 'gif']:
-                    ext = 'jpeg'  # Varsayılan format
-                
-                # Base64'ü decode et ve dosya oluştur
-                data = ContentFile(base64.b64decode(imgstr))
-                file_name = f'profile_{user.id}.{ext}'
+                header, imgstr = cropped_image_data.split(';base64,', 1)
+                if header not in {'data:image/jpeg', 'data:image/png', 'data:image/gif'}:
+                    raise ValidationError('Desteklenmeyen görsel biçimi.')
+                if len(imgstr) > 8 * 1024 * 1024:
+                    raise ValidationError('Profil fotoğrafı en fazla 5 MB olabilir.')
+                raw_upload = ContentFile(base64.b64decode(imgstr, validate=True), name='profile-upload')
+                data = sanitize_profile_image(raw_upload)
                 
                 # Eski profil resmini sil
                 if profile.profile_picture:
                     profile.profile_picture.delete(save=False)
                 
                 # Yeni resmi kaydet
-                profile.profile_picture.save(file_name, data, save=True)
+                profile.profile_picture.save(data.name, data, save=True)
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
-                
-            except Exception:
+            except (ValueError, binascii.Error, ValidationError):
                 messages.error(request, 'Profil fotoğrafı güncellenirken bir hata oluştu.')
         
         # Normal dosya yükleme (fallback)
         elif 'profile_picture_file' in request.FILES:
             try:
-                profile.profile_picture = request.FILES['profile_picture_file']
+                profile.profile_picture = sanitize_profile_image(request.FILES['profile_picture_file'])
                 profile.save()
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
-            except Exception:
+            except ValidationError:
                 messages.error(request, 'Dosya yüklenirken bir hata oluştu.')
         
         profile.save()
@@ -879,10 +908,15 @@ def profile_edit_view(request):
     
     if request.method == 'POST':
         if profile.user_type == 'teacher':
-            profile.teacher_title = request.POST.get('teacher_title', profile.teacher_title)
+            teacher_title = request.POST.get('teacher_title', profile.teacher_title)
+            valid_teacher_titles = {value for value, _ in Profile.TEACHER_TITLE_CHOICES}
+            if teacher_title not in valid_teacher_titles:
+                messages.error(request, 'Geçerli bir akademik ünvan seçmelisiniz.')
+                return redirect('accounts:profile')
+            profile.teacher_title = teacher_title or None
         
-        profile.student_number = request.POST.get('student_number', profile.student_number)
         if profile.user_type in {'student', 'staff_student'}:
+            profile.student_number = request.POST.get('student_number', profile.student_number)
             class_level = request.POST.get('class_level', '')
             if class_level not in {'1', '2', '3', '4'}:
                 messages.error(request, 'Geçerli bir sınıf seçmelisiniz.')
@@ -894,7 +928,11 @@ def profile_edit_view(request):
         profile.phone_number = request.POST.get('phone_number', profile.phone_number)
         
         if 'profile_picture' in request.FILES:
-            profile.profile_picture = request.FILES['profile_picture']
+            try:
+                profile.profile_picture = sanitize_profile_image(request.FILES['profile_picture'])
+            except ValidationError as exc:
+                messages.error(request, ' '.join(exc.messages))
+                return redirect('accounts:profile')
         
         profile.save()
         messages.success(request, 'Profiliniz başarıyla güncellendi.')

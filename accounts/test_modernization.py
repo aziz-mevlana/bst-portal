@@ -1,16 +1,23 @@
-from io import StringIO
+from io import BytesIO, StringIO
 import re
+from datetime import timedelta
+from tempfile import TemporaryDirectory
 
 from django.contrib.auth.models import User
 from django.core import mail
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
 
 from .forms import PortfolioSettingsForm
+from .image_utils import sanitize_profile_image
 from .models import PasswordReset, WebsiteModerationHistory
 from alumni.models import AlumniRegistrationRequest
 from .roles import bootstrap_bst_authority_group
@@ -40,6 +47,27 @@ class ProfileModernizationTests(TestCase):
             with self.assertRaises(ValidationError):
                 validate_linkedin_slug(invalid)
 
+    def test_legacy_profile_endpoint_rejects_html_disguised_as_picture(self):
+        self.client.force_login(self.user)
+        upload = SimpleUploadedFile('payload.html', b'<script>alert(1)</script>', content_type='text/html')
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse('accounts:profile_edit'), {
+                'class_level': '2',
+                'profile_picture': upload,
+            })
+        self.assertEqual(response.status_code, 302)
+        self.user.profile.refresh_from_db()
+        self.assertFalse(self.user.profile.profile_picture)
+
+    def test_profile_image_is_decoded_and_reencoded(self):
+        source = BytesIO()
+        Image.new('RGB', (8, 8), color='red').save(source, format='PNG')
+        upload = SimpleUploadedFile('avatar.png', source.getvalue(), content_type='image/png')
+
+        sanitized = sanitize_profile_image(upload)
+
+        self.assertTrue(sanitized.name.endswith('.jpg'))
+        self.assertTrue(sanitized.read().startswith(b'\xff\xd8\xff'))
     def test_public_website_rejects_local_private_credentials_and_ports(self):
         validate_public_website('https://portfolio.example.com/about')
         for invalid in (
@@ -75,6 +103,60 @@ class ProfileModernizationTests(TestCase):
         history = WebsiteModerationHistory.objects.get(profile=profile)
         self.assertEqual(history.website_url, 'https://new.example.com')
         self.assertEqual(history.status, 'pending')
+
+
+class PasswordResetAuthorizationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(
+            'reset-race-user', 'reset-race@example.com', 'OriginalStrongPassword123!'
+        )
+        self.reset = PasswordReset(user=self.user)
+        self.reset.set_code('123456')
+        self.reset.save()
+
+    def _verified_client(self):
+        client = Client()
+        session = client.session
+        session['reset_email'] = self.user.email
+        session.save()
+        response = client.post(
+            reverse('accounts:reset_password_verify'),
+            {f'code_{index}': digit for index, digit in enumerate('123456', start=1)},
+        )
+        self.assertRedirects(response, reverse('accounts:reset_password'))
+        return client
+
+    def test_verified_reset_is_single_use_across_sessions(self):
+        first = self._verified_client()
+        second = self._verified_client()
+
+        first.post(reverse('accounts:reset_password'), {
+            'password_1': 'FirstReplacementPassword123!',
+            'password_2': 'FirstReplacementPassword123!',
+        })
+        response = second.post(reverse('accounts:reset_password'), {
+            'password_1': 'AttackerReplacementPassword123!',
+            'password_2': 'AttackerReplacementPassword123!',
+        })
+
+        self.assertRedirects(response, reverse('accounts:forgot_password'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('FirstReplacementPassword123!'))
+        self.assertFalse(self.user.check_password('AttackerReplacementPassword123!'))
+
+    def test_verified_reset_cannot_be_used_after_expiry(self):
+        client = self._verified_client()
+        PasswordReset.objects.filter(pk=self.reset.pk).update(
+            created_at=timezone.now() - timedelta(hours=1)
+        )
+        response = client.post(reverse('accounts:reset_password'), {
+            'password_1': 'ExpiredReplacementPassword123!',
+            'password_2': 'ExpiredReplacementPassword123!',
+        })
+        self.assertRedirects(response, reverse('accounts:forgot_password'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('OriginalStrongPassword123!'))
 
 
 class AuthorityAndEmailSecurityTests(TestCase):

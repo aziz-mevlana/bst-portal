@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -156,7 +157,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "linkedin_profile_photos",
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STORAGES = {
@@ -245,6 +245,8 @@ GEMINI_MODELS = [
 ]
 
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
+if not DEBUG and not REDIS_URL:
+    raise ImproperlyConfigured('REDIS_URL canlı ortamda ortak rate-limit ve görev kuyruğu için zorunludur.')
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', REDIS_URL or 'memory://')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', REDIS_URL or 'cache+memory://')
 CELERY_TASK_ALWAYS_EAGER = env_bool('CELERY_TASK_ALWAYS_EAGER', DEBUG or not REDIS_URL)
@@ -273,6 +275,12 @@ CACHES = {
             'LOCATION': 'bst-portal-local-cache',
         }
     )
+}
+
+TRUSTED_PROXY_IPS = {
+    address.strip()
+    for address in os.getenv('TRUSTED_PROXY_IPS', '127.0.0.1,::1').split(',')
+    if address.strip()
 }
 
 LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').upper()
@@ -324,6 +332,16 @@ if SENTRY_DSN:
     )
 
 
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_AGE = int(os.getenv('DJANGO_SESSION_COOKIE_AGE', '28800'))
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
     SESSION_COOKIE_SECURE = True
@@ -331,8 +349,6 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_REFERRER_POLICY = 'same-origin'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = [

@@ -1,9 +1,9 @@
-import PyPDF2
+import pypdf
 
 
 def extract_text_from_pdf(pdf_file):
     """PDF dosyasindan metin cikar"""
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    pdf_reader = pypdf.PdfReader(pdf_file)
     if pdf_reader.is_encrypted:
         raise ValueError('Şifreli PDF dosyaları desteklenmiyor.')
     text = ""

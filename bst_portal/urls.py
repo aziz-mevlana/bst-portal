@@ -19,7 +19,6 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-import os
 from core.sitemaps import ArticleSitemap, OpportunitySitemap, PortfolioSitemap, ProjectSitemap, StaticSitemap
 from core.views import health_check, robots_txt
 from projects.views import project_uploaded_media
@@ -59,9 +58,6 @@ urlpatterns = [
     path('career/', include('career.urls')),
 ]
 
-# Serve linkedin profile photos in debug mode
 if settings.DEBUG:
-    photos_dir = os.path.join(settings.BASE_DIR, 'linkedin_profile_photos')
-    urlpatterns += static('/linkedin_profile_photos/', document_root=photos_dir)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

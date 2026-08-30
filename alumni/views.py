@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
+from django.core.exceptions import PermissionDenied
 from django.template.loader import render_to_string
 import logging
 
@@ -13,6 +14,23 @@ from .forms import AlumniProfileForm, WorkExperienceForm
 
 PAGE_SIZE = 12
 logger = logging.getLogger(__name__)
+
+
+def _has_active_alumni_role(user):
+    profile = getattr(user, 'profile', None) if user.is_authenticated else None
+    return bool(
+        user.is_authenticated
+        and user.is_active
+        and getattr(profile, 'user_type', '') == 'alumni'
+        and getattr(profile, 'account_status', '') == 'active'
+    )
+
+
+def _alumni_visible_to(user):
+    queryset = Alumni.objects.all()
+    if user.is_staff or user.is_superuser:
+        return queryset
+    return queryset.filter(models.Q(is_show_in_alumni_list=True) | models.Q(user=user))
 
 
 def _safe_offset(request):
@@ -139,7 +157,7 @@ def alumni_list(request):
 
 @login_required
 def alumni_detail(request, username):
-    alumni = get_object_or_404(Alumni, user__username=username)
+    alumni = get_object_or_404(_alumni_visible_to(request.user), user__username=username)
     experiences = alumni.work_experiences.all()
     if alumni.user_id == request.user.id:
         return redirect('alumni:alumni_profile')
@@ -152,7 +170,7 @@ def alumni_detail(request, username):
 @login_required
 def alumni_detail_by_id(request, alumni_id):
     """Alumni detail by ID - works for both matched and unmatched alumni"""
-    alumni = get_object_or_404(Alumni, id=alumni_id)
+    alumni = get_object_or_404(_alumni_visible_to(request.user), id=alumni_id)
     experiences = alumni.work_experiences.all()
     
     if alumni.user and alumni.user.username == request.user.username:
@@ -165,6 +183,8 @@ def alumni_detail_by_id(request, alumni_id):
 
 @login_required
 def alumni_profile(request):
+    if not _has_active_alumni_role(request.user):
+        raise PermissionDenied
     try:
         profile = request.user.alumni
     except Alumni.DoesNotExist:
@@ -179,6 +199,8 @@ def alumni_profile(request):
 
 @login_required
 def alumni_profile_edit(request):
+    if not _has_active_alumni_role(request.user):
+        raise PermissionDenied
     try:
         profile = request.user.alumni
     except Alumni.DoesNotExist:

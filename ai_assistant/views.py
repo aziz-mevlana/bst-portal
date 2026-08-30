@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 import logging
 import re
-from PyPDF2.errors import PdfReadError
+from pypdf.errors import PdfReadError
 from .models import KnowledgeSource
 from .gemini_service import get_gemini_response
 from .analytics import record_unanswered_question
@@ -20,20 +20,16 @@ MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024
 import json
 
 
-def is_teacher_or_staff(user):
-    if not user.is_authenticated:
-        return False
-    if user.is_staff or user.is_superuser:
-        return True
-    return hasattr(user, 'profile') and user.profile.user_type in ['teacher', 'staff_student']
+def can_manage_knowledge_sources(user):
+    """Knowledge-source contents are administrative data, not role-level content."""
+
+    return bool(user.is_authenticated and (user.is_staff or user.is_superuser))
 
 
 def audience_key_for_user(user):
     if user.is_staff or user.is_superuser:
         return 'staff'
     role = getattr(getattr(user, 'profile', None), 'user_type', 'all')
-    if role == 'staff_student':
-        return 'staff'
     return role if role in {'student', 'teacher', 'alumni'} else 'all'
 
 
@@ -168,7 +164,7 @@ def chat_send(request):
 @login_required
 def source_list(request):
     """Bilgi kaynaklarini listele"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return render(request, 'dashboard/access_denied.html')
 
     sources = KnowledgeSource.objects.all()
@@ -182,7 +178,7 @@ def source_list(request):
 @require_POST
 def source_add(request):
     """Bilgi kaynagi ekle"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
 
     if request.method != 'POST':
@@ -259,7 +255,7 @@ def source_add(request):
 @require_POST
 def source_delete(request):
     """Bilgi kaynagi sil"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
 
     if request.method != 'POST':
@@ -285,7 +281,7 @@ def source_delete(request):
 @login_required
 def source_update(request):
     """Bilgi kaynagi guncelle"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
 
     if request.method != 'POST':
@@ -339,7 +335,7 @@ def source_update(request):
 @login_required
 def faq_stats(request):
     """FAQ istatistikleri sayfasi"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return render(request, 'dashboard/access_denied.html')
 
     from .models import ChatCache, UnansweredQuestion
@@ -363,7 +359,7 @@ def faq_stats(request):
 @login_required
 def faq_delete(request):
     """FAQ cache sil"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
 
     if request.method != 'POST':
@@ -387,7 +383,7 @@ def faq_delete(request):
 @login_required
 def faq_clear_all(request):
     """Tum FAQ cache temizle"""
-    if not is_teacher_or_staff(request.user):
+    if not can_manage_knowledge_sources(request.user):
         return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
 
     if request.method != 'POST':

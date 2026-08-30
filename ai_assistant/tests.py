@@ -72,6 +72,22 @@ class RoleAwareAssistantTests(TestCase):
         gemini.assert_not_called()
         self.assertTrue(UnansweredQuestion.objects.exists())
 
+    def test_staff_only_source_is_not_visible_to_teacher_or_bst_authority(self):
+        staff_source = KnowledgeSource.objects.create(
+            title='Yönetici Sırrı', content='Yalnızca gerçek yöneticiler.', audience='staff'
+        )
+        authority = create_user('authority-ai', 'staff_student')
+        for user in (self.teacher, authority):
+            self.client.force_login(user)
+            chat = self.client.get(reverse('ai_assistant:chat'))
+            self.assertNotIn(staff_source, list(chat.context['sources']))
+            management = self.client.get(reverse('ai_assistant:source_list'))
+            self.assertNotContains(management, staff_source.content)
+
+        admin = User.objects.create_superuser('admin-ai', 'admin-ai@example.com', 'Strong-Test-123!')
+        self.client.force_login(admin)
+        self.assertContains(self.client.get(reverse('ai_assistant:source_list')), staff_source.content)
+
 
 class UnansweredQuestionTests(TestCase):
     def test_sensitive_patterns_are_removed_and_questions_grouped(self):

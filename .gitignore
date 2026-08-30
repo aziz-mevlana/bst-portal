@@ -83,3 +83,5 @@ todo.md
 
 .venv/
 backups/
+linkedin_data.db
+linkedin_profile_photos/

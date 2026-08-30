@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Alumni, WorkExperience
+from accounts.validators import validate_public_website
 
 
 class AlumniProfileForm(forms.ModelForm):
@@ -12,6 +13,17 @@ class AlumniProfileForm(forms.ModelForm):
             'is_available_for_mentoring', 'is_show_in_alumni_list',
             'categories', 'technologies',
         ]
+
+    def clean(self):
+        cleaned = super().clean()
+        for field_name in ('linkedin_url', 'github_url', 'personal_website'):
+            value = cleaned.get(field_name)
+            if value:
+                try:
+                    validate_public_website(value)
+                except forms.ValidationError as exc:
+                    self.add_error(field_name, exc)
+        return cleaned
 
 
 class WorkExperienceForm(forms.ModelForm):

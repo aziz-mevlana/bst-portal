@@ -5,6 +5,7 @@ from django.urls import reverse
 from pathlib import Path
 
 from core.form_utils import configure_optional_choice, configure_required_choice
+from accounts.validators import validate_public_website
 
 from .models import (
     Project,
@@ -152,6 +153,11 @@ class ProjectCaseStudyForm(forms.ModelForm):
             'demo_url': forms.URLInput(attrs={'class': INPUT_CLASS, 'placeholder': 'https://demo-adresi.com'}),
         }
 
+    def clean_demo_url(self):
+        value = self.cleaned_data.get('demo_url')
+        validate_public_website(value)
+        return value
+
 
 class ProjectMediaForm(forms.ModelForm):
     class Meta:
@@ -184,6 +190,11 @@ class ProjectMediaForm(forms.ModelForm):
         configure_required_choice(self.fields['media_type'], 'Medya türünü seçiniz')
         if not self.is_bound and not self.instance.pk:
             self.fields['media_type'].initial = ''
+
+    def clean_external_url(self):
+        value = self.cleaned_data.get('external_url')
+        validate_public_website(value)
+        return value
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -435,6 +446,11 @@ class ProjectForm(forms.ModelForm):
         if self.current_user and team.filter(pk=self.current_user.pk).exists():
             raise forms.ValidationError('Proje sahibi takım listesine yeniden eklenemez.')
         return team
+
+    def clean_project_link(self):
+        value = self.cleaned_data.get('project_link')
+        validate_public_website(value)
+        return value
 
     def clean_creation_source(self):
         source = self.cleaned_data['creation_source']

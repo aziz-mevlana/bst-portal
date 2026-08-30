@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import mimetypes
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
@@ -38,6 +39,7 @@ from core.analytics import record_analytics_event
 from core.notifications import create_notification
 from core.rate_limit import is_rate_limited
 from accounts.permissions import ensure_full_participation_account, ensure_interactive_account
+from accounts.validators import validate_public_website
 from django.template.loader import render_to_string
 
 PAGE_SIZE = 12
@@ -76,7 +78,6 @@ def _can_view_project(user, project):
         or user == project.advisor
         or project.team.filter(pk=user.pk).exists()
         or _is_platform_staff(user)
-        or _user_type(user) == 'teacher'
     )
 
 
@@ -797,7 +798,7 @@ def project_detail(request, project_id):
     if request.user.is_authenticated:
         is_team_member = project.team.filter(pk=user.pk).exists()
         is_advisor = user == project.advisor
-        is_staff_or_teacher = _is_platform_staff(user) or _user_type(user) == 'teacher'
+        is_staff_or_teacher = _is_platform_staff(user)
         can_see_feedback = is_team_member or is_advisor or is_staff_or_teacher
         
         try:
@@ -903,8 +904,17 @@ def project_external_redirect(request, project_id, destination):
         raise Http404
     if not target:
         raise Http404
+    try:
+        validate_public_website(target)
+    except ValidationError as exc:
+        raise Http404 from exc
     record_analytics_event(request, event_type=event_type, target=project, succeeded=True)
-    return redirect(target)
+    return render(request, 'projects/external_link_warning.html', {
+        'project': project,
+        'target_url': target,
+        'target_host': urlsplit(target).hostname,
+        'destination': destination,
+    })
 
 
 @require_GET
@@ -1845,7 +1855,7 @@ def get_feedback(request, project_id):
     user = request.user
     is_team_member = project.team.filter(pk=user.pk).exists()
     is_advisor = user == project.advisor
-    is_staff_or_teacher = _is_platform_staff(user) or _user_type(user) == 'teacher'
+    is_staff_or_teacher = _is_platform_staff(user)
     
     if not (is_team_member or is_advisor or is_staff_or_teacher):
         return JsonResponse({'success': False, 'error': 'Geri bildirimi görüntüleme yetkiniz yok.'})

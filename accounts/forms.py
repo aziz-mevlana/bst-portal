@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
-from PIL import Image
 from django.db.models import Q
 
 from core.form_utils import configure_required_choice
@@ -10,6 +9,7 @@ from .models import (
     Profile, UserReport,
 )
 from .validators import institutional_email_domain
+from .image_utils import sanitize_profile_image
 from projects.models import ProjectCategory, Technology
 
 
@@ -203,14 +203,10 @@ class AccountSettingsForm(forms.Form):
         image = self.cleaned_data.get('profile_picture')
         if not image:
             return image
-        if image.size > 5 * 1024 * 1024:
-            raise forms.ValidationError('Profil fotoğrafı en fazla 5 MB olabilir.')
         try:
-            Image.open(image).verify()
-            image.seek(0)
-        except Exception as exc:
-            raise forms.ValidationError('Geçerli bir görsel dosyası yükleyin.') from exc
-        return image
+            return sanitize_profile_image(image)
+        except forms.ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
 
     def save(self):
         self.user.first_name = self.cleaned_data['first_name'].strip()

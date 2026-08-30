@@ -111,6 +111,12 @@ class HealthCheckTests(TestCase):
         login = self.client.get(reverse('accounts:login'))
         self.assertContains(login, 'content="noindex,nofollow"')
 
+    def test_dynamic_pages_receive_security_headers(self):
+        response = self.client.get(reverse('accounts:login'))
+        self.assertIn("object-src 'none'", response['Content-Security-Policy'])
+        self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
+        self.assertIn('camera=()', response['Permissions-Policy'])
+
 
 class CloudflarePreviewTests(SimpleTestCase):
     @override_settings(ALLOWED_HOSTS=['testserver'])
@@ -196,6 +202,17 @@ class AuditAndRateLimitTests(TestCase):
         self.assertFalse(is_rate_limited(request, scope='test', limit=2, window_seconds=60))
         self.assertFalse(is_rate_limited(request, scope='test', limit=2, window_seconds=60))
         self.assertTrue(is_rate_limited(request, scope='test', limit=2, window_seconds=60))
+
+    @override_settings(TRUSTED_PROXY_IPS={'127.0.0.1'})
+    def test_rate_limit_only_trusts_forwarded_ip_from_configured_proxy(self):
+        proxied = self.factory.post('/login/', REMOTE_ADDR='127.0.0.1', HTTP_X_REAL_IP='198.51.100.10')
+        proxied.user = AnonymousUser()
+        direct = self.factory.post('/login/', REMOTE_ADDR='198.51.100.20', HTTP_X_REAL_IP='198.51.100.10')
+        direct.user = AnonymousUser()
+
+        self.assertFalse(is_rate_limited(proxied, scope='proxy', limit=1, window_seconds=60))
+        self.assertTrue(is_rate_limited(proxied, scope='proxy', limit=1, window_seconds=60))
+        self.assertFalse(is_rate_limited(direct, scope='proxy', limit=1, window_seconds=60))
 
 
 class NotificationTests(TestCase):

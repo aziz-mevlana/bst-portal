@@ -93,7 +93,7 @@
               Web Sitesi
             </a>
           {% endif %}
-          {% if alumni.user %}
+          {% if alumni.user and alumni.user.profile.show_email %}
           <div class="text-xs sm:text-sm text-gray-400 sm:mt-auto hidden sm:block">{{ alumni.user.email }}</div>
           {% endif %}
         </div>

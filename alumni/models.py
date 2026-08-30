@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 from projects.models import ProjectCategory, Technology
-from django.templatetags.static import static
 
 
 class Alumni(models.Model):
@@ -59,9 +58,6 @@ class Alumni(models.Model):
     def get_profile_photo_url(self):
         if self.user and hasattr(self.user, 'profile') and self.user.profile.profile_picture:
             return self.user.profile.profile_picture.url
-        if self.profile_photo:
-            filename = self.profile_photo.replace('\\', '/').split('/')[-1]
-            return static(filename)
         return None
 
 

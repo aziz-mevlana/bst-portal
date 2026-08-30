@@ -784,7 +784,7 @@ def dashboard_students_load_more(request):
 @login_required
 def dashboard_projects(request):
     user = request.user
-    manager_access = is_admin(user) or getattr(user.profile, 'user_type', '') == 'teacher'
+    manager_access = is_admin(user)
 
     # User type for template
     user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
@@ -794,16 +794,15 @@ def dashboard_projects(request):
     status = request.GET.get('status', '')
     request_id = request.GET.get('project_request', '')
     
-    # Base query: if user is teacher/staff, show all projects (except draft)
-    # If alumni, show all except draft
-    # If student, show only completed
     if manager_access:
         projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
-    elif is_alumni(user):
-        projects = Project.objects.exclude(status='draft').prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor')
     else:
         projects = Project.objects.filter(
-            Q(created_by=user) | Q(team=user)
+            Q(visibility__in={'public', 'unlisted'}, approval_status='approved')
+            | Q(created_by=user)
+            | Q(team=user)
+            | Q(advisor=user)
+            | Q(project_request__teacher=user)
         ).distinct().prefetch_related('team', 'categories', 'technologies', 'project_request')
     
     # Apply filters
@@ -846,7 +845,7 @@ def dashboard_projects(request):
 @login_required
 def dashboard_projects_load_more(request):
     user = request.user
-    manager_access = is_admin(user) or getattr(user.profile, 'user_type', '') == 'teacher'
+    manager_access = is_admin(user)
     
     offset = int(request.GET.get('offset', 0))
     query = request.GET.get('q', '')
@@ -855,11 +854,13 @@ def dashboard_projects_load_more(request):
     
     if manager_access:
         projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
-    elif hasattr(user, 'profile') and user.profile.user_type == 'alumni':
-        projects = Project.objects.exclude(status='draft').prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor')
     else:
         projects = Project.objects.filter(
-            Q(created_by=user) | Q(team=user)
+            Q(visibility__in={'public', 'unlisted'}, approval_status='approved')
+            | Q(created_by=user)
+            | Q(team=user)
+            | Q(advisor=user)
+            | Q(project_request__teacher=user)
         ).distinct().prefetch_related('team', 'categories', 'technologies', 'project_request')
 
     if query:

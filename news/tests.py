@@ -36,6 +36,32 @@ class NewsVisibilityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.article.title)
 
+    def test_approved_member_edit_returns_approved_article_to_review(self):
+        member = User.objects.create_user(
+            'approved-news-member', 'approved-news@example.com', 'StrongPassword123!'
+        )
+        member.profile.user_type = 'approved_member'
+        member.profile.save(update_fields=['user_type'])
+        self.article.created_by = member
+        self.article.is_approved = True
+        self.article.is_featured = True
+        self.article.is_homepage = True
+        self.article.save()
+        self.client.force_login(member)
+
+        response = self.client.post(reverse('news:edit_news', args=[self.article.pk]), {
+            'title': self.article.title,
+            'summary': 'Değişen özet',
+            'content': 'Moderasyondan sonra değiştirilen içerik',
+            'source_url': 'https://evil.example/phish',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.article.refresh_from_db()
+        self.assertFalse(self.article.is_approved)
+        self.assertFalse(self.article.is_featured)
+        self.assertFalse(self.article.is_homepage)
+
 
 class _FakeResponse:
     def __init__(self, body=b'', status=200, content_type='text/html; charset=utf-8', location=None, content_length=None):

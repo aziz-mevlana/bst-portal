@@ -449,15 +449,17 @@ class RepositoryAndMediaTests(TestCase):
         with self.assertRaises(Exception):
             reverse('projects:project_repository_sync', args=[self.project.pk])
 
-    def test_demo_redirect_uses_project_link_without_case_study(self):
+    def test_demo_link_uses_warning_page_without_case_study(self):
         from core.models import AnalyticsEvent
         self.project.project_link = 'https://example.com/app?mode=demo'
         self.project.save()
         self.assertFalse(ProjectCaseStudy.objects.filter(project=self.project).exists())
         url = reverse('projects:project_external_redirect', args=[self.project.pk, 'demo'])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], self.project.project_link)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.project.project_link)
+        self.assertContains(response, 'BST Portal\'dan ayrılıyorsunuz')
+        self.assertNotIn('Location', response)
         self.assertTrue(AnalyticsEvent.objects.filter(event_type='demo_click', target_id=str(self.project.pk)).exists())
 
     def test_demo_redirect_prefers_demo_and_falls_back_when_blank(self):
@@ -465,10 +467,10 @@ class RepositoryAndMediaTests(TestCase):
         self.project.save()
         case_study = ProjectCaseStudy.objects.create(project=self.project, demo_url='https://example.com/demo')
         url = reverse('projects:project_external_redirect', args=[self.project.pk, 'demo'])
-        self.assertEqual(self.client.get(url)['Location'], case_study.demo_url)
+        self.assertContains(self.client.get(url), case_study.demo_url)
         case_study.demo_url = ''
         case_study.save()
-        self.assertEqual(self.client.get(url)['Location'], self.project.project_link)
+        self.assertContains(self.client.get(url), self.project.project_link)
 
     def test_missing_demo_returns_404_and_private_demo_is_not_exposed(self):
         url = reverse('projects:project_external_redirect', args=[self.project.pk, 'demo'])
@@ -479,12 +481,12 @@ class RepositoryAndMediaTests(TestCase):
         self.project.save()
         self.assertEqual(self.client.get(url).status_code, 403)
         self.client.force_login(self.owner)
-        self.assertEqual(self.client.get(url)['Location'], self.project.project_link)
+        self.assertContains(self.client.get(url), self.project.project_link)
 
     def test_github_redirect_also_works_without_case_study(self):
         repository = ProjectRepository.objects.create(project=self.project, repository_path='BST-Portal/project')
         response = self.client.get(reverse('projects:project_external_redirect', args=[self.project.pk, 'github']))
-        self.assertEqual(response['Location'], repository.repository_url)
+        self.assertContains(response, repository.repository_url)
 
     def test_like_toggle_is_unique_and_reversible(self):
         viewer = make_user('like-viewer')
@@ -749,3 +751,32 @@ class StructuredMatchingTests(TestCase):
         self.assertEqual(matches[0]['breakdown']['technology'], 40)
         self.assertEqual(matches[0]['breakdown']['availability'], 20)
         self.assertIn('Django Match Tech', matches[0]['matched_technologies'])
+
+
+class PrivateProjectAuthorizationTests(TestCase):
+    def setUp(self):
+        self.owner = make_user('private-project-owner')
+        self.teacher = make_user('unrelated-project-teacher', 'teacher')
+        self.project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Gizli Güvenlik Projesi',
+            description='Yalnızca proje ilişkisi olan kullanıcılar görebilir.',
+            created_by=self.owner,
+            visibility='private',
+            approval_status='pending',
+        )
+
+    def test_unrelated_teacher_cannot_open_or_list_private_project(self):
+        self.client.force_login(self.teacher)
+        detail = self.client.get(reverse('projects:project_detail', args=[self.project.pk]))
+        self.assertRedirects(detail, reverse('projects:project_list'))
+        self.assertNotContains(self.client.get(reverse('dashboard:projects')), self.project.title)
+
+    def test_assigned_advisor_can_open_private_project(self):
+        self.project.advisor = self.teacher
+        self.project.save(update_fields=['advisor', 'updated_at'])
+        self.client.force_login(self.teacher)
+        self.assertEqual(
+            self.client.get(reverse('projects:project_detail', args=[self.project.pk])).status_code,
+            200,
+        )

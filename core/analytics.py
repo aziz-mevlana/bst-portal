@@ -2,7 +2,6 @@ import hashlib
 import hmac
 
 from django.conf import settings
-from django.db import IntegrityError
 from django.utils import timezone
 
 from .models import AnalyticsEvent
@@ -24,15 +23,15 @@ def record_analytics_event(request, *, event_type, target=None, succeeded=None, 
         key: value for key, value in (metadata or {}).items()
         if key in ALLOWED_METADATA_KEYS and isinstance(value, (str, int, float, bool, type(None)))
     }
-    try:
-        return AnalyticsEvent.objects.create(
-            event_type=event_type,
-            target_type=target._meta.label_lower if target else '',
-            target_id=str(target.pk) if target else '',
-            visitor_hash=_visitor_hash(request),
-            succeeded=succeeded,
-            metadata=safe_metadata,
-            date_bucket=timezone.localdate(),
-        )
-    except IntegrityError:
-        return None
+    event, _ = AnalyticsEvent.objects.get_or_create(
+        event_type=event_type,
+        target_type=target._meta.label_lower if target else '',
+        target_id=str(target.pk) if target else '',
+        visitor_hash=_visitor_hash(request),
+        date_bucket=timezone.localdate(),
+        defaults={
+            'succeeded': succeeded,
+            'metadata': safe_metadata,
+        },
+    )
+    return event

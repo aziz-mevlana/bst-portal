@@ -111,6 +111,18 @@ class OpportunityTests(TestCase):
         self.assertEqual(opportunity.title, 'Güncellenen Backend İlanı')
         self.assertEqual(opportunity.approval_status, 'pending')
 
+    def test_bst_authority_without_career_permission_cannot_approve(self):
+        pending = self.create_opportunity(approval_status='pending')
+        authority = make_user('career-authority', 'staff_student')
+        self.assertFalse(authority.has_perm('career.change_opportunity'))
+        self.client.force_login(authority)
+
+        response = self.client.post(reverse('career:opportunity_approve', args=[pending.pk]))
+
+        self.assertEqual(response.status_code, 403)
+        pending.refresh_from_db()
+        self.assertEqual(pending.approval_status, 'pending')
+
 
 class MentorshipFlowTests(TestCase):
     def setUp(self):

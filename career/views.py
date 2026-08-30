@@ -185,12 +185,18 @@ def _can_review_collaboration(user):
 
 
 def _is_staff(user):
-    profile = getattr(user, 'profile', None) if user.is_authenticated else None
-    return bool(user.is_authenticated and (user.is_staff or user.is_superuser or getattr(profile, 'user_type', '') == 'staff_student'))
+    return _is_django_admin(user)
 
 
 def _is_django_admin(user):
     return bool(user.is_authenticated and (user.is_staff or user.is_superuser))
+
+
+def _can_review_opportunity(user):
+    return bool(
+        user.is_authenticated
+        and (_is_django_admin(user) or user.has_perm('career.change_opportunity'))
+    )
 
 
 def _can_edit_opportunity(user, opportunity):
@@ -199,7 +205,7 @@ def _can_edit_opportunity(user, opportunity):
 
 def _can_publish_opportunity(user):
     profile = getattr(user, 'profile', None) if user.is_authenticated else None
-    return bool(user.is_authenticated and (_is_staff(user) or getattr(profile, 'user_type', '') in {'teacher', 'alumni'}))
+    return bool(user.is_authenticated and (_is_django_admin(user) or getattr(profile, 'user_type', '') in {'teacher', 'alumni'}))
 
 
 def opportunity_list(request):
@@ -240,7 +246,7 @@ def opportunity_list(request):
 
 def opportunity_detail(request, slug):
     opportunity = get_object_or_404(Opportunity.objects.prefetch_related('technologies'), slug=slug)
-    if not opportunity.is_open and not (_is_staff(request.user) or opportunity.created_by_id == getattr(request.user, 'id', None)):
+    if not opportunity.is_open and not (_can_review_opportunity(request.user) or opportunity.created_by_id == getattr(request.user, 'id', None)):
         raise Http404
     return render(request, 'career/opportunity_detail.html', {
         'opportunity': opportunity,
@@ -248,7 +254,7 @@ def opportunity_detail(request, slug):
         'meta_description': opportunity.description[:160],
         'canonical_url': request.build_absolute_uri(opportunity.get_absolute_url()),
         'meta_robots': 'index,follow' if opportunity.is_open else 'noindex,nofollow',
-        'can_moderate': _is_staff(request.user),
+        'can_moderate': _can_review_opportunity(request.user),
         'can_edit': _can_edit_opportunity(request.user, opportunity),
         'can_delete': _can_edit_opportunity(request.user, opportunity),
     })
@@ -263,7 +269,7 @@ def opportunity_create(request):
         if form.is_valid():
             opportunity = form.save(commit=False)
             opportunity.created_by = request.user
-            if _is_staff(request.user):
+            if _can_review_opportunity(request.user):
                 opportunity.approval_status = 'approved'
                 opportunity.approved_by = request.user
                 opportunity.approved_at = timezone.now()
@@ -345,7 +351,7 @@ def opportunity_delete(request, opportunity_id):
 @login_required
 @require_POST
 def opportunity_approve(request, opportunity_id):
-    if not _is_staff(request.user):
+    if not _can_review_opportunity(request.user):
         raise PermissionDenied
     opportunity = get_object_or_404(Opportunity, pk=opportunity_id)
     opportunity.approval_status = 'approved'
@@ -372,6 +378,9 @@ def mentor_list(request):
 
 @login_required
 def mentorship_profile_manage(request):
+    profile = getattr(request.user, 'profile', None)
+    if not request.user.is_active or getattr(profile, 'user_type', '') != 'alumni' or getattr(profile, 'account_status', '') != 'active':
+        raise PermissionDenied
     alumni = get_object_or_404(Alumni, user=request.user)
     profile, _ = MentorshipProfile.objects.get_or_create(alumni=alumni)
     if request.method == 'POST':
