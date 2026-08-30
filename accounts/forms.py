@@ -171,13 +171,12 @@ class DataSubjectRequestForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user and getattr(getattr(user, 'profile', None), 'user_type', None) == 'visitor':
-            self.fields['request_type'].choices = [
-                choice for choice in self.fields['request_type'].choices
-                if choice[0] != 'delete'
-            ]
+        self.fields['request_type'].choices = [
+            choice for choice in self.fields['request_type'].choices
+            if choice[0] != 'delete'
+        ]
         configure_required_choice(self.fields['request_type'], 'KVKK talep türünü seçiniz')
         if not self.is_bound and not self.instance.pk:
             self.fields['request_type'].initial = ''
@@ -188,8 +187,13 @@ class AccountDeletionForm(forms.Form):
         label='Mevcut parola',
         widget=forms.PasswordInput(attrs={'class': INPUT_CLASS, 'autocomplete': 'current-password'}),
     )
-    confirm_delete = forms.BooleanField(
-        label='Hesabımın ve ziyaretçi verilerimin kalıcı olarak silineceğini anlıyorum.',
+    confirmation_text = forms.CharField(
+        label='Onay metni',
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASS,
+            'autocomplete': 'off',
+            'placeholder': 'DELETE',
+        }),
     )
 
     def __init__(self, *args, user, **kwargs):
@@ -201,6 +205,12 @@ class AccountDeletionForm(forms.Form):
         if not self.user.check_password(password):
             raise forms.ValidationError('Mevcut parola hatalı.')
         return password
+
+    def clean_confirmation_text(self):
+        value = self.cleaned_data['confirmation_text'].strip()
+        if value != 'DELETE':
+            raise forms.ValidationError('Onaylamak için tam olarak DELETE yazın.')
+        return value
 
 
 class AccountSettingsForm(forms.Form):

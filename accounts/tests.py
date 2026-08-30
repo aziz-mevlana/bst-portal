@@ -11,7 +11,7 @@ from django.utils import timezone
 from .email_service import EmailConfigurationError, validate_email_configuration
 from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification
 from django.contrib.auth.models import User
-from projects.models import Project, ProjectType
+from projects.models import Project, ProjectType, Team
 from core.models import Notification
 from events.models import Event
 
@@ -290,6 +290,28 @@ class AccountSettingsTests(TestCase):
         self.assertTrue(self.user.check_password('NewStrongPassword456!'))
         self.assertEqual(self.client.get(reverse('accounts:portfolio_settings')).status_code, 200)
 
+    def test_student_can_delete_account_with_owned_project_and_team(self):
+        team = Team.objects.create(name='Silinecek ekip', leader=self.user)
+        project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Silinecek proje',
+            created_by=self.user,
+            team_entity=team,
+        )
+        user_pk = self.user.pk
+        team_pk = team.pk
+        project_pk = project.pk
+
+        response = self.client.post(
+            reverse('accounts:account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirmation_text': 'DELETE'},
+        )
+
+        self.assertRedirects(response, reverse('portal:index'))
+        self.assertFalse(User.objects.filter(pk=user_pk).exists())
+        self.assertFalse(Team.objects.filter(pk=team_pk).exists())
+        self.assertFalse(Project.objects.filter(pk=project_pk).exists())
+
     def test_temporary_password_forces_change_and_unlocks_account_after_update(self):
         self.user.profile.must_change_password = True
         self.user.profile.save(update_fields=['must_change_password'])
@@ -495,15 +517,19 @@ class CommunityRegistrationFlowTests(TestCase):
         self.assertContains(response, 'Varsa GitHub/LinkedIn/portfolyo bağlantısı')
         self.assertContains(response, 'Ek açıklama')
 
-    def test_visitor_settings_offer_direct_deletion_not_deletion_request(self):
+    def test_settings_link_to_confirmation_page_not_deletion_request(self):
         self.register_and_verify()
         user = User.objects.get(email='ayse@example.com')
         self.client.force_login(user)
 
         response = self.client.get(reverse('accounts:portfolio_settings'))
 
-        self.assertContains(response, 'Hesabımı kalıcı olarak sil')
+        self.assertContains(response, 'Hesabımı sil')
         self.assertNotContains(response, '<option value="delete">')
+
+        confirmation = self.client.get(reverse('accounts:account_delete'))
+        self.assertContains(confirmation, 'Hesabını kalıcı olarak sil')
+        self.assertContains(confirmation, 'büyük harflerle')
 
     def test_visitor_can_delete_account_with_current_password(self):
         self.register_and_verify()
@@ -513,8 +539,8 @@ class CommunityRegistrationFlowTests(TestCase):
         self.client.force_login(user)
 
         response = self.client.post(
-            reverse('accounts:visitor_account_delete'),
-            {'current_password': 'StrongPassword123!', 'confirm_delete': 'on'},
+            reverse('accounts:account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirmation_text': 'DELETE'},
         )
 
         self.assertRedirects(response, reverse('portal:index'))
@@ -527,31 +553,52 @@ class CommunityRegistrationFlowTests(TestCase):
         self.client.force_login(user)
 
         response = self.client.post(
-            reverse('accounts:visitor_account_delete'),
-            {'current_password': 'WrongPassword!', 'confirm_delete': 'on'},
+            reverse('accounts:account_delete'),
+            {'current_password': 'WrongPassword!', 'confirmation_text': 'DELETE'},
         )
 
-        self.assertRedirects(
-            response,
-            f"{reverse('accounts:portfolio_settings')}#data",
-            fetch_redirect_response=False,
-        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'Mevcut parola hatalı.', status_code=400)
         self.assertTrue(User.objects.filter(pk=user.pk).exists())
 
-    def test_direct_visitor_deletion_endpoint_rejects_other_roles(self):
+    def test_approved_member_can_also_delete_account(self):
         self.register_and_verify()
         user = User.objects.get(email='ayse@example.com')
+        user_pk = user.pk
         user.profile.user_type = 'approved_member'
         user.profile.save(update_fields=['user_type'])
         self.client.force_login(user)
 
         response = self.client.post(
-            reverse('accounts:visitor_account_delete'),
-            {'current_password': 'StrongPassword123!', 'confirm_delete': 'on'},
+            reverse('accounts:account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirmation_text': 'DELETE'},
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse('portal:index'))
+        self.assertFalse(User.objects.filter(pk=user_pk).exists())
+
+    def test_account_deletion_requires_exact_delete_text(self):
+        self.register_and_verify()
+        user = User.objects.get(email='ayse@example.com')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('accounts:account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirmation_text': 'delete'},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'tam olarak DELETE yazın', status_code=400)
         self.assertTrue(User.objects.filter(pk=user.pk).exists())
+
+    def test_admin_account_cannot_use_self_service_deletion(self):
+        admin = User.objects.create_superuser('site-admin', 'admin@example.com', 'StrongPassword123!')
+        self.client.force_login(admin)
+
+        response = self.client.get(reverse('accounts:account_delete'))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=admin.pk).exists())
 
     def test_visitor_can_submit_approved_member_application(self):
         self.register_and_verify()

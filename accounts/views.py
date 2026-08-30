@@ -8,11 +8,13 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
+from django.db.models import FileField
+from django.db.models.deletion import Collector
 from django.db.models.deletion import ProtectedError
 from django.db.models import Q
 from django.utils import timezone
 from django.urls import reverse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from .forms import (
     AccountSettingsForm, ApprovedMemberApplicationForm, EmailChangeForm, PrivacySettingsForm, UserReportForm,
     AccountDeletionForm, CommunicationPreferenceForm, DataSubjectRequestForm,
@@ -21,7 +23,7 @@ from .forms import (
 from .models import (
     CommunicationPreference, CommunityRegistration, ConsentRecord, DataSubjectRequest,
     PortfolioCertificate, Profile, EmailVerification, PasswordReset,
-    UserReport,
+    UserModerationAction, UserReport, WebsiteModerationHistory,
 )
 from alumni.models import AlumniRegistrationRequest
 from .email_service import EmailConfigurationError, send_transactional_email
@@ -33,7 +35,7 @@ import base64
 import binascii
 import logging
 from django.core.files.base import ContentFile
-from projects.models import Project, ProjectCategory, Technology
+from projects.models import Project, ProjectCategory, Team, TeamInvitation, Technology
 from core.rate_limit import is_rate_limited
 from core.audit import record_audit_event
 from core.notifications import create_notification
@@ -962,7 +964,6 @@ def portfolio_settings(request):
         'profile': profile,
         'communication_form': CommunicationPreferenceForm(instance=communication_preferences),
         'data_request_form': DataSubjectRequestForm(user=request.user),
-        'account_deletion_form': AccountDeletionForm(user=request.user),
         'data_requests': request.user.data_subject_requests.all(),
         'account_form': AccountSettingsForm(user=request.user),
         'privacy_form': PrivacySettingsForm(instance=profile),
@@ -1275,38 +1276,76 @@ def data_subject_request_create(request):
     return redirect('accounts:portfolio_settings')
 
 
+def _delete_account_and_related_data(user):
+    DataSubjectRequest.objects.filter(user=user).delete()
+    ConsentRecord.objects.filter(user=user).delete()
+    TeamInvitation.objects.filter(invited_by=user).delete()
+    Team.objects.filter(leader=user).delete()
+    AlumniRegistrationRequest.objects.filter(user=user).delete()
+    AlumniRegistrationRequest.objects.filter(reviewed_by=user).update(reviewed_by=None)
+    UserModerationAction.objects.filter(Q(user=user) | Q(performed_by=user)).delete()
+    UserReport.objects.filter(Q(reporter=user) | Q(reported_user=user)).delete()
+    WebsiteModerationHistory.objects.filter(profile__user=user).delete()
+    WebsiteModerationHistory.objects.filter(performed_by=user).update(performed_by=None)
+
+    collector = Collector(using=user._state.db)
+    collector.collect([user])
+    stored_files = []
+    for model, instances in collector.data.items():
+        file_fields = [field for field in model._meta.fields if isinstance(field, FileField)]
+        for instance in instances:
+            for field in file_fields:
+                file_value = getattr(instance, field.name, None)
+                if file_value and file_value.name:
+                    stored_files.append((file_value.storage, file_value.name))
+
+    collector.delete()
+
+    def delete_stored_files():
+        for storage, name in stored_files:
+            try:
+                storage.delete(name)
+            except Exception:
+                logger.exception('Hesap silme sonrası dosya temizlenemedi: %s', name)
+
+    transaction.on_commit(delete_stored_files)
+
+
 @login_required
-@require_POST
-def visitor_account_delete(request):
+@require_http_methods(['GET', 'POST'])
+def account_delete(request):
     user = request.user
-    profile = getattr(user, 'profile', None)
-    if user.is_staff or user.is_superuser or not profile or profile.user_type != 'visitor':
+    if user.is_staff or user.is_superuser:
         raise PermissionDenied
+
+    if request.method == 'GET':
+        return render(request, 'accounts/account_delete_confirm.html', {
+            'deletion_form': AccountDeletionForm(user=user),
+        })
 
     form = AccountDeletionForm(request.POST, user=user)
     if not form.is_valid():
-        messages.error(request, 'Hesap silinemedi. Mevcut parolanızı ve onay kutusunu kontrol edin.')
-        return redirect(f"{reverse('accounts:portfolio_settings')}#data")
+        return render(request, 'accounts/account_delete_confirm.html', {
+            'deletion_form': form,
+        }, status=400)
 
     try:
         with transaction.atomic():
-            DataSubjectRequest.objects.filter(user=user).delete()
-            ConsentRecord.objects.filter(user=user).delete()
             record_audit_event(
                 actor=user,
-                action='account.deleted_by_visitor',
+                action='account.self_deleted',
                 target=user,
                 request=request,
-                metadata={'user_type': 'visitor'},
+                metadata={'user_type': getattr(getattr(user, 'profile', None), 'user_type', '')},
             )
-            user.delete()
+            _delete_account_and_related_data(user)
     except ProtectedError:
-        messages.error(
-            request,
-            'Hesap güvenlik veya moderasyon kayıtlarıyla bağlantılı olduğu için otomatik silinemedi. Lütfen yönetimle iletişime geçin.',
-        )
-        return redirect(f"{reverse('accounts:portfolio_settings')}#data")
+        logger.exception('Kullanıcı hesabı ilişkili kayıtlar nedeniyle silinemedi: %s', user.pk)
+        form.add_error(None, 'Hesap ilişkili bir kayıt nedeniyle silinemedi. Lütfen yönetimle iletişime geçin.')
+        return render(request, 'accounts/account_delete_confirm.html', {
+            'deletion_form': form,
+        }, status=409)
 
     logout(request)
-    messages.success(request, 'Ziyaretçi hesabınız ve hesabınıza bağlı içerikler kalıcı olarak silindi.')
+    messages.success(request, 'Hesabınız ve hesabınıza bağlı kişisel içerikler kalıcı olarak silindi.')
     return redirect('portal:index')
