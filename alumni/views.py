@@ -3,16 +3,28 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+import logging
 
 from projects.models import ProjectCategory, Technology
 
 from .models import Alumni, WorkExperience
+from .forms import AlumniProfileForm, WorkExperienceForm
 
 PAGE_SIZE = 12
+logger = logging.getLogger(__name__)
 
 
+def _safe_offset(request):
+    try:
+        return max(0, int(request.GET.get('offset', 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+@login_required
 def load_more_alumni(request):
-    offset = int(request.GET.get('offset', 0))
+    offset = _safe_offset(request)
     query = request.GET.get('q', '')
     experience_level = request.GET.get('experience_level', '')
     graduation_year = request.GET.get('graduation_year', '')
@@ -28,6 +40,7 @@ def load_more_alumni(request):
             models.Q(user__username__icontains=query) |
             models.Q(user__first_name__icontains=query) |
             models.Q(user__last_name__icontains=query) |
+            models.Q(full_name__icontains=query) |
             models.Q(current_position__icontains=query) |
             models.Q(company__icontains=query) |
             models.Q(bio__icontains=query)
@@ -45,85 +58,14 @@ def load_more_alumni(request):
     alumni = list(alumni_qs[offset:offset + PAGE_SIZE])
     has_more = len(alumni) == PAGE_SIZE
 
-    items = []
-    for alumni_obj in alumni:
-        profile_picture = alumni_obj.user.profile.profile_picture.url if hasattr(alumni_obj.user, 'profile') and alumni_obj.user.profile.profile_picture else '/static/images/icons/profile.svg'
-        
-        badges = f'''
-        <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-              style="--badge-bg: #FFFFFF20; --badge-color: #FFFFFF; --badge-border: #FFFFFF40;" 
-              data-badge-color="#FFFFFF">
-            {alumni_obj.graduation_year}
-        </span>
-        <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-              style="--badge-bg: #3B82F620; --badge-color: #3B82F6; --badge-border: #3B82F640;" 
-              data-badge-color="#3B82F6">
-            {alumni_obj.get_experience_level_display()}
-        </span>
-        '''
-        
-        if alumni_obj.is_available_for_mentoring:
-            badges += '''
-        <span class="alumni-badge px-2 py-1 rounded-full text-xs font-semibold" 
-              style="--badge-bg: #10B98120; --badge-color: #10B981; --badge-border: #10B98140;" 
-              data-badge-color="#10B981">
-            Mentor
-        </span>
-            '''
-
-        for category in alumni_obj.categories.all():
-            badges += f'''
-        <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
-              style="--skill-bg: {category.color}20; --skill-color: {category.color}; --skill-border: {category.color}40;" 
-              data-skill-color="{category.color}">
-            {category.name}
-        </span>
-            '''
-
-        for technology in alumni_obj.technologies.all():
-            badges += f'''
-        <span class="alumni-skill-tag px-2 py-1 rounded-full text-xs font-semibold" 
-              style="--skill-bg: {technology.color}20; --skill-color: {technology.color}; --skill-border: {technology.color}40;" 
-              data-skill-color="{technology.color}">
-            {technology.name}
-        </span>
-            '''
-
-        social_icons = ''
-        if alumni_obj.linkedin_url:
-            social_icons += f'<a href="{alumni_obj.linkedin_url}" target="_blank" title="LinkedIn" class="hover:scale-110 transition"><img src="/static/images/icons/linkedin.svg" alt="LinkedIn" width="20" height="20"></a>'
-        if alumni_obj.github_url:
-            social_icons += f'<a href="{alumni_obj.github_url}" target="_blank" title="GitHub" class="hover:scale-110 transition"><img src="/static/images/icons/github.svg" alt="GitHub" width="20" height="20"></a>'
-        if alumni_obj.personal_website:
-            social_icons += f'<a href="{alumni_obj.personal_website}" target="_blank" title="Web" class="hover:scale-110 transition"><img src="/static/images/icons/external-link.svg" alt="Web" width="20" height="20"></a>'
-
-        items.append(f'''
-        <div class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-5 flex flex-col justify-between h-full">
-            <a href="/alumni/{alumni_obj.user.username}/">
-                <div class="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
-                    <div class="shrink-0 mx-auto sm:mx-0">
-                        <img src="{profile_picture}" alt="{alumni_obj.user.username}" class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full alumni-list-profile-picture">
-                    </div>
-                    <div class="flex-1 text-center sm:text-left space-y-1">
-                        <h3 class="text-lg sm:text-xl font-bold">{alumni_obj.user.get_full_name()}</h3>
-                        <div class="text-xs sm:text-sm text-gray-400">{alumni_obj.current_position} @ {alumni_obj.company}</div>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
-                    {badges}
-                </div>
-            </a>
-            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-600 pt-3 mt-auto gap-2">
-                <div class="flex items-center gap-3 alumni-list-social-media-icons">
-                    {social_icons}
-                </div>
-                <div class="text-gray-400 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">{alumni_obj.user.email}</div>
-            </div>
-        </div>
-        ''')
+    items = render_to_string(
+        'alumni/partials/alumni_item.html',
+        {'alumni_list': alumni},
+        request=request,
+    )
 
     return JsonResponse({
-        'items': ''.join(items),
+        'items': items,
         'has_more': has_more,
         'next_offset': offset + PAGE_SIZE if has_more else 0
     })
@@ -149,6 +91,7 @@ def alumni_list(request):
             models.Q(user__username__icontains=query) |
             models.Q(user__first_name__icontains=query) |
             models.Q(user__last_name__icontains=query) |
+            models.Q(full_name__icontains=query) |
             models.Q(current_position__icontains=query) |
             models.Q(company__icontains=query) |
             models.Q(bio__icontains=query)
@@ -168,7 +111,7 @@ def alumni_list(request):
     graduation_years = Alumni.objects.values_list('graduation_year', flat=True).distinct().order_by('-graduation_year')
 
     # Pagination - sadece initial load için
-    offset = int(request.GET.get('offset', 0))
+    offset = _safe_offset(request)
     has_more = False
     
     # Filtre parametreleri ile total count kontrolü
@@ -194,10 +137,11 @@ def alumni_list(request):
         'has_more': has_more,
     })
 
+@login_required
 def alumni_detail(request, username):
     alumni = get_object_or_404(Alumni, user__username=username)
     experiences = alumni.work_experiences.all()
-    if alumni.user.username == request.user.username:
+    if alumni.user_id == request.user.id:
         return redirect('alumni:alumni_profile')
     return render(request, 'alumni/alumni_detail.html', {
         'alumni': alumni,
@@ -205,6 +149,7 @@ def alumni_detail(request, username):
     })
 
 
+@login_required
 def alumni_detail_by_id(request, alumni_id):
     """Alumni detail by ID - works for both matched and unmatched alumni"""
     alumni = get_object_or_404(Alumni, id=alumni_id)
@@ -255,27 +200,15 @@ def alumni_profile_edit(request):
             messages.success(request, 'Mezun profiliniz silindi.')
             return redirect('alumni:alumni_list')
         else:
-            # Normal profile update
-            profile.graduation_year = request.POST.get('graduation_year')
-            profile.current_position = request.POST.get('current_position')
-            profile.company = request.POST.get('company')
-            profile.experience_level = request.POST.get('experience_level')
-            profile.bio = request.POST.get('bio')
-            profile.linkedin_url = request.POST.get('linkedin_url')
-            profile.github_url = request.POST.get('github_url')
-            profile.personal_website = request.POST.get('personal_website')
-            profile.is_available_for_mentoring = request.POST.get('is_available_for_mentoring') == 'on'
-            profile.is_show_in_alumni_list = request.POST.get('is_show_in_alumni_list') == 'on'
-            
-            category_ids = request.POST.getlist('categories')
-            technology_ids = request.POST.getlist('technologies')
-
-            profile.save()
-            profile.categories.set(category_ids)
-            profile.technologies.set(technology_ids)
-
-            messages.success(request, 'Profiliniz başarıyla güncellendi.')
-            return redirect('alumni:alumni_profile')
+            form = AlumniProfileForm(request.POST, instance=profile)
+            if form.is_valid():
+                profile = form.save(commit=False)
+                profile.user = request.user
+                profile.save()
+                form.save_m2m()
+                messages.success(request, 'Profiliniz başarıyla güncellendi.')
+                return redirect('alumni:alumni_profile')
+            messages.error(request, 'Profil kaydedilemedi. Lütfen alanları kontrol edin.')
     
     categories = ProjectCategory.objects.all()
     technologies = Technology.objects.all()
@@ -287,29 +220,19 @@ def alumni_profile_edit(request):
 
 def add_experience(request, profile):
     try:
-        company = request.POST.get('company')
-        position = request.POST.get('position')
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        is_current = request.POST.get('is_current') == 'on'
-        description = request.POST.get('description', '')
-        
-        if not company or not position or not start_date:
-            return JsonResponse({'success': False, 'error': 'Zorunlu alanlar eksik'})
-        
-        experience = WorkExperience.objects.create(
-            person=profile,
-            company=company,
-            position=position,
-            start_date=start_date,
-            end_date=end_date if not is_current else None,
-            is_current=is_current,
-            description=description
-        )
-        
+        if not profile.pk:
+            profile.user = request.user
+            profile.save()
+        form = WorkExperienceForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse({'success': False, 'error': 'Deneyim bilgilerini ve tarihleri kontrol edin.'}, status=400)
+        experience = form.save(commit=False)
+        experience.person = profile
+        experience.save()
         return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('İş deneyimi eklenemedi.')
+        return JsonResponse({'success': False, 'error': 'Deneyim eklenirken bir hata oluştu.'}, status=500)
 
 def delete_experience(request, profile):
     try:
@@ -319,8 +242,9 @@ def delete_experience(request, profile):
         return JsonResponse({'success': True})
     except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('İş deneyimi silinemedi.')
+        return JsonResponse({'success': False, 'error': 'Deneyim silinirken bir hata oluştu.'}, status=500)
 
 def get_experience(request, profile):
     try:
@@ -331,8 +255,8 @@ def get_experience(request, profile):
             'id': experience.id,
             'company': experience.company,
             'position': experience.position,
-            'start_date': experience.start_date,
-            'end_date': experience.end_date,
+            'start_date': experience.start_date.isoformat(),
+            'end_date': experience.end_date.isoformat() if experience.end_date else None,
             'is_current': experience.is_current,
             'description': experience.description
         }
@@ -340,34 +264,22 @@ def get_experience(request, profile):
         return JsonResponse({'success': True, 'experience': experience_data})
     except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('İş deneyimi okunamadı.')
+        return JsonResponse({'success': False, 'error': 'Deneyim okunurken bir hata oluştu.'}, status=500)
 
 def edit_experience(request, profile):
     try:
         experience_id = request.POST.get('experience_id')
         experience = WorkExperience.objects.get(id=experience_id, person=profile)
         
-        company = request.POST.get('company')
-        position = request.POST.get('position')
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        is_current = request.POST.get('is_current') == 'on'
-        description = request.POST.get('description', '')
-        
-        if not company or not position or not start_date:
-            return JsonResponse({'success': False, 'error': 'Zorunlu alanlar eksik'})
-        
-        experience.company = company
-        experience.position = position
-        experience.start_date = start_date
-        experience.end_date = end_date if not is_current else None
-        experience.is_current = is_current
-        experience.description = description
-        experience.save()
-        
+        form = WorkExperienceForm(request.POST, instance=experience)
+        if not form.is_valid():
+            return JsonResponse({'success': False, 'error': 'Deneyim bilgilerini ve tarihleri kontrol edin.'}, status=400)
+        form.save()
         return JsonResponse({'success': True})
     except WorkExperience.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Deneyim bulunamadı'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('İş deneyimi güncellenemedi.')
+        return JsonResponse({'success': False, 'error': 'Deneyim güncellenirken bir hata oluştu.'}, status=500)

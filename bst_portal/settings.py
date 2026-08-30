@@ -13,20 +13,37 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-load_dotenv()
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+load_dotenv(BASE_DIR / '.env')
+
+
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+DEBUG = env_bool('DJANGO_DEBUG', False)
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-local-development-only'
+    else:
+        raise ImproperlyConfigured('DJANGO_SECRET_KEY canlı ortamda zorunludur.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'www.bstakademi.com', 'bstakademi.com', 'testserver']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        'DJANGO_ALLOWED_HOSTS',
+        'localhost,127.0.0.1,testserver',
+    ).split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -38,6 +55,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
+    'core',
     'portal',
     'events',
     'projects',
@@ -46,15 +65,18 @@ INSTALLED_APPS = [
     'news',
     'dashboard',
     'ai_assistant',
+    'career',
     'widget_tweaks',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.TemporaryPasswordChangeMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -73,6 +95,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'dashboard.context_processors.user_type',
+                'core.context_processors.seo_defaults',
             ],
         },
     },
@@ -84,10 +107,14 @@ WSGI_APPLICATION = 'bst_portal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+sqlite_path = Path(os.getenv('SQLITE_DATABASE_PATH', 'db.sqlite3')).expanduser()
+if not sqlite_path.is_absolute():
+    sqlite_path = BASE_DIR / sqlite_path
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': sqlite_path,
+        'OPTIONS': {'timeout': int(os.getenv('SQLITE_TIMEOUT_SECONDS', '20'))},
     }
 }
 
@@ -132,18 +159,68 @@ STATICFILES_DIRS = [
     BASE_DIR / "linkedin_profile_photos",
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+USE_S3 = env_bool('USE_S3', False)
+if USE_S3:
+    required_s3 = {
+        'AWS_STORAGE_BUCKET_NAME': os.getenv('AWS_STORAGE_BUCKET_NAME', '').strip(),
+        'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID', '').strip(),
+        'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY', '').strip(),
+    }
+    missing_s3 = [name for name, value in required_s3.items() if not value]
+    if missing_s3:
+        raise ImproperlyConfigured('Eksik S3 ayarları: ' + ', '.join(missing_s3))
+    INSTALLED_APPS.append('storages')
+    AWS_STORAGE_BUCKET_NAME = required_s3['AWS_STORAGE_BUCKET_NAME']
+    AWS_ACCESS_KEY_ID = required_s3['AWS_ACCESS_KEY_ID']
+    AWS_SECRET_ACCESS_KEY = required_s3['AWS_SECRET_ACCESS_KEY']
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', '').strip() or None
+    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', '').strip() or None
+    AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN', '').strip() or None
+    AWS_QUERYSTRING_AUTH = env_bool('AWS_QUERYSTRING_AUTH', True)
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    STORAGES['default'] = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {'location': 'media'},
+    }
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
 # Email ayarları - .env dosyasından okunuyor
-EMAIL_BACKEND = 'bst_portal.email_backend.CertifiEmailBackend'
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend',
+)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', 15))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or '')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    EMAIL_HOST_USER or 'webmaster@localhost',
+)
+
+INSTITUTIONAL_EMAIL_DOMAINS = {
+    domain.strip().casefold()
+    for domain in os.getenv('INSTITUTIONAL_EMAIL_DOMAINS', 'trakya.edu.tr').split(',')
+    if domain.strip()
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -157,3 +234,109 @@ AUTHENTICATION_BACKENDS = [
 
 # Gemini AI API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+GEMINI_WRITING_MODEL = os.getenv('GEMINI_WRITING_MODEL', 'gemini-2.5-flash')
+GEMINI_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        'GEMINI_MODELS',
+        'gemini-2.5-flash,gemini-3.1-flash-lite,gemini-3.5-flash',
+    ).split(',')
+    if model.strip()
+]
+
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', REDIS_URL or 'memory://')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', REDIS_URL or 'cache+memory://')
+CELERY_TASK_ALWAYS_EAGER = env_bool('CELERY_TASK_ALWAYS_EAGER', DEBUG or not REDIS_URL)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'purge-expired-privacy-analytics': {
+        'task': 'core.tasks.purge_expired_analytics',
+        'schedule': 86400,
+    },
+}
+ANALYTICS_RETENTION_DAYS = int(os.getenv('ANALYTICS_RETENTION_DAYS', '180'))
+
+CACHES = {
+    'default': (
+        {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+        if REDIS_URL
+        else {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'bst-portal-local-cache',
+        }
+    )
+}
+
+LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO').upper()
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+        'json': {'()': 'core.logging.JsonFormatter'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console' if DEBUG else 'json',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'bst-portal.log',
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'encoding': 'utf-8',
+            'formatter': 'json',
+        },
+    },
+    'root': {'handlers': ['console', 'file'], 'level': LOG_LEVEL},
+    'loggers': {
+        'django.security.DisallowedHost': {
+            'handlers': ['console', 'file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.getenv('SENTRY_ENVIRONMENT', 'production'),
+        traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0')),
+        send_default_pii=False,
+    )
+
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]

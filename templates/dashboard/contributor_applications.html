@@ -1,0 +1,52 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Onaylı Üye Başvuruları | Yönetim{% endblock %}
+
+{% block dashboard_content %}
+<div class="py-4">
+  <header>
+    <p class="text-sm font-semibold text-violet-300">Topluluk moderasyonu</p>
+    <h1 class="mt-1 text-3xl font-black">Onaylı Üye başvuruları</h1>
+    <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-400">Ziyaretçi hesaplardan gelen paylaşım yetkisi başvurularını ve kullanıcıların referans bağlantılarını inceleyin.</p>
+  </header>
+
+  <nav class="mt-6 flex flex-wrap gap-3" aria-label="Başvuru durumu">
+    <a href="?status=pending" class="rounded-xl border px-4 py-2.5 text-sm font-semibold {% if selected_status == 'pending' %}border-amber-500 bg-amber-950/30 text-amber-200{% else %}border-gray-700 text-gray-400{% endif %}">Bekleyenler · {{ pending_count }}</a>
+    <a href="?status=approved" class="rounded-xl border px-4 py-2.5 text-sm font-semibold {% if selected_status == 'approved' %}border-emerald-500 bg-emerald-950/30 text-emerald-200{% else %}border-gray-700 text-gray-400{% endif %}">Onaylananlar · {{ approved_count }}</a>
+    <a href="?status=rejected" class="rounded-xl border px-4 py-2.5 text-sm font-semibold {% if selected_status == 'rejected' %}border-red-500 bg-red-950/30 text-red-200{% else %}border-gray-700 text-gray-400{% endif %}">Reddedilenler · {{ rejected_count }}</a>
+  </nav>
+
+  <div class="mt-6 grid gap-5 xl:grid-cols-2">
+    {% for application in applications %}
+      <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><h2 class="text-xl font-bold">{{ application.user.get_full_name|default:application.user.username }}</h2><p class="mt-1 text-xs text-gray-500">{{ application.user.email }} · {{ application.created_at|date:'d.m.Y H:i' }}</p></div>
+          <span class="rounded-full px-3 py-1 text-xs font-bold {% if application.status == 'pending' %}bg-amber-950 text-amber-200{% elif application.status == 'approved' %}bg-emerald-950 text-emerald-200{% else %}bg-red-950 text-red-200{% endif %}">{{ application.get_status_display }}</span>
+        </div>
+        <dl class="mt-5 grid gap-4 text-sm">
+          <div><dt class="font-semibold text-gray-200">Kısa tanıtım</dt><dd class="mt-1 whitespace-pre-line leading-6 text-gray-400">{{ application.introduction }}</dd></div>
+          <div><dt class="font-semibold text-gray-200">BST Akademi’ye kayıt olma nedeni</dt><dd class="mt-1 whitespace-pre-line leading-6 text-gray-400">{{ application.motivation }}</dd></div>
+          <div class="rounded-xl border border-violet-900/60 bg-violet-950/15 p-4"><dt class="font-semibold text-violet-200">Paylaşmayı düşündüğü içerikler</dt><dd class="mt-1 whitespace-pre-line leading-6 text-gray-300">{{ application.content_plan }}</dd></div>
+          {% if application.reference_url %}<div><dt class="font-semibold text-gray-200">GitHub / LinkedIn / portfolyo</dt><dd class="mt-1"><a href="{{ application.reference_url }}" target="_blank" rel="noopener noreferrer" class="break-all text-blue-300 hover:underline">{{ application.reference_url }}</a></dd></div>{% endif %}
+          {% if application.additional_notes %}<div><dt class="font-semibold text-gray-200">Ek açıklama</dt><dd class="mt-1 whitespace-pre-line leading-6 text-gray-400">{{ application.additional_notes }}</dd></div>{% endif %}
+        </dl>
+        {% if application.status == 'pending' %}
+          <form method="post" action="{% url 'dashboard:approved_member_application_review' application.pk %}" class="mt-5 space-y-3">
+            {% csrf_token %}
+            <label class="block text-sm font-semibold" for="review-note-{{ application.pk }}">İnceleme notu <span class="font-normal text-gray-500">(ret için zorunlu)</span></label>
+            <textarea id="review-note-{{ application.pk }}" name="reviewer_note" rows="3" maxlength="1000" placeholder="Kararınızı destekleyen kısa not" class="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3"></textarea>
+            <div class="flex flex-wrap gap-3">
+              <button name="action" value="approve" class="rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600">Onaylı Üye yap</button>
+              <button name="action" value="reject" class="rounded-xl border border-red-800 px-5 py-2.5 text-sm font-bold text-red-300 hover:bg-red-950/30">Reddet</button>
+            </div>
+          </form>
+        {% else %}
+          <div class="mt-5 border-t border-gray-800 pt-4 text-xs text-gray-500"><p>İnceleyen: {{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }} · {{ application.reviewed_at|date:'d.m.Y H:i' }}</p>{% if application.reviewer_note %}<p class="mt-2 text-gray-400">{{ application.reviewer_note }}</p>{% endif %}</div>
+        {% endif %}
+      </article>
+    {% empty %}
+      <div class="rounded-2xl border border-dashed border-gray-700 p-10 text-center text-gray-400 xl:col-span-2">Bu durumda katkıcı başvurusu bulunmuyor.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

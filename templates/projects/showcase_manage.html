@@ -1,0 +1,189 @@
+{% extends 'projects/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}BST Portal | Proje Vitrinini Düzenle{% endblock %}
+
+{% block project_content %}
+<div>
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-400">Proje Vitrini 2.0</p>
+        <h1 class="text-3xl font-bold text-white">{{ project.title }}</h1>
+        <p class="mt-2 text-gray-400">Vaka çalışmasını, görselleri, ekip katkılarını ve başarıları yönetin.</p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row"><a href="{% url 'projects:project_matches' project_id=project.pk %}" class="rounded-xl bg-violet-600 px-5 py-3 text-center font-semibold text-white hover:bg-violet-500">Eşleşme önerileri</a><a href="{{ project.get_absolute_url }}" class="rounded-xl border border-gray-600 px-5 py-3 text-center font-semibold text-gray-300 hover:bg-gray-800">Projeyi görüntüle</a></div>
+    </div>
+
+    <div class="space-y-8">
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">GitHub deposu</h2>
+        <p class="mb-6 text-sm text-gray-400">Yalnızca <strong>kullanıcı/depo</strong> biçimini girin. Portal GitHub API’sine bağlanmaz ve depo verisi senkronize etmez.</p>
+        <form method="post" action="{% url 'projects:project_repository_save' project_id=project.pk %}" class="flex flex-col gap-3 sm:flex-row">{% csrf_token %}<div class="min-w-0 flex-1">{{ repository_form.repository_path }}</div><button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Bağlantıyı kaydet</button></form>
+        {% if repository %}<div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-800/60 p-4"><a href="{{ repository.repository_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="font-semibold text-blue-300">{{ repository.repository_path }}</a><form method="post" action="{% url 'projects:project_repository_delete' project_id=project.pk %}" onsubmit="return confirm('GitHub depo bağlantısı kaldırılsın mı?');">{% csrf_token %}<button class="text-sm text-red-300">Kaldır</button></form></div>{% endif %}
+      </section>
+
+      <section id="ai-writing" class="rounded-2xl border border-violet-700/50 bg-violet-950/20 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">AI proje yazım asistanı</h2>
+        <p class="mb-6 text-sm leading-6 text-gray-400">Dağınık metninizi yapılandırılmış bir taslağa dönüştürür. Öneri doğrudan yayınlanmaz; yalnızca seçtiğiniz alanlar onayınızdan sonra uygulanır.</p>
+        {% if writing_suggestion %}
+          <div class="space-y-4">
+            <div class="grid gap-4 lg:grid-cols-2"><div class="rounded-xl border border-gray-700 bg-gray-900/60 p-4"><p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Gönderdiğiniz metin</p><p class="mt-3 whitespace-pre-line text-sm leading-6 text-gray-300">{{ writing_suggestion.original_text }}</p></div><div class="rounded-xl border border-violet-700/50 bg-violet-950/20 p-4"><p class="text-xs font-semibold uppercase tracking-wider text-violet-300">Teknoloji önerileri (otomatik uygulanmaz)</p><p class="mt-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.technologies|join:', '|default:'Kaynak metinde belirlenemedi.' }}</p></div></div>
+            <form method="post" action="{% url 'projects:project_writing_apply' suggestion_id=writing_suggestion.pk %}" class="space-y-4">{% csrf_token %}
+              <div class="overflow-x-auto rounded-xl border border-gray-700"><table class="w-full min-w-[760px] text-left"><thead class="bg-gray-800"><tr><th class="px-4 py-3 text-sm text-gray-300">Uygula</th><th class="px-4 py-3 text-sm text-gray-300">Alan</th><th class="px-4 py-3 text-sm text-gray-300">Mevcut içerik</th><th class="px-4 py-3 text-sm text-violet-200">AI önerisi</th></tr></thead><tbody class="divide-y divide-gray-800">
+                <tr><td class="px-4 py-3"><input type="checkbox" name="fields" value="problem" checked aria-label="Problem önerisini uygula"></td><td class="px-4 py-3 font-medium text-white">Problem</td><td class="max-w-xs px-4 py-3 text-sm text-gray-500">{{ case_study_form.instance.problem|default:'—'|truncatechars:180 }}</td><td class="max-w-xs px-4 py-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.problem|default:'—'|truncatechars:300 }}</td></tr>
+                <tr><td class="px-4 py-3"><input type="checkbox" name="fields" value="solution" checked aria-label="Çözüm önerisini uygula"></td><td class="px-4 py-3 font-medium text-white">Çözüm</td><td class="max-w-xs px-4 py-3 text-sm text-gray-500">{{ case_study_form.instance.solution|default:'—'|truncatechars:180 }}</td><td class="max-w-xs px-4 py-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.solution|default:'—'|truncatechars:300 }}</td></tr>
+                <tr><td class="px-4 py-3"><input type="checkbox" name="fields" value="architecture" checked aria-label="Mimari önerisini uygula"></td><td class="px-4 py-3 font-medium text-white">Mimari</td><td class="max-w-xs px-4 py-3 text-sm text-gray-500">{{ case_study_form.instance.architecture|default:'—'|truncatechars:180 }}</td><td class="max-w-xs px-4 py-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.architecture|default:'—'|truncatechars:300 }}</td></tr>
+                <tr><td class="px-4 py-3"><input type="checkbox" name="fields" value="measurable_results" checked aria-label="Sonuç önerisini uygula"></td><td class="px-4 py-3 font-medium text-white">Sonuçlar</td><td class="max-w-xs px-4 py-3 text-sm text-gray-500">{{ case_study_form.instance.measurable_results|default:'—'|truncatechars:180 }}</td><td class="max-w-xs px-4 py-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.measurable_results|default:'—'|truncatechars:300 }}</td></tr>
+                <tr><td class="px-4 py-3"><input type="checkbox" name="fields" value="future_developments" checked aria-label="Gelecek geliştirmeler önerisini uygula"></td><td class="px-4 py-3 font-medium text-white">Gelecek</td><td class="max-w-xs px-4 py-3 text-sm text-gray-500">{{ case_study_form.instance.future_developments|default:'—'|truncatechars:180 }}</td><td class="max-w-xs px-4 py-3 text-sm text-gray-300">{{ writing_suggestion.suggested_fields.future_developments|default:'—'|truncatechars:300 }}</td></tr>
+              </tbody></table></div>
+              <div><button class="rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-500">Seçili alanları uygula</button></div>
+            </form>
+            <form method="post" action="{% url 'projects:project_writing_reject' suggestion_id=writing_suggestion.pk %}" class="mt-3">{% csrf_token %}<button class="rounded-xl border border-gray-600 px-5 py-3 font-semibold text-gray-300 hover:bg-gray-800">Öneriyi reddet</button></form>
+          </div>
+        {% else %}
+          <form method="post" action="{% url 'projects:project_writing_generate' project_id=project.pk %}">{% csrf_token %}<label for="source_text" class="mb-2 block text-sm font-medium text-gray-200">Ham proje anlatımı</label><textarea id="source_text" name="source_text" minlength="30" maxlength="8000" rows="7" required class="w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none" placeholder="Projenin problemi, çözüm fikri, mimarisi, kullandığınız teknolojiler ve gerçek sonuçları hakkında bildiklerinizi yazın...">{{ project.description }}</textarea><p class="mt-2 text-xs text-gray-500">AI metni uydurmamalıdır; yine de öneriyi doğrulama sorumluluğu sizdedir.</p><button class="mt-4 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-500">Karşılaştırmalı önizleme oluştur</button></form>
+        {% endif %}
+      </section>
+
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">Profesyonel vaka çalışması</h2>
+        <p class="mb-6 text-sm text-gray-400">Problemi, çözümü ve elde edilen sonucu ziyaretçinin anlayacağı biçimde anlatın.</p>
+        <form method="post" class="grid gap-5 md:grid-cols-2">
+          {% csrf_token %}
+          {% for field in case_study_form %}
+            <div class="{% if field.name != 'demo_url' and field.name != 'github_url' %}md:col-span-2{% endif %}">
+              <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-gray-200">{{ field.label }}</label>
+              {{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500' }}
+              {% if field.errors %}<div class="mt-2 text-sm text-red-300">{{ field.errors }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          <div class="md:col-span-2"><button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Vaka çalışmasını kaydet</button></div>
+        </form>
+      </section>
+
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">Medya ve kapak</h2>
+        <p class="mb-6 text-sm text-gray-400">Proje görselleri JPG/PNG/WEBP ve en fazla 5 MB; diğer medyalar en fazla 20 MB olabilir.</p>
+        <form method="post" enctype="multipart/form-data" action="{% url 'projects:project_images_add' project_id=project.pk %}" class="mb-6 rounded-xl border border-gray-700 p-4">
+          {% csrf_token %}
+          <label for="showcase-images" class="mb-2 block text-sm font-semibold">Birden çok proje görseli ekle</label>
+          <p class="mb-3 text-xs text-gray-500">Dosyaları seçtikten sonra ön izlemelerden yeni kapağı belirleyebilirsiniz. Seçmezseniz mevcut kapak korunur.</p>
+          <input id="showcase-images" type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp" required class="w-full rounded-xl border border-gray-600 bg-[#181e29] p-3">
+          <input id="showcase-cover-index" type="hidden" name="cover_index" value="">
+          <div id="showcase-image-previews" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite"></div>
+          <button class="mt-3 rounded-xl bg-blue-600 px-5 py-2.5 font-semibold">Görselleri yükle</button>
+        </form>
+        <form method="post" enctype="multipart/form-data" action="{% url 'projects:project_media_add' project_id=project.pk %}" class="grid gap-4 md:grid-cols-2">
+          {% csrf_token %}
+          {% for field in media_form %}
+            <div class="{% if field.name == 'caption' or field.name == 'alt_text' %}md:col-span-2{% endif %}">
+              <label for="{{ field.id_for_label }}" class="mb-2 block text-sm text-gray-300">{{ field.label }}</label>
+              {% if field|widget_type == 'checkbox' %}<div class="rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white">{{ field }}</div>{% else %}{{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white' }}{% endif %}
+            </div>
+          {% endfor %}
+          <div class="md:col-span-2"><button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Medya ekle</button></div>
+        </form>
+        {% if media_items %}
+          <div class="mt-6 grid gap-3 md:grid-cols-2">
+            {% for media in media_items %}
+              <div class="flex items-center justify-between gap-3 rounded-xl bg-gray-800/60 p-4 text-sm text-gray-300">
+                <div><span class="font-semibold text-white">{{ media.get_media_type_display }}</span>{% if media.is_cover %} · Kapak{% endif %}<p class="mt-1 text-gray-500">{{ media.caption|default:media.external_url|default:media.file.name }}</p></div>
+                <div class="flex gap-3">{% if media.media_type == 'image' and not media.is_cover %}<form method="post" action="{% url 'projects:project_media_set_cover' media_id=media.pk %}">{% csrf_token %}<button class="text-blue-300">Kapak yap</button></form>{% endif %}<form method="post" action="{% url 'projects:project_media_delete' media_id=media.pk %}" onsubmit="return confirm('Bu medya kalıcı olarak silinsin mi?');">{% csrf_token %}<button class="text-red-300 hover:text-red-200">Sil</button></form></div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">Doğrulanmış ekip katkıları</h2>
+        <p class="mb-6 text-sm text-gray-400">Ekip üyesinin rolünü ve somut katkısını kaydedin.</p>
+        <form method="post" action="{% url 'projects:project_contribution_add' project_id=project.pk %}" class="grid gap-4 md:grid-cols-2">
+          {% csrf_token %}
+          {% for field in contribution_form %}
+            <div class="{% if field.name == 'contribution_description' %}md:col-span-2{% endif %}"><label for="{{ field.id_for_label }}" class="mb-2 block text-sm text-gray-300">{{ field.label }}</label>{{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white' }}</div>
+          {% endfor %}
+          <div class="md:col-span-2"><button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Katkı ekle</button></div>
+        </form>
+        <div class="mt-6 space-y-3">
+          {% for contribution in contributions %}
+            <div class="rounded-xl bg-gray-800/60 p-4">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div><h3 class="font-semibold text-white">{{ contribution.user.get_full_name|default:contribution.user.username }} · {{ contribution.role }}</h3><p class="mt-2 text-sm text-gray-400">{{ contribution.contribution_description }}</p></div>
+                <span class="rounded-full px-2.5 py-1 text-xs {% if contribution.is_verified %}bg-green-950 text-green-300{% else %}bg-yellow-950 text-yellow-300{% endif %}">{% if contribution.is_verified %}Doğrulandı{% else %}Doğrulama bekliyor{% endif %}</span>
+              </div>
+              <div class="mt-3 flex gap-4 text-sm">
+                <form method="post" action="{% url 'projects:project_contribution_verify' contribution_id=contribution.pk %}">{% csrf_token %}<button class="text-blue-300 hover:text-blue-200">Katkıyı doğrula</button></form>
+                <form method="post" action="{% url 'projects:project_contribution_delete' contribution_id=contribution.pk %}">{% csrf_token %}<button class="text-red-300 hover:text-red-200">Sil</button></form>
+              </div>
+            </div>
+          {% empty %}<p class="text-sm text-gray-500">Henüz katkı kaydı yok.</p>{% endfor %}
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        <h2 class="mb-2 text-xl font-semibold text-white">Başarılar ve ödüller</h2>
+        <form method="post" enctype="multipart/form-data" action="{% url 'projects:project_achievement_add' project_id=project.pk %}" class="mt-6 grid gap-4 md:grid-cols-2">
+          {% csrf_token %}
+          {% for field in achievement_form %}
+            <div class="{% if field.name == 'description' %}md:col-span-2{% endif %}"><label for="{{ field.id_for_label }}" class="mb-2 block text-sm text-gray-300">{{ field.label }}</label>{{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white' }}</div>
+          {% endfor %}
+          <div class="md:col-span-2"><button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Başarı ekle</button></div>
+        </form>
+        <div class="mt-6 space-y-3">
+          {% for achievement in achievements %}
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-gray-800/60 p-4"><div><span class="font-semibold text-white">{{ achievement.title }}</span><p class="text-sm text-gray-500">{{ achievement.get_achievement_type_display }} · {{ achievement.organization }}</p></div><form method="post" action="{% url 'projects:project_achievement_delete' achievement_id=achievement.pk %}">{% csrf_token %}<button class="text-sm text-red-300">Sil</button></form></div>
+          {% empty %}<p class="text-sm text-gray-500">Henüz başarı kaydı yok.</p>{% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('showcase-images');
+  const cover = document.getElementById('showcase-cover-index');
+  const previews = document.getElementById('showcase-image-previews');
+  if (!input || !cover || !previews) return;
+  let objectUrls = [];
+  input.addEventListener('change', function () {
+    objectUrls.forEach(URL.revokeObjectURL);
+    objectUrls = [];
+    cover.value = '';
+    previews.replaceChildren();
+    Array.from(input.files || []).forEach(function (file, index) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'overflow-hidden rounded-xl border-2 border-gray-700 bg-gray-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500';
+      button.setAttribute('aria-pressed', 'false');
+      const url = URL.createObjectURL(file);
+      objectUrls.push(url);
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = file.name + ' ön izlemesi';
+      image.className = 'aspect-video w-full object-cover';
+      const label = document.createElement('span');
+      label.className = 'block px-3 py-2 text-xs font-semibold text-gray-300';
+      label.textContent = 'Yeni kapak yap';
+      button.append(image, label);
+      button.addEventListener('click', function () {
+        cover.value = String(index);
+        previews.querySelectorAll('button').forEach(function (item, itemIndex) {
+          const selected = itemIndex === index;
+          item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+          item.classList.toggle('border-blue-500', selected);
+          item.classList.toggle('border-gray-700', !selected);
+          item.querySelector('span').textContent = selected ? 'Yeni kapak seçildi' : 'Yeni kapak yap';
+        });
+      });
+      previews.appendChild(button);
+    });
+  });
+});
+</script>
+{% endblock %}

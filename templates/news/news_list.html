@@ -1,162 +1,74 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}BST Akademi | Haberler{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/projects.css' %}">
-<style>
-.technology-tag {
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.technology-tag::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.technology-tag:hover::before {
-  left: 100%;
-}
-
-.technology-tag[data-technology-color] {
-  background-color: var(--technology-bg);
-  color: var(--technology-color);
-  border: 1px solid var(--technology-border);
-}
-
-.technology-tag:hover {
-  transform: translateY(-1px);
-}
-</style>
-{% endblock %}
+{% block title %}Haberler ve Duyurular | BST Akademi{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-6 page-container-large">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-        <h2 class="text-3xl font-bold">Haberler</h2>
-
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- Haber Ekle Kartı -->
-        {% if user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
-        <a href="{% url 'news:create_news' %}" class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 hover:border-blue-400 bg-gray-800 hover:bg-gray-750 group">
-            <div class="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center mb-4 group-hover:bg-blue-800 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-bold group-hover:text-blue-400 transition">Yeni Haber</h3>
-            <p class="text-center mt-2">Haber eklemek için tıklayın</p>
-        </a>
+<main class="min-h-screen bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
+  <div class="mx-auto max-w-7xl">
+    <header class="border-b border-[var(--border)] pb-8">
+      <div class="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">BST gündemi</p>
+          <h1 class="mt-2 text-3xl font-black sm:text-4xl">Haberler ve Duyurular</h1>
+          <p class="mt-3 max-w-2xl text-[var(--text-secondary)]">Bölümümüzden, teknoloji dünyasından ve öğrenci topluluğumuzdan güncel gelişmeler.</p>
+        </div>
+        {% if user.is_authenticated and can_manage_news %}
+          <a href="{% url 'news:create_news' %}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Yeni haber</a>
         {% endif %}
-        
-        {% for news in news %}
-        <a href="{% url 'news:news_detail' news.id %}" class="news-item project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between color-page">
-            <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="dynamic-tag" 
-                          style="--tag-bg: #d1d5db15; --tag-color: #d1d5db; --tag-border: #d1d5db30;">
-                        {{ news.date|date:"d.m.Y" }}
-                    </span>
-                    {% if news.source %}
-                    <span class="dynamic-tag" 
-                       style="--tag-bg: #3b82f620; --tag-color: #3b82f6; --tag-border: #3b82f640;">
-                        Kaynak
-                    </span>
-                    {% endif %}
-                </div>
-                <h3 class="text-xl font-bold mb-2">{{ news.title }}</h3>
-                <p class="mb-4 line-clamp-3">{{ news.content|truncatewords:25 }}</p>
-            </div>
-            <div class="flex items-center justify-between text-sm">
-                <span class="flex items-center gap-1">
-                    <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{% if news.created_by %}{{ news.created_by.get_full_name|default:news.created_by.username }}{% else %}BST AI{% endif %}</span>
-                </span>
-            </div>
+      </div>
+      <form method="get" class="mt-7 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-[1fr_15rem_auto]" role="search">
+        <label class="sr-only" for="news-search">Haberlerde ara</label>
+        <input id="news-search" name="q" value="{{ query }}" placeholder="Başlık veya içerikte ara…" class="min-h-11 rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] px-4 text-white placeholder:text-gray-500">
+        <label class="sr-only" for="news-category">Kategori</label>
+        <select id="news-category" name="category" class="min-h-11 rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] px-4 text-white">
+          <option value="">Tüm kategoriler</option>
+          {% for value, label in categories %}<option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="min-h-11 rounded-xl bg-blue-600 px-5 font-semibold text-white hover:bg-blue-500">Ara</button>
+      </form>
+    </header>
+
+    {% if featured %}
+      <section class="mt-8 overflow-hidden rounded-3xl border border-blue-700/40 bg-gradient-to-br from-blue-950/60 to-[var(--surface)]">
+        <a href="{{ featured.get_absolute_url }}" class="grid lg:grid-cols-2">
+          <div class="min-h-64 bg-[var(--surface-elevated)]">
+            {% if featured.image %}<img src="{{ featured.image.url }}" alt="" class="h-full w-full object-cover">{% elif featured.image_url %}<img src="{{ featured.image_url }}" alt="" class="h-full w-full object-cover" loading="lazy">{% endif %}
+          </div>
+          <div class="p-7 sm:p-10">
+            <span class="rounded-full bg-blue-600/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">Öne çıkan</span>
+            <h2 class="mt-5 text-2xl font-bold sm:text-3xl">{{ featured.title }}</h2>
+            <p class="mt-4 leading-7 text-[var(--text-secondary)]">{{ featured.summary|default:featured.content|truncatewords:38 }}</p>
+            <p class="mt-6 text-sm text-[var(--text-muted)]">{{ featured.date|date:'d F Y' }}{% if featured.source %} · {{ featured.source }}{% endif %}</p>
+          </div>
         </a>
-        {% empty %}
-        <div class="col-span-full">
-            <div class="p-6 text-center font-semibold">Henüz haber bulunmuyor.</div>
-        </div>
-        {% endfor %}
-    </div>
-    
-    {% if has_more %}
-    <div id="news-load-trigger" class="flex justify-center py-6">
-        <div class="flex items-center gap-3 text-gray-400">
-            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Yükleniyor...</span>
-        </div>
-    </div>
+      </section>
     {% endif %}
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');
-  
-  technologyTags.forEach((tag) => {
-    const color = tag.dataset.technologyColor;
-    tag.style.setProperty('--technology-bg', color + '20');
-    tag.style.setProperty('--technology-color', color);
-    tag.style.setProperty('--technology-border', color + '40');
-  });
-  
-  // Infinite Scroll
-  const loadTrigger = document.getElementById('news-load-trigger');
-  const gridContainer = document.querySelector('.grid');
-  
-  if (loadTrigger && gridContainer) {
-    let newsOffset = {{ next_offset|default:12 }};
-    let newsHasMore = {{ has_more|yesno:"true,false" }};
-    let newsLoading = false;
+    <section class="mt-8" aria-labelledby="news-results-title">
+      <div class="flex items-center justify-between gap-4">
+        <h2 id="news-results-title" class="text-xl font-bold">Son haberler</h2>
+        <span class="text-sm text-[var(--text-muted)]">{{ total_count }} sonuç</span>
+      </div>
+      <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for item in news %}
+          {% include 'news/partials/news_item.html' with news=item %}
+        {% empty %}
+          <div class="col-span-full rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-8 text-center">
+            <h3 class="text-lg font-bold">Haber bulunamadı</h3>
+            <p class="mt-2 text-sm text-[var(--text-muted)]">Arama veya kategori filtresini değiştirerek yeniden deneyin.</p>
+            {% if query or selected_category %}<a href="{% url 'news:news_list' %}" class="mt-5 inline-flex rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold">Filtreleri temizle</a>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
 
-    const observer = new IntersectionObserver(function(entries) {
-      if (entries[0].isIntersecting && newsHasMore && !newsLoading) {
-        newsLoading = true;
-        
-        fetch(`/news/load-more/?offset=${newsOffset}`)
-          .then(response => response.json())
-          .then(data => {
-            gridContainer.insertAdjacentHTML('beforeend', data.items);
-            
-            const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
-            newTags.forEach((tag) => {
-              const color = tag.dataset.technologyColor;
-              tag.style.setProperty('--technology-bg', color + '20');
-              tag.style.setProperty('--technology-color', color);
-              tag.style.setProperty('--technology-border', color + '40');
-            });
-            
-            newsHasMore = data.has_more;
-            newsOffset = data.next_offset;
-            newsLoading = false;
-            
-            if (!newsHasMore) {
-              loadTrigger.classList.add('hidden');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            newsLoading = false;
-          });
-      }
-    }, { rootMargin: '200px' });
-    
-    observer.observe(loadTrigger);
-  }
-});
-</script>
+    {% if page_obj.has_other_pages %}
+      <nav class="mt-8 flex items-center justify-center gap-3" aria-label="Haber sayfaları">
+        {% if page_obj.has_previous %}<a class="rounded-lg border border-[var(--border)] px-4 py-2" href="?q={{ query|urlencode }}&category={{ selected_category|urlencode }}&page={{ page_obj.previous_page_number }}">Önceki</a>{% endif %}
+        <span class="text-sm text-[var(--text-muted)]">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a class="rounded-lg border border-[var(--border)] px-4 py-2" href="?q={{ query|urlencode }}&category={{ selected_category|urlencode }}&page={{ page_obj.next_page_number }}">Sonraki</a>{% endif %}
+      </nav>
+    {% endif %}
+  </div>
+</main>
 {% endblock %}

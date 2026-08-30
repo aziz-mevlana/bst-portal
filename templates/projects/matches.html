@@ -1,0 +1,17 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}BST Portal | Eşleşme Önerileri{% endblock %}
+
+{% block project_content %}
+<div>
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p class="mb-2 text-sm font-semibold uppercase tracking-widest text-violet-400">Açıklanabilir eşleştirme</p><h1 class="text-3xl font-bold text-white">{{ project.title }}</h1><p class="mt-2 text-gray-400">Ekip arkadaşı, danışman ve mentor önerileri.</p></div><a href="{% url 'projects:project_showcase_manage' project_id=project.pk %}" class="rounded-xl border border-gray-600 px-5 py-3 text-center font-semibold text-gray-300 hover:bg-gray-800">Projeye dön</a></div>
+
+    <section class="mb-8 rounded-2xl border border-violet-700/40 bg-violet-950/20 p-6"><h2 class="font-semibold text-white">Puanlama nasıl çalışır?</h2><div class="mt-3 flex flex-wrap gap-2 text-sm"><span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">Teknoloji %{{ weights.technology }}</span><span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">İlgi alanı %{{ weights.interest }}</span><span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">Uygunluk %{{ weights.availability }}</span><span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">Deneyim %{{ weights.experience }}</span></div><p class="mt-4 text-sm leading-6 text-gray-400">Bu sıralama yalnızca profil sahibinin paylaştığı yapılandırılmış alanları kullanır. Sistem kimseyi kabul etmez, onay vermez veya otomatik mesaj göndermez.</p></section>
+
+    {% include 'projects/partials/match_section.html' with title='Ekip arkadaşı önerileri' candidates=students empty_text='Uygun ve herkese açık öğrenci profili bulunamadı.' %}
+    {% include 'projects/partials/match_section.html' with title='Akademik danışman önerileri' candidates=advisors empty_text='Eşleşen aktif akademisyen bulunamadı.' %}
+    {% include 'projects/partials/match_section.html' with title='Mezun mentor önerileri' candidates=mentors empty_text='Kapasitesi açık mentor bulunamadı.' %}
+  </div>
+</div>
+{% endblock %}

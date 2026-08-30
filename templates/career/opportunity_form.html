@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Kariyer İlanını Düzenle{% else %}Kariyer İlanı Ekle{% endif %} | BST Portal{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-[#080d18] px-4 py-10 sm:py-12">
+  <div class="mx-auto max-w-5xl">
+    <a href="{% if opportunity %}{{ opportunity.get_absolute_url }}{% else %}{% url 'career:opportunity_list' %}{% endif %}" class="text-sm font-semibold text-gray-400 hover:text-white">← {% if is_edit %}İlana dön{% else %}Kariyer fırsatlarına dön{% endif %}</a>
+    <header class="mt-6"><p class="text-sm font-semibold uppercase tracking-widest text-blue-400">BST Kariyer</p><h1 class="mt-2 text-4xl font-black text-white">{% if is_edit %}Kariyer ilanını düzenle{% else %}Yeni kariyer ilanı oluştur{% endif %}</h1><p class="mt-3 max-w-3xl leading-7 text-gray-400">Adayların fırsatı doğru değerlendirebilmesi için görevleri, şartları ve başvuru yöntemini açık biçimde belirtin.</p></header>
+
+    <form method="post" class="mt-8 overflow-hidden rounded-3xl border border-gray-700 bg-[#111827] shadow-2xl">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="m-6 rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-300">{{ form.non_field_errors }}</div>{% endif %}
+
+      <section class="border-b border-gray-800 p-6 sm:p-8"><div class="mb-6"><p class="text-xs font-bold uppercase tracking-widest text-blue-300">1. Fırsat</p><h2 class="mt-1 text-2xl font-bold">İlanın temel bilgileri</h2></div><div class="grid gap-6 md:grid-cols-2">
+        {% for field in form %}{% if field.name == 'title' or field.name == 'opportunity_type' or field.name == 'organization' or field.name == 'work_mode' or field.name == 'location' or field.name == 'deadline' %}<div><label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-200">{{ field.label }}{% if field.field.required %} <span class="text-red-300">*</span>{% endif %}</label><div class="mt-2">{{ field }}</div>{% if field.help_text %}<p class="mt-2 text-xs leading-5 text-gray-500">{{ field.help_text }}</p>{% endif %}{% if field.errors %}<p class="mt-2 text-sm text-red-300">{{ field.errors|striptags }}</p>{% endif %}</div>{% endif %}{% endfor %}
+      </div></section>
+
+      <section class="border-b border-gray-800 p-6 sm:p-8"><div class="mb-6"><p class="text-xs font-bold uppercase tracking-widest text-blue-300">2. İçerik</p><h2 class="mt-1 text-2xl font-bold">Aday ne bilmeli?</h2></div><div class="grid gap-6">
+        {% for field in form %}{% if field.name == 'description' or field.name == 'requirements' or field.name == 'technologies' %}<div><label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-200">{{ field.label }}{% if field.field.required %} <span class="text-red-300">*</span>{% endif %}</label><div class="mt-2">{{ field }}</div>{% if field.help_text %}<p class="mt-2 text-xs leading-5 text-gray-500">{{ field.help_text }}</p>{% endif %}{% if field.errors %}<p class="mt-2 text-sm text-red-300">{{ field.errors|striptags }}</p>{% endif %}</div>{% endif %}{% endfor %}
+      </div></section>
+
+      <section class="p-6 sm:p-8"><div class="mb-6"><p class="text-xs font-bold uppercase tracking-widest text-blue-300">3. Başvuru</p><h2 class="mt-1 text-2xl font-bold">Aday nasıl başvuracak?</h2></div><div>
+        <label for="{{ form.contact_method.id_for_label }}" class="block text-sm font-semibold text-gray-200">{{ form.contact_method.label }} <span class="text-red-300">*</span></label><div class="mt-2">{{ form.contact_method }}</div>{% if form.contact_method.errors %}<p class="mt-2 text-sm text-red-300">{{ form.contact_method.errors|striptags }}</p>{% endif %}
+      </div><div class="mt-6 grid gap-6 md:grid-cols-2">
+        <div data-contact-field="url"><label for="{{ form.application_url.id_for_label }}" class="block text-sm font-semibold text-gray-200">{{ form.application_url.label }}</label><div class="mt-2">{{ form.application_url }}</div>{% if form.application_url.help_text %}<p class="mt-2 text-xs leading-5 text-gray-500">{{ form.application_url.help_text }}</p>{% endif %}{% if form.application_url.errors %}<p class="mt-2 text-sm text-red-300">{{ form.application_url.errors|striptags }}</p>{% endif %}</div>
+        <div data-contact-field="email"><label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-semibold text-gray-200">{{ form.contact_email.label }}</label><div class="mt-2">{{ form.contact_email }}</div>{% if form.contact_email.help_text %}<p class="mt-2 text-xs leading-5 text-gray-500">{{ form.contact_email.help_text }}</p>{% endif %}{% if form.contact_email.errors %}<p class="mt-2 text-sm text-red-300">{{ form.contact_email.errors|striptags }}</p>{% endif %}</div>
+      </div><div data-contact-field="portal" class="mt-5 hidden rounded-xl border border-blue-900 bg-blue-950/25 p-4 text-sm leading-6 text-blue-200">Portal profili seçildiğinde iletişim bağlantısı ilan sahibinin BST profilinden yürütülür.</div>
+      <div class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-800 pt-6 sm:flex-row sm:justify-end"><a href="{% if opportunity %}{{ opportunity.get_absolute_url }}{% else %}{% url 'career:opportunity_list' %}{% endif %}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-600 px-5 py-3 font-bold text-gray-300 hover:bg-gray-800">Vazgeç</a><button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-500">{% if is_edit %}Değişiklikleri kaydet{% else %}İlanı gönder{% endif %}</button></div></section>
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const method = document.getElementById('id_contact_method');
+  const urlInput = document.getElementById('id_application_url');
+  const emailInput = document.getElementById('id_contact_email');
+  function syncContactFields() {
+    const value = method?.value;
+    document.querySelectorAll('[data-contact-field]').forEach(function (element) {
+      element.classList.toggle('hidden', element.dataset.contactField !== value);
+    });
+    if (urlInput) urlInput.required = value === 'url';
+    if (emailInput) emailInput.required = value === 'email';
+  }
+  method?.addEventListener('change', syncContactFields);
+  syncContactFields();
+});
+</script>
+{% endblock %}

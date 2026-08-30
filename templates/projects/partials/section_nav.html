@@ -1,0 +1,13 @@
+<nav class="project-section-nav" aria-label="Proje bölümü">
+  <div class="project-section-nav-inner">
+    <a href="{% url 'projects:project_list' %}" {% if request.resolver_match.view_name == 'projects:project_list' or request.resolver_match.view_name == 'projects:project_public_detail' or request.resolver_match.view_name == 'projects:project_detail' or request.resolver_match.view_name == 'projects:project_showcase_manage' or request.resolver_match.view_name == 'projects:project_matches' %}class="active" aria-current="page"{% endif %}>Proje Vitrini</a>
+    <a href="{% url 'projects:team_list' %}" {% if 'team_' in request.resolver_match.view_name %}class="active" aria-current="page"{% endif %}>Ekipler</a>
+    <a href="{% url 'projects:request_list' %}" {% if request.resolver_match.view_name == 'projects:request_list' or request.resolver_match.view_name == 'projects:request_detail' or request.resolver_match.view_name == 'projects:request_create' or request.resolver_match.view_name == 'projects:request_edit' or request.resolver_match.view_name == 'projects:request_applications' %}class="active" aria-current="page"{% endif %}>İlanlar</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'projects:saved_projects' %}" {% if request.resolver_match.view_name == 'projects:saved_projects' %}class="active" aria-current="page"{% endif %}>Kaydedilenler</a>
+      {% if user.is_active and user.profile.account_status == 'active' %}
+        {% if can_share_content %}<a href="{% url 'projects:project_create' %}" {% if request.resolver_match.view_name == 'projects:project_create' or request.resolver_match.view_name == 'projects:project_update' %}class="active" aria-current="page"{% endif %}>Yeni Proje</a>{% endif %}
+      {% endif %}
+    {% endif %}
+  </div>
+</nav>

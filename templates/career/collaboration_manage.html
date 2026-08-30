@@ -1,0 +1,46 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}İş Birliği Talepleri | Yönetim{% endblock %}
+
+{% block dashboard_content %}
+<div class="py-4">
+  <header>
+    <p class="text-sm font-semibold text-blue-300">Yetkili inceleme alanı</p>
+    <h1 class="mt-1 text-3xl font-black">İş birliği talepleri</h1>
+    <p class="mt-2 text-sm text-gray-400">Kurumlar tarafından iletilen doğrulanmış talepleri değerlendirin.</p>
+  </header>
+
+  <form method="get" class="mt-6 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-[minmax(14rem,1fr)_15rem_auto]">
+    <label class="sr-only" for="collaboration-query">Talep ara</label>
+    <input id="collaboration-query" name="q" value="{{ query }}" placeholder="Takip no, kurum veya başlık…" class="min-h-11 rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] px-4">
+    <label class="sr-only" for="collaboration-status">Durum</label>
+    <select id="collaboration-status" name="status" class="min-h-11 rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] px-4">
+      <option value="">Tüm durumlar</option>
+      {% for value, label in statuses %}<option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="min-h-11 rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-500">Filtrele</button>
+  </form>
+
+  <div class="dashboard-table-scroll mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+    <table class="w-full min-w-[760px] text-left text-sm">
+      <thead class="bg-[var(--surface-elevated)] text-gray-400">
+        <tr><th class="p-4">Takip</th><th>Kurum</th><th>Talep</th><th>Durum</th><th>Tarih</th><th><span class="sr-only">İşlem</span></th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr class="border-t border-[var(--border)] hover:bg-[var(--surface-elevated)]">
+          <td class="p-4 font-mono text-xs">{{ item.tracking_number }}</td>
+          <td>{{ item.organization }}</td>
+          <td>{{ item.get_request_type_display }}<br><span class="text-gray-400">{{ item.title|truncatechars:45 }}</span></td>
+          <td>{{ item.get_status_display }}</td>
+          <td>{{ item.created_at|date:'d.m.Y' }}</td>
+          <td class="pr-4 text-right"><a href="{% url 'career:collaboration_review' item.pk %}" class="font-semibold text-blue-300 hover:text-blue-200">İncele</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="p-8 text-center text-gray-400">Talep bulunamadı.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

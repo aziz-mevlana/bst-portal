@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}KVKK Aydınlatma Metni | BST Portal{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-[var(--page-bg)] px-4 py-12 text-[var(--text-primary)]">
+  <article class="mx-auto max-w-5xl">
+    <header class="border-b border-[var(--border)] pb-8">
+      <p class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">Sürüm 2026-08-13-v2 · Son güncelleme 13 Ağustos 2026</p>
+      <h1 class="mt-3 text-3xl font-black sm:text-5xl">KVKK Aydınlatma Metni</h1>
+      <p class="mt-4 max-w-3xl leading-7 text-[var(--text-secondary)]">Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu’nun 10. maddesi kapsamında BST Portal kullanılırken işlenen kişisel veriler hakkında sizi bilgilendirmek amacıyla hazırlanmıştır.</p>
+    </header>
+
+    <div class="mt-8 space-y-6">
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">1. Veri sorumlusu ve iletişim</h2>
+        <p class="mt-4 leading-7 text-[var(--text-secondary)]">Kişisel verileriniz bakımından veri sorumlusu BST Portal platform yönetimidir. KVKK başvuruları ve gizlilik soruları için <a href="mailto:bstakademi@outlook.com" class="font-semibold text-blue-300 hover:text-blue-200">bstakademi@outlook.com</a> adresinden iletişime geçebilirsiniz.</p>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">2. İşlenen kişisel veri kategorileri</h2>
+        <div class="mt-5 overflow-x-auto">
+          <table class="w-full min-w-[680px] text-left text-sm">
+            <thead class="text-[var(--text-muted)]"><tr><th class="border-b border-[var(--border)] p-3">Kategori</th><th class="border-b border-[var(--border)] p-3">Örnek veriler</th></tr></thead>
+            <tbody class="text-[var(--text-secondary)]">
+              <tr><td class="border-b border-[var(--border)] p-3 font-semibold text-white">Kimlik ve hesap</td><td class="border-b border-[var(--border)] p-3">Ad, soyad, kullanıcı adı, kullanıcı rolü, hesap ve doğrulama durumu</td></tr>
+              <tr><td class="border-b border-[var(--border)] p-3 font-semibold text-white">İletişim</td><td class="border-b border-[var(--border)] p-3">E-posta adresi, isteğe bağlı telefon numarası ve iletişim tercihleri</td></tr>
+              <tr><td class="border-b border-[var(--border)] p-3 font-semibold text-white">Eğitim ve mesleki bilgiler</td><td class="border-b border-[var(--border)] p-3">Öğrenci numarası, sınıf, bölüm, akademik unvan, mezuniyet ve çalışma bilgileri</td></tr>
+              <tr><td class="border-b border-[var(--border)] p-3 font-semibold text-white">Profil ve proje</td><td class="border-b border-[var(--border)] p-3">Profil fotoğrafı, biyografi, yetkinlikler, proje içerikleri, katkılar, sertifikalar ve bağlantılar</td></tr>
+              <tr><td class="border-b border-[var(--border)] p-3 font-semibold text-white">İşlem güvenliği</td><td class="border-b border-[var(--border)] p-3">IP bilgisi, oturum, denetim kayıtları, doğrulama ve güvenlik olayları</td></tr>
+              <tr><td class="p-3 font-semibold text-white">Talep ve iletişim kayıtları</td><td class="p-3">Başvuru, iş birliği, mentorluk, moderasyon, bildirim ve KVKK taleplerinin içeriği</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">3. İşleme amaçları</h2>
+        <ul class="mt-4 grid gap-3 text-[var(--text-secondary)] sm:grid-cols-2">
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Kullanıcı hesabını oluşturmak, doğrulamak ve yönetmek</li>
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Öğrenci, akademisyen ve mezun profillerini yetkilere göre sunmak</li>
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Proje oluşturma, ekip, danışmanlık ve başvuru süreçlerini yürütmek</li>
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Etkinlik, kariyer, mentorluk ve kurumsal iş birliği taleplerini yönetmek</li>
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Platform güvenliğini sağlamak, kötüye kullanımı önlemek ve denetim kaydı tutmak</li>
+          <li class="rounded-xl bg-[var(--input-bg)] p-4">Yasal yükümlülükleri ve ilgili kişi başvurularını yerine getirmek</li>
+        </ul>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+          <h2 class="text-2xl font-bold">4. Toplama yöntemi ve hukuki sebepler</h2>
+          <p class="mt-4 leading-7 text-[var(--text-secondary)]">Veriler; kayıt ve profil formları, proje ve başvuru ekranları, e-posta doğrulama akışları, çerez/oturum kayıtları ve platform üzerindeki işlemler yoluyla elektronik ortamda toplanır.</p>
+          <p class="mt-4 leading-7 text-[var(--text-secondary)]">İşleme faaliyetleri somut sürece göre Kanun’un 5. maddesindeki kanunlarda açıkça öngörülme, sözleşmenin kurulması veya ifası, hukuki yükümlülük, bir hakkın tesisi/kullanılması/korunması ve temel haklara zarar vermemek kaydıyla meşru menfaat şartlarına dayanır. Yalnızca açık rıza gerektiren isteğe bağlı işlemler ayrıca onayınıza sunulur.</p>
+        </div>
+        <div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+          <h2 class="text-2xl font-bold">5. Aktarım ve hizmet sağlayıcılar</h2>
+          <p class="mt-4 leading-7 text-[var(--text-secondary)]">Veriler; yetkili kamu kurumlarına hukuki zorunluluk hâlinde, platformun işletilmesi için gerekli olduğu ölçüde barındırma, e-posta, dosya saklama, güvenlik ve teknik destek hizmeti sağlayan veri işleyenlere aktarılabilir.</p>
+          <p class="mt-4 leading-7 text-[var(--text-secondary)]">Yurt dışı aktarım gündeme gelirse Kanun’un 9. maddesindeki şartlar ve uygun güvenceler sağlanmadan aktarım yapılmaz. Profilinizde herkese açık olarak yayımlamayı seçtiğiniz bilgiler internet kullanıcıları tarafından görülebilir.</p>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">6. Saklama, güvenlik ve imha</h2>
+        <p class="mt-4 leading-7 text-[var(--text-secondary)]">Kişisel veriler işleme amacı ve ilgili mevzuatın gerektirdiği süre boyunca; hesap ve proje kayıtları hesap ilişkisi sürdükçe, güvenlik ve denetim kayıtları olası uyuşmazlık ve güvenlik ihtiyacının gerektirdiği makul süreyle saklanır. İşleme şartları ortadan kalktığında veriler mevzuata uygun biçimde silinir, yok edilir veya anonim hâle getirilir.</p>
+        <p class="mt-4 leading-7 text-[var(--text-secondary)]">Yetkisiz erişimi, veri kaybını ve kötüye kullanımı azaltmak amacıyla erişim kontrolü, parola özetleme, işlem kaydı, doğrulama, yedekleme ve uygun teknik/idari güvenlik tedbirleri uygulanır.</p>
+      </section>
+
+      <section class="rounded-2xl border border-blue-800/60 bg-blue-950/20 p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">7. KVKK kapsamındaki haklarınız</h2>
+        <p class="mt-4 text-[var(--text-secondary)]">Kanun’un 11. maddesi kapsamında kişisel verilerinizle ilgili olarak:</p>
+        <ul class="mt-4 list-disc space-y-2 pl-6 text-[var(--text-secondary)]">
+          <li>işlenip işlenmediğini öğrenme ve işlenmişse bilgi talep etme,</li>
+          <li>işleme amacını ve amaca uygun kullanılıp kullanılmadığını öğrenme,</li>
+          <li>yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,</li>
+          <li>eksik veya yanlış işlenmiş verilerin düzeltilmesini isteme,</li>
+          <li>şartları oluştuğunda silme veya yok etme ve bu işlemlerin aktarım yapılan kişilere bildirilmesini isteme,</li>
+          <li>otomatik analiz sonucunun aleyhinize olması hâlinde itiraz etme ve kanuna aykırı işlem nedeniyle zararın giderilmesini talep etme</li>
+        </ul>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+        <h2 class="text-2xl font-bold">8. Başvuru yöntemi</h2>
+        <p class="mt-4 leading-7 text-[var(--text-secondary)]">Talebinizi giriş yaptıktan sonra <a href="{% url 'accounts:portfolio_settings' %}#data" class="font-semibold text-blue-300">Ayarlar → Veriler ve hesap</a> bölümünden veya kimliğinizi ve talebinizi açıkça belirterek <a href="mailto:bstakademi@outlook.com" class="font-semibold text-blue-300">bstakademi@outlook.com</a> adresine iletebilirsiniz. Başvurular, mevzuatta öngörülen süre içinde ve kural olarak en geç 30 gün içinde sonuçlandırılır.</p>
+      </section>
+
+      <aside class="rounded-2xl border border-amber-800/60 bg-amber-950/20 p-5 text-sm leading-6 text-amber-100">
+        Bu metin platformun mevcut işleyişine göre hazırlanmıştır. İşleme amaçları, kullanılan hizmet sağlayıcılar veya mevzuat değişirse metin güncellenir; güncel sürüm bu sayfada yayımlanır.
+      </aside>
+
+      <p class="text-sm text-[var(--text-muted)]">Resmî kaynaklar: <a href="https://www.kvkk.gov.tr/Icerik/4132/aydinlatma-yukumlulugunun-yerine-getirilmesinde-uyulacak-usul-ve-esaslar-hakkinda-teblig" target="_blank" rel="noopener noreferrer" class="text-blue-300">Aydınlatma Tebliği</a> · <a href="https://www.kvkk.gov.tr/Icerik/5441/KISISEL-VERILERIN-SILINMESI-YOK-EDILMESI-VEYA-ANONIM-HALE-GETIRILMESI-HAKKINDA-YONETMELIK" target="_blank" rel="noopener noreferrer" class="text-blue-300">Silme, Yok Etme veya Anonim Hâle Getirme Yönetmeliği</a></p>
+    </div>
+  </article>
+</main>
+{% endblock %}

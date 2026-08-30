@@ -1,0 +1,51 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ item.tracking_number }} | Talep İnceleme{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid gap-6 py-4 lg:grid-cols-[22rem_1fr]">
+  <aside class="h-fit rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+    <a href="{% url 'career:collaboration_manage' %}" class="text-sm text-blue-300 hover:text-blue-200">← Tüm talepler</a>
+    <h1 class="mt-4 font-mono text-lg font-bold">{{ item.tracking_number }}</h1>
+    <dl class="mt-5 space-y-4 text-sm">
+      <div><dt class="text-gray-500">Kurum</dt><dd>{{ item.organization }}</dd></div>
+      <div><dt class="text-gray-500">Yetkili</dt><dd>{{ item.contact_name }} · {{ item.job_title }}</dd></div>
+      <div><dt class="text-gray-500">Talep türü</dt><dd>{{ item.get_request_type_display }}</dd></div>
+      <div><dt class="text-gray-500">E-posta durumu</dt><dd>{% if item.email_verified_at %}<span class="text-green-300">Doğrulandı</span>{% else %}<span class="text-red-300">Doğrulanmadı</span>{% endif %}</dd></div>
+      <div><dt class="text-gray-500">Orijinal açıklama</dt><dd class="mt-1 whitespace-pre-line text-gray-300">{{ item.description }}</dd></div>
+    </dl>
+  </aside>
+
+  <form method="post" class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6" novalidate>
+    {% csrf_token %}
+    <h2 class="text-2xl font-black">Talebi düzenle ve incele</h2>
+    {% if form.non_field_errors %}<div class="mt-4 rounded-xl border border-red-700 p-4 text-red-200">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      {% for field in form %}
+      <div class="{% if field.name == 'normalized_description' or field.name == 'expected_output' or field.name == 'categories' or field.name == 'technologies' or field.name == 'admin_note' %}sm:col-span-2{% endif %}">
+        <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-semibold">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="mt-1 text-sm text-red-300">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-7 flex flex-wrap gap-3">
+      {% if can_first_review and item.status != 'published' %}
+      <button name="action" value="first_review" class="rounded-xl bg-blue-700 px-5 py-3 font-bold hover:bg-blue-600">İlk incelemeyi onayla</button>
+      {% endif %}
+      {% if can_publish %}
+      <button name="action" value="publish" class="rounded-xl bg-green-700 px-5 py-3 font-bold hover:bg-green-600">Uygun kanalda yayımla</button>
+      {% endif %}
+      <button name="action" value="reject" class="rounded-xl border border-red-700 px-5 py-3 font-bold text-red-300 hover:bg-red-950/30">Reddet</button>
+    </div>
+
+    {% if item.project_request %}
+      <a href="{% url 'projects:request_detail' item.project_request.pk %}" class="mt-5 inline-flex text-sm font-semibold text-blue-300">Oluşturulan proje ilanını aç →</a>
+    {% elif item.opportunity %}
+      <a href="{{ item.opportunity.get_absolute_url }}" class="mt-5 inline-flex text-sm font-semibold text-blue-300">Oluşturulan kariyer ilanını aç →</a>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

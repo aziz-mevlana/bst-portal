@@ -3,7 +3,6 @@
 {% block title %}BST Akademi | Mezun Profilim{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/projects.css' %}">
 <style>
   .alumni-skill-tag,
   .alumni-badge {
@@ -73,19 +72,19 @@
         </div>
         <div class="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-3 md:ms-11 sm:ms-0 items-center sm:items-end justify-center sm:justify-start">
           {% if profile.linkedin_url %}
-            <a href="{{ profile.linkedin_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+            <a href="{{ profile.linkedin_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
               <img src="{% static 'images/icons/linkedin.svg' %}" alt="LinkedIn" class="w-5 h-5 filter invert brightness-0">
               LinkedIn
             </a>
           {% endif %}
           {% if profile.github_url %}
-            <a href="{{ profile.github_url }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+            <a href="{{ profile.github_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
               <img src="{% static 'images/icons/github.svg' %}" alt="GitHub" class="w-5 h-5 filter invert brightness-0">
               GitHub
             </a>
           {% endif %}
           {% if profile.personal_website %}
-            <a href="{{ profile.personal_website }}" target="_blank" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
+            <a href="{{ profile.personal_website }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-36">
               <img src="{% static 'images/icons/profile.svg' %}" alt="Website" class="w-5 h-5 filter invert brightness-0">
               Web Sitesi
             </a>
@@ -98,7 +97,7 @@
         <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start">
                 {% if profile.user.profile.user_type == 'staff_student' %}
                 <span class="alumni-badge px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold" style="--badge-bg:#8b5cf620;--badge-color:#8b5cf6;--badge-border:#8b5cf640;" data-badge-color="#8b5cf6">
-                  Görevli Öğrenci
+                  BST Yetkilisi
                 </span>
                 {% elif profile.user.profile.user_type == 'teacher' %}
                 <span class="alumni-badge px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold" style="--badge-bg:#f59e0b20;--badge-color:#f59e0b;--badge-border:#f59e0b40;" data-badge-color="#f59e0b">

@@ -1,0 +1,127 @@
+.project-section-nav {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+    background: var(--navbar-bg);
+}
+
+.project-section-nav-inner {
+    display: flex;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0.55rem 1rem;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+}
+
+.project-section-nav-inner::-webkit-scrollbar {
+    display: none;
+}
+
+.project-section-nav a {
+    flex: 0 0 auto;
+    padding: 0.58rem 0.75rem;
+    border-radius: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.project-section-nav a:hover,
+.project-section-nav a:focus-visible {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.055);
+    outline: none;
+}
+
+.project-section-nav a.active {
+    color: #dbeafe;
+    background: rgba(47, 111, 237, 0.15);
+}
+
+.project-page {
+    min-height: calc(100vh - var(--header-height));
+    padding: clamp(1.5rem, 3vw, 2.5rem) 1rem 4rem;
+    background: var(--page-bg);
+}
+
+.project-page-container {
+    width: min(100%, 80rem);
+    margin-inline: auto;
+}
+
+.project-page-header {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+    padding: 0 0 1.75rem;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+}
+
+@media (min-width: 768px) {
+    .project-page-header {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+    }
+}
+
+.project-list-hero {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    padding: 0 0 1.75rem;
+    background: radial-gradient(circle at 15% 10%, rgba(47, 111, 237, 0.08), transparent 42%);
+}
+
+.project-filter-panel {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    overflow: visible;
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+.project-surface {
+    border-color: var(--border) !important;
+    background: var(--surface) !important;
+}
+
+@media (max-width: 480px) {
+    .project-page {
+        padding-inline: 0.9rem;
+        padding-top: 1.35rem;
+    }
+
+    .project-section-nav-inner {
+        padding-inline: 0.75rem;
+    }
+}
+
+.project-more-filters summary {
+    width: fit-content;
+    cursor: pointer;
+    color: #93c5fd;
+    font-size: 0.88rem;
+    font-weight: 600;
+    list-style-position: inside;
+}
+
+.project-more-filters summary:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}

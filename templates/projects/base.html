@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {% include 'projects/partials/section_nav.html' %}
+  <main class="project-page">
+    <div class="project-page-container">
+      {% block project_content %}{% endblock %}
+    </div>
+  </main>
+{% endblock %}

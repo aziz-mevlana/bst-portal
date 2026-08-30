@@ -1,0 +1,28 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Topluluk Alanım | BST Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="py-4">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div><p class="text-sm font-semibold text-violet-300">Topluluk alanı</p><h1 class="mt-1 text-3xl font-black">Hoş geldiniz, {{ user.first_name|default:user.username }}</h1><p class="mt-2 text-gray-400">Kaydettiğiniz projelere ve hesap durumunuza buradan ulaşabilirsiniz.</p></div>
+    {% if can_share_content %}<a href="{% url 'projects:project_create' %}" class="rounded-xl bg-blue-600 px-5 py-3 font-bold text-white">Yeni proje oluştur</a>{% endif %}
+  </header>
+
+  {% if application %}
+    <section class="mt-7 rounded-2xl border {% if application.status == 'pending' %}border-amber-800 bg-amber-950/20{% elif application.status == 'approved' %}border-emerald-800 bg-emerald-950/20{% elif application.status == 'rejected' %}border-red-900 bg-red-950/20{% else %}border-gray-700 bg-[var(--surface)]{% endif %} p-5">
+      <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Hesap durumu</p>
+      <h2 class="mt-2 text-xl font-bold">{{ application.get_status_display }}</h2>
+      {% if application.status == 'pending' %}<p class="mt-2 text-sm text-gray-400">Onaylı Üye başvurunuz admin veya BST Yetkilisi incelemesinde. Bu sırada Ziyaretçi özelliklerini kullanabilirsiniz.</p>{% elif application.status == 'approved' %}<p class="mt-2 text-sm text-gray-400">İçerik paylaşma yetkiniz aktif.</p>{% elif application.status == 'rejected' %}<p class="mt-2 text-sm text-gray-400">Ziyaretçi hesabınız aktif kalmaya devam ediyor.{% if application.reviewer_note %} İnceleme notu: {{ application.reviewer_note }}{% endif %}</p>{% else %}<p class="mt-2 text-sm text-gray-400">Görüntüleme, yorum, beğeni ve kaydetme özelliklerini kullanabilirsiniz.</p>{% endif %}
+    </section>
+  {% endif %}
+  {% if user_type == 'visitor' and not application or user_type == 'visitor' and application.status == 'rejected' or user_type == 'visitor' and application.status == 'visitor' %}<a href="{% url 'accounts:portfolio_settings' %}#approved-member" class="mt-4 inline-flex rounded-xl bg-violet-700 px-5 py-3 text-sm font-bold text-white hover:bg-violet-600">Onaylı Üye başvurusu yap</a>{% endif %}
+
+  <section class="mt-7">
+    <div class="flex items-center justify-between gap-4"><h2 class="text-xl font-bold">Son kaydettiğiniz projeler</h2><a href="{% url 'projects:saved_projects' %}" class="text-sm font-semibold text-blue-300">Tümünü görüntüle →</a></div>
+    <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for saved in saved_projects %}<a href="{{ saved.project.get_absolute_url }}" class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 hover:border-blue-600"><span class="text-xs font-semibold text-blue-300">{{ saved.project.project_type.name }}</span><h3 class="mt-2 font-bold">{{ saved.project.title }}</h3><p class="mt-2 line-clamp-2 text-sm text-gray-400">{{ saved.project.description }}</p></a>{% empty %}<div class="rounded-2xl border border-dashed border-gray-700 p-8 text-center text-gray-400 md:col-span-2 xl:col-span-3">Henüz proje kaydetmediniz.</div>{% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

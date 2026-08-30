@@ -1,19 +1,22 @@
-{% extends 'base.html' %}
+{% extends 'dashboard/base.html' %}
 {% load static %}
 
 {% block title %}BST Akademi | Yeni Etkinlik Oluştur{% endblock %}
 
-{% block content %}
-<div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
+{% block dashboard_content %}
+<div class="px-0 py-2 sm:py-4">
     <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
         <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div class="text-center sm:text-left">
+            <div class="text-left">
+                <a href="{% url 'dashboard:events' %}" class="mb-3 inline-flex text-sm font-semibold text-blue-300 hover:text-blue-200">← Etkinlik yönetimine dön</a>
                 <h2 class="text-2xl sm:text-3xl font-bold text-white">{{ page_title|default:'Yeni Etkinlik Oluştur' }}</h2>
+                <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-400">{{ page_description }}</p>
             </div>
         </div>
 
         <form method="post" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
             {% csrf_token %}
+            {% if form.errors %}<div class="rounded-xl border border-red-800 bg-red-950/30 p-4 text-sm text-red-300">Lütfen işaretli alanları kontrol edin: {{ form.errors }}</div>{% endif %}
 
             <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
                 <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
@@ -26,17 +29,17 @@
                     <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="title">Başlık <span class="text-blue-400">*</span></label>
-                            <input type="text" id="title" name="title" value="{{ event_obj.title|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <input type="text" id="title" name="title" value="{{ event_obj.title|default_if_none:'' }}" placeholder="Örn: Yapay Zekâ ile Ürün Geliştirme Atölyesi" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-sm font-medium text-gray-300" for="description">Açıklama <span class="text-blue-400">*</span></label>
-                            <textarea id="description" name="description" rows="4" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none" required>{{ event_obj.description|default_if_none:'' }}</textarea>
+                            <textarea id="description" name="description" rows="5" placeholder="Etkinliğin kapsamını, hedef kitlesini ve katılımcıların kazanımlarını açıklayın." class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-y" required>{{ event_obj.description|default_if_none:'' }}</textarea>
                         </div>
                     </div>
 
                     <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-300" for="event_type">Etkinlik Türü</label>
+                            <label class="text-sm font-medium text-gray-300" for="event_type">Etkinlik türü <span class="text-blue-400">*</span></label>
                             <div class="relative">
                                 <select id="event_type" name="event_type" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none cursor-pointer" required>
                                     <option value="seminar" {% if event_obj.event_type == 'seminar' %}selected{% endif %}>Seminer</option>
@@ -53,21 +56,23 @@
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-300" for="location">Konum</label>
-                            <input type="text" id="location" name="location" value="{{ event_obj.location|default_if_none:'' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <label class="text-sm font-medium text-gray-300" for="location">Konum <span class="text-blue-400">*</span></label>
+                            <input type="text" id="location" name="location" value="{{ event_obj.location|default_if_none:'' }}" placeholder="Örn: Konferans Salonu veya çevrim içi" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                     </div>
 
                     <div class="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-300" for="start_date">Başlangıç Tarihi</label>
+                            <label class="text-sm font-medium text-gray-300" for="start_date">Başlangıç tarihi <span class="text-blue-400">*</span></label>
                             <input type="datetime-local" id="start_date" name="start_date" value="{{ event_obj.start_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-300" for="end_date">Bitiş Tarihi</label>
+                            <label class="text-sm font-medium text-gray-300" for="end_date">Bitiş tarihi <span class="text-blue-400">*</span></label>
                             <input type="datetime-local" id="end_date" name="end_date" value="{{ event_obj.end_date|date:'Y-m-d\\TH:i' }}" class="project-form-input w-full p-3 sm:p-4 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
                         </div>
                     </div>
+
+                    <div class="rounded-2xl border border-gray-700 bg-[#111827] p-5"><h3 class="text-lg font-semibold text-white">Kayıt ve kontenjan</h3><div class="mt-4 grid gap-4 md:grid-cols-2"><label class="flex items-center gap-3 text-sm text-gray-300"><input type="checkbox" name="allow_registration" {% if form.allow_registration.value %}checked{% endif %}> Etkinlik kaydı açık</label><label class="flex items-center gap-3 text-sm text-gray-300"><input type="checkbox" name="waitlist_enabled" {% if form.waitlist_enabled.value %}checked{% endif %}> Bekleme listesi açık</label><label class="flex items-center gap-3 text-sm text-gray-300"><input type="checkbox" name="certificate_enabled" {% if form.certificate_enabled.value %}checked{% endif %}> Katılım sertifikası uygunluğu</label><div><label class="mb-2 block text-sm text-gray-300" for="capacity">Kontenjan</label><input id="capacity" name="capacity" type="number" min="1" value="{{ form.capacity.value|default_if_none:'' }}" placeholder="Sınırsız için boş" class="project-form-input w-full p-3 rounded-xl"></div><div class="md:col-span-2"><label class="mb-2 block text-sm text-gray-300" for="registration_deadline">Son kayıt tarihi</label><input id="registration_deadline" name="registration_deadline" type="datetime-local" value="{{ form.registration_deadline.value|date:'Y-m-d\TH:i' }}" class="project-form-input w-full p-3 rounded-xl"></div></div></div>
 
                     <div class="space-y-3">
                         <label class="text-sm font-medium text-gray-300" for="image">Görsel</label>
@@ -83,9 +88,9 @@
             </div>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
-                {% if event_obj %}
-                <button type="submit" form="delete-event-form" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
-                    Sil
+                {% if is_edit %}
+                <button type="button" data-open-event-delete class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 border border-red-800 bg-red-950/30 hover:bg-red-950/60 text-red-200 rounded-lg sm:rounded-xl font-semibold transition">
+                    Etkinliği sil
                 </button>
                 {% endif %}
                 <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition">
@@ -93,10 +98,13 @@
                 </button>
             </div>
         </form>
-        {% if event_obj %}
+        {% if is_edit %}
         <form id="delete-event-form" method="post" action="{% url 'events:delete_event' event_obj.id %}" class="hidden">
             {% csrf_token %}
         </form>
+        <dialog id="event-delete-dialog" class="m-auto w-[min(92vw,460px)] rounded-2xl border border-red-900 bg-[#101827] p-0 text-white backdrop:bg-black/75">
+            <div class="p-6"><p class="text-sm font-semibold uppercase tracking-widest text-red-300">Kalıcı işlem</p><h3 class="mt-2 text-2xl font-bold">Etkinlik silinsin mi?</h3><p class="mt-3 text-sm leading-6 text-gray-400">“{{ event_obj.title }}” ve etkinliğe bağlı katılım kayıtları silinecek. Bu işlem geri alınamaz.</p><div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" data-close-event-delete class="rounded-xl border border-gray-600 px-4 py-2.5 font-semibold text-gray-200">Vazgeç</button><button type="submit" form="delete-event-form" class="rounded-xl bg-red-700 px-4 py-2.5 font-semibold text-white hover:bg-red-600">Evet, etkinliği sil</button></div></div>
+        </dialog>
         {% endif %}
     </div>
 </div>
@@ -138,6 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
             placeholderText.classList.add('hidden');
         }
     });
+    const deleteDialog = document.getElementById('event-delete-dialog');
+    document.querySelector('[data-open-event-delete]')?.addEventListener('click', function () { deleteDialog?.showModal(); });
+    document.querySelector('[data-close-event-delete]')?.addEventListener('click', function () { deleteDialog?.close(); });
+    deleteDialog?.addEventListener('click', function (event) { if (event.target === deleteDialog) deleteDialog.close(); });
 });
 </script>
 {% endblock %}

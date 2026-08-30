@@ -47,6 +47,9 @@ settings.py
 .env.local
 .env.*.local
 
+# Temporary Cloudflare preview: private database, media, secret and processes
+.preview/
+
 # Coverage reports
 htmlcov/
 .tox/
@@ -77,3 +80,6 @@ yarn-error.log*
 
 
 todo.md
+
+.venv/
+backups/

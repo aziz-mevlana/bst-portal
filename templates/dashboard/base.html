@@ -3,272 +3,120 @@
 
 {% block extra_css %}
 <style>
-  /* Koyu tema için arka plan ve metin renkleri */
-  body {
-    background-color: #111827; /* Gray-900 */
-    color: #f3f4f6; /* Gray-100 */
-  }
-  
-  .dashboard-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 280px;
-    background-color: #1f2937; /* Gray-800 */
-    border-right: 1px solid #374151;
-    overflow-y: auto;
-    z-index: 50;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-  .dashboard-sidebar.open {
-    transform: translateX(0);
-  }
-  @media (min-width: 768px) {
-    .dashboard-sidebar {
-      position: sticky;
-      transform: translateX(0);
-    }
-  }
-
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0,0,0,0.5);
-    z-index: 40;
-    display: none;
-  }
-  .sidebar-overlay.active {
-    display: block;
-  }
-  
-  .dashboard-content {
-    min-height: 100vh;
-    background-color: #111827; /* Gray-900 */
-  }
-  
-  .nav-link.active {
-    background-color: rgba(59, 130, 246, 0.2);
-    border-left: 3px solid #3b82f6;
-    color: #60a5fa;
-  }
-  
-  /* Header (Navbar) gizle */
-  #main-header {
-    display: none !important;
-  }
-  
-  /* Dashboard Header */
-  .dashboard-header {
-    background-color: #1f2937;
-    border-bottom: 1px solid #374151;
-  }
-  
-  /* Card styles for dark mode */
-  .dashboard-card {
-    background-color: #1f2937;
-    border: 1px solid #374151;
-  }
-  
-  /* Input styles for dark mode */
-  .dashboard-input {
-    background-color: #374151;
-    border: 1px solid #4b5563;
-    color: #f3f4f6;
-  }
-  .dashboard-input::placeholder {
-    color: #9ca3af;
-  }
-  
-  /* Table styles for dark mode */
-  .dashboard-table {
-    background-color: #1f2937;
-  }
-  .dashboard-table th {
-    background-color: #374151;
-    color: #e5e7eb;
-  }
-  .dashboard-table td {
-    border-color: #374151;
-  }
-  .dashboard-table tr:hover {
-    background-color: #374151;
-  }
-  
-  /* Custom scrollbar for sidebar */
-  .dashboard-sidebar::-webkit-scrollbar {
-    width: 6px;
-  }
-  .dashboard-sidebar::-webkit-scrollbar-track {
-    background: #1f2937;
-  }
-  .dashboard-sidebar::-webkit-scrollbar-thumb {
-    background: #4b5563;
-    border-radius: 3px;
-  }
-  .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
-  }
+  :root{--page-bg:#080d18;--navbar-bg:#0c1422;--surface:#101827;--surface-elevated:#182235;--input-bg:#111a2a;--border:#26344a;--border-strong:#3a4c68;--text-primary:#f5f7fb;--text-secondary:#c8d2e1;--text-muted:#8d9bb0;--accent:#2f6fed}
+  html,body,#site-content,.dashboard-shell{background:#080d18!important;color-scheme:dark;color:var(--text-primary)}
+  #main-header{display:none!important}
+  .dashboard-shell{display:flex;min-height:100vh;width:100%;min-width:0}
+  .dashboard-sidebar{position:fixed;inset:0 auto 0 0;z-index:50;display:flex;height:100dvh;width:min(280px,88vw);transform:translateX(-100%);flex-direction:column;border-right:1px solid var(--border);background:var(--navbar-bg);transition:transform .25s ease}
+  .dashboard-sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{position:fixed;inset:0;z-index:40;display:none;background:rgba(0,0,0,.62)}
+  .sidebar-overlay.active{display:block}
+  .dashboard-nav{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+  .dashboard-nav-heading{margin:0 12px 6px;color:#66758d;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+  .dashboard-sidebar .nav-link{display:flex;min-height:40px;align-items:center;gap:12px;margin:2px 0;border-left:3px solid transparent;border-radius:10px;padding:9px 12px;color:var(--text-secondary);font-size:14px;font-weight:600;transition:background-color .16s ease,color .16s ease,border-color .16s ease}
+  .dashboard-sidebar .nav-link svg{width:19px;height:19px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:#91a0b6}
+  .dashboard-sidebar .nav-link:hover,.dashboard-sidebar .nav-link:focus-visible{background:var(--surface-elevated);color:#fff;outline:none}
+  .dashboard-sidebar .nav-link.active{border-left-color:var(--accent);background:rgba(47,111,237,.18);color:#bfdbfe}
+  .dashboard-content{min-height:100vh;min-width:0;width:100%;overflow-x:clip;background:var(--page-bg);color:var(--text-primary)}
+  .dashboard-content-inner{width:100%;max-width:1440px;margin:0 auto;padding:20px 16px 40px}
+  .dashboard-mobile-bar{display:flex;min-height:58px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navbar-bg);padding:9px 16px}
+  .dashboard-card{border:1px solid var(--border);background:var(--surface)!important;color:var(--text-primary);box-shadow:0 18px 45px rgba(0,0,0,.16)}
+  .dashboard-content input,.dashboard-content select,.dashboard-content textarea{border-color:var(--border-strong)!important;background:var(--input-bg)!important;color:var(--text-primary)!important}
+  .dashboard-content input::placeholder,.dashboard-content textarea::placeholder{color:#76859b}
+  .dashboard-content [class*="bg-gray-700"],.dashboard-content [class*="bg-gray-800"]{background-color:var(--surface-elevated)!important}
+  .dashboard-table-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+  .dashboard-table{background:var(--surface)}
+  .dashboard-table th{background:var(--surface-elevated);color:var(--text-secondary)}
+  .dashboard-table td{border-color:var(--border)}
+  @media (min-width:768px){.dashboard-sidebar{position:sticky;top:0;width:280px;transform:none}.dashboard-content-inner{padding:28px 24px 48px}.dashboard-mobile-bar{display:none}}
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Mobile sidebar overlay -->
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<div class="flex min-h-screen">
-  <!-- Sidebar -->
-  <aside class="dashboard-sidebar py-4 px-0 flex-shrink-0" id="dashboard-sidebar">
-    <!-- Logo & Title with Close Button -->
-    <div class="mb-6 px-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="{% static 'images/logo.svg' %}" alt="Logo" class="w-10 h-10">
-        <div>
-          <h2 class="text-xl font-bold text-blue-400">
-            {% if user_type == 'student' %}Öğrenci Paneli
-            {% elif user_type == 'alumni' %}Mezun Paneli
-            {% else %}Yönetim Paneli{% endif %}
-          </h2>
-          <p class="text-xs text-gray-400">
-            {% if user_type == 'student' %}Öğrenci
-            {% elif user_type == 'alumni' %}Mezun
-            {% elif user_type == 'staff_student' %}Yönetici
-            {% elif user_type == 'teacher' %}Akademisyen{% endif %}
-          </p>
-        </div>
-      </div>
-      <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 md:hidden">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-      </button>
+<div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+<div class="dashboard-shell">
+  <aside id="dashboard-sidebar" class="dashboard-sidebar" aria-label="Yönetim menüsü">
+    <div class="flex items-center justify-between px-4 pb-4 pt-4">
+      <a href="{% url 'dashboard:home' %}" class="flex min-w-0 items-center gap-3">
+        <img src="{% static 'images/logo.svg' %}" alt="" class="h-10 w-10">
+        <div class="min-w-0"><h2 class="truncate text-lg font-bold text-blue-400">{{ panel_label|default:'Panelim' }}</h2><p class="text-xs text-gray-500">{% if is_admin_account %}Yönetici hesap{% elif user_type == 'staff_student' %}Öğrenci · BST Yetkilisi{% elif user_type == 'teacher' %}Akademisyen{% elif user_type == 'student' %}Öğrenci{% elif user_type == 'alumni' %}Mezun{% elif user_type == 'visitor' %}Ziyaretçi{% elif user_type == 'approved_member' %}Onaylı Üye{% endif %}</p></div>
+      </a>
+      <button type="button" data-sidebar-close class="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white md:hidden" aria-label="Yönetim menüsünü kapat"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
-    
-    <!-- Navigation Section -->
-    <nav class="space-y-1 px-0">
-      <!-- Common: Dashboard Home for all users -->
-      <a href="{% url 'dashboard:home' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-        Panel
-      </a>
-      <a href="{% url 'ai_assistant:chat' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if 'ai_assistant' in request.resolver_match.view_name %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-        AI Asistan
-      </a>
 
-      <!-- Teacher/Admin menu items -->
-      {% if user_type == 'teacher' or user_type == 'staff_student' %}
-      <a href="{% url 'dashboard:projects' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:projects' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-        Projeler
-      </a>
-      <a href="{% url 'dashboard:requests' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:requests' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-        Proje İstekleri
-      </a>
-      <a href="{% url 'dashboard:students' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:students' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"></path></svg>
-        Öğrenciler
-      </a>
-      <a href="{% url 'dashboard:academics' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:academics' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-        Akademisyenler
-      </a>
-      <a href="{% url 'dashboard:alumni' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:alumni' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
-        Mezunlar
-      </a>
-      <a href="{% url 'dashboard:skills' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:skills' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-        Yetenekler
-      </a>
-<a href="{% url 'dashboard:news' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:news' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
-        Haberler
-      </a>
+    <nav class="dashboard-nav flex-1 space-y-5 overflow-y-auto px-2 pb-4" aria-label="Panel navigasyonu">
+      <div><p class="dashboard-nav-heading">Panel</p><a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg><span>Genel Bakış</span></a></div>
+
+      {% if is_admin_account or user_type == 'teacher' or can_manage_news_content or can_manage_event_content or can_review_project_requests %}
+      <div><p class="dashboard-nav-heading">İçerik</p>
+        {% if is_admin_account or user_type == 'teacher' %}<a href="{% url 'dashboard:projects' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:projects' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4zM4 7V5h6l2 2"/></svg><span>Projeler</span></a>{% endif %}
+        {% if can_review_project_requests %}<a href="{% url 'dashboard:requests' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:requests' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M8 4h8M9 3h6v3H9zM6 5H4v16h16V5h-2M8 11h8M8 15h6"/></svg><span>Proje İlanları</span></a>{% endif %}
+        {% if can_manage_news_content %}<a href="{% url 'dashboard:news' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:news' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M4 5h12v14H4zM16 8h4v11h-4M7 9h6M7 13h6M7 16h4"/></svg><span>Haberler</span></a>{% endif %}
+        {% if can_manage_event_content %}<a href="{% url 'dashboard:events' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:events' or request.resolver_match.app_name == 'events' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M5 5h14v15H5zM8 3v4M16 3v4M5 9h14M8 13h3M13 13h3"/></svg><span>Etkinlikler</span></a>{% endif %}
+      </div>
       {% endif %}
 
-      <!-- Student menu items -->
-      {% if user_type == 'student' %}
-      <a href="{% url 'dashboard:my_projects' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:my_projects' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-        Projelerim
-      </a>
+      {% if is_admin_account or user_type == 'teacher' or can_moderate_accounts %}
+      <div><p class="dashboard-nav-heading">Kullanıcılar</p>
+        {% if is_admin_account or user_type == 'teacher' or can_moderate_accounts %}<a href="{% url 'dashboard:students' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:students' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM3 21v-2a6 6 0 0 1 12 0v2M17 7a3 3 0 0 1 0 6M17 16a5 5 0 0 1 4 5"/></svg><span>Öğrenciler</span></a>{% endif %}
+        {% if user.is_staff or user.is_superuser %}<a href="{% url 'dashboard:academics' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:academics' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M5 21V4h14v17M3 21h18M9 8h2M13 8h2M9 12h2M13 12h2M10 21v-5h4v5"/></svg><span>Akademisyenler</span></a>{% endif %}
+        <a href="{% url 'dashboard:alumni' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:alumni' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="m3 8 9-4 9 4-9 4zM6 10v5c3 3 9 3 12 0v-5M21 8v6"/></svg><span>Mezunlar</span></a>
+        {% if is_admin_account or user_type == 'teacher' %}<a href="{% url 'dashboard:skills' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:skills' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z"/></svg><span>Yetenekler</span></a>{% endif %}
+      </div>
       {% endif %}
 
-      <!-- Alumni menu items -->
-      {% if user_type == 'alumni' %}
-      <a href="{% url 'dashboard:projects' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition {% if request.resolver_match.view_name == 'dashboard:projects' %}active{% endif %}">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-        Projeler
-      </a>
-      <a href="{% url 'alumni:alumni_list' %}" class="nav-link flex items-center gap-3 px-4 py-2 mx-2 rounded-lg hover:bg-gray-700 transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-        Mezunlar Ağı
-      </a>
+      {% if user.is_staff or user.is_superuser or can_moderate_accounts or can_review_profile_websites or can_review_alumni_registrations or can_review_contributor_applications or perms.accounts.review_collaborations %}
+      <div><p class="dashboard-nav-heading">Moderasyon</p>
+        {% if user.is_staff or user.is_superuser or can_moderate_accounts %}<a href="{% url 'dashboard:moderation_users' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:moderation_users' or request.resolver_match.view_name == 'dashboard:moderation_user_detail' or request.resolver_match.view_name == 'dashboard:change_user_role' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6zM9 12l2 2 4-4"/></svg><span>Kullanıcılar ve Roller</span></a>{% endif %}
+        {% if can_review_profile_websites or user.is_staff or user.is_superuser %}<a href="{% url 'dashboard:website_moderation' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:website_moderation' %}active{% endif %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18M9 12l2 2 4-4"/></svg><span>Site İncelemeleri</span></a>{% endif %}
+        {% if can_review_alumni_registrations or user.is_staff or user.is_superuser %}<a href="{% url 'dashboard:alumni_registrations' %}" class="nav-link {% if 'alumni_registration' in request.resolver_match.view_name %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="m3 8 9-4 9 4-9 4zM6 10v5c3 3 9 3 12 0v-5M9 19l2 2 4-4"/></svg><span>Mezun Talepleri</span></a>{% endif %}
+        {% if can_review_contributor_applications or user.is_staff or user.is_superuser %}<a href="{% url 'dashboard:approved_member_applications' %}" class="nav-link {% if 'approved_member_application' in request.resolver_match.view_name %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M12 3v5M9.5 5.5h5M5 20v-2a7 7 0 0 1 14 0v2M12 9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/></svg><span>Onaylı Üye Başvuruları</span></a>{% endif %}
+      </div>
       {% endif %}
+
+      {% if user.is_staff or user.is_superuser or perms.accounts.review_collaborations %}<div><p class="dashboard-nav-heading">Kurumsal</p><a href="{% url 'career:collaboration_manage' %}" class="nav-link {% if request.resolver_match.view_name == 'career:collaboration_manage' or request.resolver_match.view_name == 'career:collaboration_review' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="m8 12 3 3a2 2 0 0 0 3 0l3-3M2 10l5-5 4 4M22 10l-5-5-4 4M5 13l4 4M19 13l-4 4"/></svg><span>İş Birliği Talepleri</span></a></div>{% endif %}
+
+      {% if not is_admin_account %}{% if user_type == 'student' or user_type == 'staff_student' %}<div><p class="dashboard-nav-heading">Öğrenci Alanım</p><a href="{% url 'accounts:profile' %}" class="nav-link {% if request.resolver_match.view_name == 'accounts:profile' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Portfolyom</span></a><a href="{% url 'dashboard:my_projects' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:my_projects' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span>Projelerim</span></a><a href="{% url 'projects:saved_projects' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M6 4h12v17l-6-4-6 4z"/></svg><span>Kaydedilenler</span></a><a href="{% url 'projects:team_list' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20v-2a5 5 0 0 1 10 0v2M17 10a3 3 0 1 0 0-6M17 14a5 5 0 0 1 4 4v2"/></svg><span>Ekipler</span></a><a href="{% url 'projects:team_invitations' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg><span>Ekip Davetleri{% if pending_invitation_count %} ({{ pending_invitation_count }}){% endif %}</span></a></div>{% endif %}{% endif %}
+      {% if user_type == 'alumni' %}<div><p class="dashboard-nav-heading">Mezun Ağı</p><a href="{% url 'dashboard:projects' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:projects' %}active{% endif %}"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span>Projeler</span></a><a href="{% url 'alumni:alumni_list' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM3 21v-2a6 6 0 0 1 12 0v2M17 7a3 3 0 0 1 0 6M17 16a5 5 0 0 1 4 5"/></svg><span>Mezunlar Ağı</span></a></div>{% endif %}
+      {% if user_type == 'approved_member' %}<div><p class="dashboard-nav-heading">Topluluk Alanım</p><a href="{% url 'accounts:profile' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>Profilim</span></a><a href="{% url 'projects:saved_projects' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M6 4h12v17l-6-4-6 4z"/></svg><span>Kaydedilenler</span></a><a href="{% url 'projects:project_create' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Yeni Proje</span></a></div>{% endif %}
+
+      {% if is_admin_account %}<div><p class="dashboard-nav-heading">Site Ayarları</p><a href="{% url 'dashboard:footer_settings' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:footer_settings' %}active{% endif %}"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15h18M8 15v5M16 15v5"/></svg><span>Footer ve Katkıda Bulunanlar</span></a></div>{% endif %}
+      <div><p class="dashboard-nav-heading">Araçlar</p><a href="{% url 'ai_assistant:chat' %}" class="nav-link {% if 'ai_assistant' in request.resolver_match.view_name %}active{% endif %}"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="13" rx="2"/><path d="M9 18v3M15 18v3M8 10h.01M16 10h.01M9 14h6"/></svg><span>AI Asistan</span></a></div>
     </nav>
 
-    <!-- Ana Sayfaya Dön Butonu -->
-    <div class="px-2 mt-4">
-      <a href="{% url 'portal:index' %}" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition border border-gray-700">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path></svg>
-        Ana Sayfaya Dön
-      </a>
-    </div>
-    
-    <!-- User Section at Bottom -->
-    <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-gray-700">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          {% if request.user.profile.profile_picture %}
-            <img src="{{ request.user.profile.profile_picture.url }}" alt="User" class="w-8 h-8 rounded-full object-cover">
-          {% else %}
-            <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">
-              {{ request.user.first_name|first }}{{ request.user.last_name|first }}
-            </div>
-          {% endif %}
-          <div>
-            <p class="text-sm font-medium truncate max-w-[120px]">{{ request.user.get_full_name }}</p>
-            <p class="text-xs text-gray-400">{{ request.user.email }}</p>
-          </div>
-        </div>
-        <a href="{% url 'accounts:logout' %}" class="text-gray-400 hover:text-white" title="Çıkış Yap">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-        </a>
-      </div>
-    </div>
+    <div class="border-t border-gray-800 px-2 py-3"><a href="{% url 'portal:index' %}" class="nav-link"><svg viewBox="0 0 24 24"><path d="M10 6 4 12l6 6M4 12h16"/></svg><span>Ana Sayfaya Dön</span></a></div>
+    <div class="border-t border-gray-800 px-4 py-4"><div class="flex items-center justify-between gap-3"><div class="flex min-w-0 items-center gap-3">{% if request.user.profile.profile_picture %}<img src="{{ request.user.profile.profile_picture.url }}" alt="" class="h-9 w-9 rounded-full object-cover">{% else %}<div class="grid h-9 w-9 flex-none place-items-center rounded-full bg-gray-700 text-xs font-bold">{{ request.user.first_name|first }}{{ request.user.last_name|first }}</div>{% endif %}<div class="min-w-0"><p class="truncate text-sm font-semibold">{{ request.user.get_full_name|default:request.user.username }}</p><p class="truncate text-xs text-gray-500">{{ request.user.email }}</p></div></div><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white" aria-label="Çıkış yap"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M17 16l4-4-4-4M21 12H8M13 17v2H4V5h9v2"/></svg></button></form></div></div>
   </aside>
 
-  <!-- Main Content -->
-  <main class="dashboard-content flex-1 py-6 px-4 overflow-y-auto">
-    {% block dashboard_content %}
-    <!-- Content will be injected here -->
-    {% endblock %}
+  <main class="dashboard-content flex-1">
+    <div class="dashboard-mobile-bar"><a href="{% url 'dashboard:home' %}" class="flex items-center gap-2 font-bold text-blue-300"><img src="{% static 'images/logo.svg' %}" alt="" class="h-8 w-8">{{ panel_label }}</a><button type="button" data-sidebar-open class="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-300" aria-controls="dashboard-sidebar" aria-expanded="false" aria-label="Yönetim menüsünü aç"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
+    <div class="dashboard-content-inner">{% block dashboard_content %}{% endblock %}</div>
   </main>
 </div>
 
 <script>
-function toggleSidebar() {
+document.addEventListener('DOMContentLoaded', function () {
   const sidebar = document.getElementById('dashboard-sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('active');
-}
-
-// Close sidebar on window resize to desktop
-window.addEventListener('resize', function() {
-  if (window.innerWidth >= 768) {
-    const sidebar = document.getElementById('dashboard-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
+  const openButton = document.querySelector('[data-sidebar-open]');
+  const closeButton = document.querySelector('[data-sidebar-close]');
+  function setSidebar(open) {
+    sidebar?.classList.toggle('open', open);
+    overlay?.classList.toggle('active', open);
+    overlay?.setAttribute('aria-hidden', String(!open));
+    openButton?.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) closeButton?.focus();
   }
+  window.toggleSidebar = function () { setSidebar(!sidebar?.classList.contains('open')); };
+  openButton?.addEventListener('click', function () { setSidebar(true); });
+  closeButton?.addEventListener('click', function () { setSidebar(false); openButton?.focus(); });
+  overlay?.addEventListener('click', function () { setSidebar(false); });
+  document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && sidebar?.classList.contains('open')) { setSidebar(false); openButton?.focus(); } });
+  window.addEventListener('resize', function () { if (window.innerWidth >= 768) setSidebar(false); });
 });
 </script>
 {% endblock %}
 
-{% block footer %}
-  <!-- Footer gizlendi -->
-{% endblock %}
-
+{% block footer %}{% endblock %}
 {% block extra_js %}{% endblock %}

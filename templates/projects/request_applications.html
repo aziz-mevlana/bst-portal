@@ -1,0 +1,51 @@
+{% extends 'projects/base.html' %}
+
+{% block title %}BST Portal | Başvurular{% endblock %}
+
+{% block project_content %}
+<div>
+  <div class="mx-auto max-w-5xl">
+    <a href="{% url 'projects:request_detail' request_id=project_request.pk %}" class="mb-6 inline-flex text-sm text-gray-400 hover:text-white">← İlana dön</a>
+    <div class="mb-8">
+      <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-400">Başvuru değerlendirme</p>
+      <h1 class="text-3xl font-bold text-white">{{ project_request.title }}</h1>
+      <p class="mt-2 text-gray-400">Bir başvuru kabul edildiğinde proje otomatik oluşturulur ve diğer bekleyen başvurular reddedilir.</p>
+    </div>
+
+    <div class="space-y-5">
+      {% for application in applications %}
+        <article class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 shadow-xl">
+          <div class="flex flex-col gap-3 border-b border-gray-700 pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-white">{{ application.student.get_full_name|default:application.student.username }}</h2>
+              <p class="mt-1 text-sm text-gray-500">{{ application.created_at|date:'d.m.Y H:i' }}</p>
+            </div>
+            <span class="self-start rounded-full border border-gray-600 bg-gray-800 px-3 py-1 text-xs text-gray-300">{{ application.get_status_display }}</span>
+          </div>
+          <div class="mt-5 grid gap-6 md:grid-cols-2">
+            <div><h3 class="mb-2 text-sm font-semibold text-blue-300">Motivasyon</h3><p class="whitespace-pre-line text-sm leading-6 text-gray-300">{{ application.motivation }}</p></div>
+            <div><h3 class="mb-2 text-sm font-semibold text-blue-300">Önerilen yaklaşım</h3><p class="whitespace-pre-line text-sm leading-6 text-gray-300">{{ application.proposed_approach|default:'Belirtilmedi.' }}</p></div>
+          </div>
+          {% if application.review_note %}<p class="mt-5 rounded-xl bg-gray-800/60 p-4 text-sm text-gray-300"><span class="font-semibold">Değerlendirme notu:</span> {{ application.review_note }}</p>{% endif %}
+          {% if application.status == 'pending' and not project_request.created_project %}
+            <div class="mt-6 grid gap-4 border-t border-gray-700 pt-5 md:grid-cols-2">
+              <form method="post" action="{% url 'projects:request_application_accept' application_id=application.pk %}" class="space-y-3">
+                {% csrf_token %}
+                <textarea name="review_note" rows="2" class="w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-sm text-white" placeholder="İsteğe bağlı değerlendirme notu"></textarea>
+                <button class="w-full rounded-xl bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-500">Kabul et ve projeyi oluştur</button>
+              </form>
+              <form method="post" action="{% url 'projects:request_application_reject' application_id=application.pk %}" class="space-y-3">
+                {% csrf_token %}
+                <textarea name="review_note" rows="2" class="w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-sm text-white" placeholder="İsteğe bağlı ret notu"></textarea>
+                <button class="w-full rounded-xl border border-red-700 px-5 py-3 font-semibold text-red-300 hover:bg-red-950/40">Reddet</button>
+              </form>
+            </div>
+          {% endif %}
+        </article>
+      {% empty %}
+        <div class="rounded-2xl border border-dashed border-gray-700 bg-[#111827]/60 px-6 py-16 text-center text-gray-400">Bu ilana henüz başvuru yapılmadı.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

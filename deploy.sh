@@ -11,7 +11,7 @@ sudo apt-get upgrade -y
 
 # Install required packages
 echo "Installing required packages..."
-sudo apt-get install -y python3-pip python3-venv postgresql postgresql-contrib nginx
+sudo apt-get install -y python3-pip python3-venv nginx
 
 # Create system user for the application
 echo "Creating system user..."

@@ -1,85 +1,34 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}BST Akademi | {{ news.title }}{% endblock %}
+{% block title %}{{ news.title }} | BST Haberler{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8 page-container-large">
-    <!-- Haber Başlığı ve Meta Bilgileri -->
-    <div class="mb-8">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-blue">
-                    {{ news.news_type|default:"Genel" }}
-                </span>
-                {% if news.news_category %}
-                <span class="px-3 py-1 rounded-full text-sm font-semibold project-tag-gray">
-                    {{ news.news_category }}
-                </span>
-                {% endif %}
-            </div>
-            {% if user.is_authenticated and user == news.created_by or user.profile.user_type == 'staff_student' or user.profile.user_type == 'teacher' %}
-            <a href="{% url 'news:edit_news' news.id %}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition text-sm w-full sm:w-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Haberi Düzenle
-            </a>
-            {% endif %}
-        </div>
-        <h1 class="text-3xl font-bold mb-4">{{ news.title }}</h1>
-        <div class="flex items-center gap-4 text-sm text-gray-600 mb-4 card-link">
-            <span class="flex items-center gap-1 card-link">
-                <div class="flex items-center gap-1">
-                    <img src="{% static 'images/icons/calendar.svg' %}" alt="Tarih" class="w-4 h-4">
-                    {{ news.date|date:"d.m.Y" }}
-                </div>
-            </span>
-            <span class="flex items-center gap-1 card-link">
-                <img src="{% static 'images/icons/profile.svg' %}" alt="Yazar" class="w-4 h-4">
-                <a href="{% if news.created_by %}{% url 'accounts:user_profile' news.created_by.id %}{% endif %}" class="hover:text-blue-400 transition-colors">
-                    {% if news.created_by %}{{ news.created_by.get_full_name|default:news.created_by.username }}{% else %}BST AI{% endif %}
-                </a>
-            </span>
-            {% if news.source %}
-            <span class="flex items-center gap-1 card-link">
-                <img src="{% static 'images/icons/globe.svg' %}" alt="Kaynak" class="w-4 h-4">
-                {{ news.source }}
-            </span>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Haber Görseli -->
-    {% if news.image %}
-    <div class="mb-8">
-        <img src="{{ news.image.url }}" alt="{{ news.title }}" class="w-full h-auto rounded-lg shadow-lg">
-    </div>
+<main class="min-h-screen bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
+  <article class="mx-auto max-w-4xl">
+    <a href="{% url 'news:news_list' %}" class="text-sm font-semibold text-blue-300 hover:text-blue-200">← Tüm haberler</a>
+    <header class="mt-6 border-b border-[var(--border)] pb-7">
+      <div class="flex flex-wrap items-center gap-2 text-sm text-[var(--text-muted)]">
+        {% if news.get_category_display %}<span class="rounded-full bg-blue-950 px-3 py-1 text-blue-300">{{ news.get_category_display }}</span>{% endif %}
+        <time datetime="{{ news.date|date:'c' }}">{{ news.date|date:'d F Y' }}</time>
+        {% if news.source %}<span>· {{ news.source }}</span>{% endif %}
+      </div>
+      <h1 class="mt-5 text-3xl font-black leading-tight sm:text-5xl">{{ news.title }}</h1>
+      {% if news.summary %}<p class="mt-5 text-lg leading-8 text-[var(--text-secondary)]">{{ news.summary }}</p>{% endif %}
+      {% if user.is_authenticated and can_manage_news %}<a href="{% url 'news:edit_news' news.id %}" class="mt-5 inline-flex rounded-lg border border-[var(--border-strong)] px-4 py-2 text-sm font-semibold">Haberi düzenle</a>{% endif %}
+    </header>
+    {% if news.image %}<img src="{{ news.image.url }}" alt="" class="mt-8 max-h-[34rem] w-full rounded-2xl object-cover">{% elif news.image_url %}<img src="{{ news.image_url }}" alt="" class="mt-8 max-h-[34rem] w-full rounded-2xl object-cover">{% endif %}
+    <div class="mt-8 whitespace-pre-line text-base leading-8 text-[var(--text-secondary)]">{{ news.content }}</div>
+    {% if news.source_url or news.url %}
+      <div class="mt-9 border-t border-[var(--border)] pt-6">
+        <a href="{{ news.source_url|default:news.url }}" target="_blank" rel="noopener noreferrer nofollow" class="inline-flex min-h-11 items-center rounded-xl bg-blue-600 px-5 font-semibold text-white hover:bg-blue-500">Kaynağa git ↗</a>
+      </div>
     {% endif %}
-
-    <!-- Haber Özeti -->
-    {% if news.summary %}
-    <div class="mb-8 p-4 rounded-lg color-page">
-        <p class="text-lg ">{{ news.summary }}</p>
-    </div>
-    {% endif %}
-
-    <!-- Haber İçeriği -->
-    <div class="prose max-w-none mb-8">
-        {{ news.content|linebreaks }}
-    </div>
-
-    <!-- Kaynak Linki -->
-    {% if news.url %}
-    <div class="mt-8 pt-4 border-t">
-        <a href="{{ news.url }}" target="_blank" rel="noopener noreferrer" 
-           class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-600/25">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-6m6 0v6" />
-            </svg>
-            Kaynak Habere Git
-        </a>
-    </div>
-    {% endif %}
-</div>
+  </article>
+  {% if related_news %}
+    <section class="mx-auto mt-14 max-w-7xl border-t border-[var(--border)] pt-8" aria-labelledby="related-news-title">
+      <h2 id="related-news-title" class="text-2xl font-bold">İlgili haberler</h2>
+      <div class="mt-5 grid gap-5 md:grid-cols-3">{% for item in related_news %}{% include 'news/partials/news_item.html' with news=item %}{% endfor %}</div>
+    </section>
+  {% endif %}
+</main>
 {% endblock %}

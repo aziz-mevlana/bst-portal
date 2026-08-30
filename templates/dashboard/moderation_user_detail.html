@@ -1,0 +1,143 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ target_user.username }} | Moderasyon{% endblock %}
+
+{% block dashboard_content %}
+<div class="mx-auto max-w-6xl py-4">
+  <a href="{% url 'dashboard:moderation_users' %}" class="text-sm font-semibold text-blue-300 hover:text-blue-200">← Kullanıcı Moderasyonu</a>
+
+  <div class="mt-5 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+    <div class="space-y-6">
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl shadow-black/10">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><p class="text-xs font-bold uppercase tracking-[.16em] text-blue-300">Hesap özeti</p><h1 class="mt-1 text-2xl font-black">{{ target_user.get_full_name|default:target_user.username }}</h1></div>
+          <div class="flex flex-wrap gap-2"><span class="rounded-full bg-blue-950 px-3 py-1 text-xs font-bold text-blue-200">{{ target_user.profile.get_user_type_display }}</span><span class="rounded-full bg-gray-800 px-3 py-1 text-xs font-semibold text-gray-300">{{ target_user.profile.get_account_status_display }}</span></div>
+        </div>
+        <dl class="mt-5 space-y-3 text-sm">
+          <div><dt class="text-gray-500">Kullanıcı adı</dt><dd>{{ target_user.username }}</dd></div>
+          <div><dt class="text-gray-500">E-posta</dt><dd>{{ target_user.email }}</dd></div>
+          <div><dt class="text-gray-500">Rol</dt><dd>{{ target_user.profile.get_user_type_display }}</dd></div>
+          <div><dt class="text-gray-500">Durum</dt><dd>{{ target_user.profile.get_account_status_display }}</dd></div>
+          <div><dt class="text-gray-500">Kurumsal doğrulama</dt><dd>{{ target_user.profile.institutional_email_verified_at|date:'d.m.Y H:i'|default:'Yok' }}</dd></div>
+          <div><dt class="text-gray-500">Öğrenci numarası doğrulaması</dt><dd>{% if target_user.profile.student_number_verified %}Doğrulandı{% else %}İncelenmedi{% endif %}</dd></div>
+        </dl>
+        <p class="mt-5 rounded-lg border border-gray-700 p-3 text-xs text-gray-500">Parola ve doğrulama kodları bu ekranda gösterilmez.</p>
+      </section>
+
+      {% if can_change_role %}
+      <section class="rounded-2xl border border-blue-900/70 bg-gradient-to-br from-blue-950/35 to-[var(--surface)] p-6">
+        <p class="text-xs font-bold uppercase tracking-[.16em] text-blue-300">Yalnızca yönetici</p>
+        <h2 class="mt-1 text-xl font-bold">Hesap rolünü değiştir</h2>
+        <p class="mt-2 text-sm leading-6 text-gray-400">Öğrenci hesabını BST Yetkilisi yapabilir veya yetkili hesabı tekrar standart öğrenci rolüne alabilirsiniz.</p>
+        <form method="post" action="{% url 'dashboard:change_user_role' target_user.pk %}" class="mt-5 space-y-4" onsubmit="return confirm('Bu kullanıcının rolünü değiştirmek istediğinize emin misiniz?');">
+          {% csrf_token %}
+          <label class="block text-sm font-semibold" for="new-role">Yeni rol
+            <select id="new-role" name="new_role" required class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3">
+              <option value="" selected disabled>Yeni rolü seçiniz</option>
+              {% for value, label in assignable_roles %}<option value="{{ value }}" {% if target_user.profile.user_type == value %}disabled{% endif %}>{{ label }}{% if target_user.profile.user_type == value %} (mevcut){% endif %}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="block text-sm font-semibold" for="role-description">Değişiklik açıklaması
+            <textarea id="role-description" name="description" required rows="3" maxlength="1000" placeholder="Yetkinin neden verildiğini veya kaldırıldığını açıklayın" class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3"></textarea>
+          </label>
+          <label class="flex items-start gap-3 rounded-xl border border-blue-900/70 bg-black/10 p-3 text-sm text-gray-300"><input type="checkbox" name="confirm_role_change" value="yes" required><span>Bu değişikliğin yönetim erişimini etkilediğini anlıyorum ve işlemi onaylıyorum.</span></label>
+          <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-bold text-white hover:bg-blue-500">Rolü güncelle</button>
+        </form>
+      </section>
+      {% endif %}
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <h2 class="text-xl font-bold">Moderasyon işlemi</h2>
+        <form method="post" action="{% url 'dashboard:moderate_user' target_user.pk %}" class="mt-5 space-y-4" onsubmit="return confirm('Bu moderasyon işlemini uygulamak istediğinize emin misiniz?');">
+          {% csrf_token %}
+          <label class="block text-sm font-semibold">İşlem
+            <select id="moderation-action" name="action" required class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3">
+              <option value="" selected disabled>Uygulanacak işlemi seçiniz</option>
+              <option value="suspend">Geçici askıya al</option>
+              <option value="reactivate">Yeniden etkinleştir</option>
+              <option value="request_reverification">Yeniden e-posta doğrulaması iste</option>
+              <option value="remove_photo">Profil fotoğrafını kaldır</option>
+              {% if can_end_sessions %}<option value="end_sessions">Aktif oturumları sonlandır</option>{% endif %}
+              {% if can_close_account %}<option value="close">Kalıcı olarak kapat</option>{% endif %}
+            </select>
+          </label>
+          <label id="suspension-expiry-field" class="hidden text-sm font-semibold">Askı bitiş zamanı
+            <input id="suspension-expiry" type="datetime-local" name="expires_at" class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3">
+          </label>
+          <label class="block text-sm font-semibold">Standart neden
+            <select name="reason" required class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3">
+              <option value="">Neden seçiniz</option>
+              {% for value, label in reason_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="block text-sm font-semibold">Açıklama
+            <textarea name="description" required rows="4" placeholder="İşlemin gerekçesini somut biçimde açıklayın" class="mt-2 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--input-bg)] p-3"></textarea>
+          </label>
+          <button class="min-h-11 rounded-xl bg-red-700 px-5 py-3 font-bold text-white hover:bg-red-600">Moderasyon işlemini uygula</button>
+        </form>
+      </section>
+
+      {% if role_history %}
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <h2 class="text-xl font-bold">Rol değişikliği geçmişi</h2>
+        <div class="mt-4 space-y-3">
+          {% for item in role_history %}
+          <article class="rounded-xl bg-[var(--input-bg)] p-4 text-sm">
+            <div class="flex flex-wrap justify-between gap-3"><strong>{{ item.metadata.previous_role_label|default:item.metadata.previous_role }} → {{ item.metadata.new_role_label|default:item.metadata.new_role }}</strong><time class="text-gray-500">{{ item.created_at|date:'d.m.Y H:i' }}</time></div>
+            <p class="mt-2 text-gray-400">{{ item.metadata.description }}</p>
+            <p class="mt-2 text-xs text-gray-600">İşlemi yapan: {% if item.actor %}{{ item.actor.get_full_name|default:item.actor.username }}{% else %}Sistem{% endif %}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <div class="space-y-6">
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <h2 class="text-xl font-bold">Moderasyon geçmişi</h2>
+        <div class="mt-4 space-y-3">
+          {% for item in history %}
+          <article class="rounded-xl bg-[var(--input-bg)] p-4 text-sm">
+            <div class="flex justify-between gap-3"><strong>{{ item.get_action_type_display }}</strong><time class="text-gray-500">{{ item.created_at|date:'d.m.Y H:i' }}</time></div>
+            <p class="mt-2 text-gray-400"><strong>{{ item.get_reason_display }}:</strong> {{ item.description }}</p>
+            <p class="mt-2 text-xs text-gray-600">İşlemi yapan: {{ item.performed_by.username }}{% if item.expires_at %} · Bitiş: {{ item.expires_at|date:'d.m.Y H:i' }}{% endif %}</p>
+          </article>
+          {% empty %}<p class="text-sm text-gray-500">İşlem geçmişi yok.</p>{% endfor %}
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <h2 class="text-xl font-bold">Kullanıcı şikâyetleri</h2>
+        <div class="mt-4 space-y-3">
+          {% for report in reports %}
+          <article class="rounded-xl bg-[var(--input-bg)] p-4 text-sm">
+            <strong>{{ report.get_reason_display }} · {{ report.get_status_display }}</strong>
+            <p class="mt-2 text-gray-400">{{ report.description }}</p>
+            <p class="mt-2 text-xs text-gray-600">{{ report.created_at|date:'d.m.Y H:i' }} · Bildiren: {{ report.reporter.username }}</p>
+          </article>
+          {% empty %}<p class="text-sm text-gray-500">Şikâyet yok.</p>{% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const action = document.getElementById('moderation-action');
+  const expiryField = document.getElementById('suspension-expiry-field');
+  const expiryInput = document.getElementById('suspension-expiry');
+  function syncExpiryField() {
+    const visible = action?.value === 'suspend';
+    expiryField?.classList.toggle('hidden', !visible);
+    expiryField?.classList.toggle('block', visible);
+    if (expiryInput) expiryInput.required = visible;
+  }
+  action?.addEventListener('change', syncExpiryField);
+  syncExpiryField();
+});
+</script>
+{% endblock %}

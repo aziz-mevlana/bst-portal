@@ -1,125 +1,108 @@
 {% load static %}
-<header id="main-header">
+<header id="main-header" class="site-header">
     <div class="nav-content {% if user.is_authenticated %}user-logged-in{% endif %}">
-        <!-- Logo -->
-        <a href="{% url 'portal:index' %}" class="nav-logo">
-                <img src="{% static 'images/logo.svg' %}" alt="BST Akademi Logo">
-                <span>BST Akademi</span>
-            </a>
+        <a href="{% url 'portal:index' %}" class="nav-logo" aria-label="BST Akademi ana sayfa">
+            <img src="{% static 'images/logo.svg' %}" alt="" width="44" height="44">
+            <span>BST Akademi</span>
+        </a>
 
-            <!-- Desktop Navigation -->
-            <nav class="nav-links">
-                <ul>
-                    <li><a href="{% url 'portal:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Ana Sayfa</a></li>
-                    <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
-                    <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
-                    {% if user.is_authenticated %}
-                    {% if user.profile.user_type == 'staff_student' %}
-                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
-                    {% elif user.profile.user_type == 'teacher' %}
-                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Akademisyen Paneli</a></li>
-                    {% elif user.profile.user_type == 'student' %}
-                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Öğrenci Paneli</a></li>
-                    {% elif user.profile.user_type == 'alumni' %}
-                    <li id="dashboard-nav-link"><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Mezun Paneli</a></li>
-                    {% endif %}
-                    {% endif %}
-                </ul>
-            </nav>
-
-            <!-- Right side actions - Desktop -->
-            <div class="nav-actions desktop-only">
-
-                <!-- Auth Actions -->
-                {% if user.is_authenticated %}
-                    <div class="profile-dropdown">
-                        <button id="profile-button" class="profile-button">
-                            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="profile-avatar">
-                            <span>{{ user.first_name }} {{ user.last_name }}</span>
-                            <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="chevron-icon">
-                        </button>
-
-                        <!-- Profile Dropdown Menu -->
-                        <div id="dropdown-menu" class="dropdown-menu hidden">
-                            <a href="{% url 'accounts:profile' %}">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75a.75.75 0 01-.75.75h-13.5a.75.75 0 01-.75-.75V19.5z" /></svg>
-                                Profil
-                            </a>
-                            {% if user.alumni %}
-                            <a href="{% url 'alumni:alumni_profile' %}">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                                Mezun Profilim
-                            </a>
-                            {% endif %}
-                            <form method="post" action="{% url 'accounts:logout' %}">
-                                {% csrf_token %}
-                                <button type="submit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 15l3-3m0 0l-3-3m3 3H9" /></svg>
-                                    Çıkış
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                {% else %}
-                    <a href="{% url 'accounts:login' %}" class="auth-button">Giriş Yap</a>
-                {% endif %}
-            </div>
-
-            <!-- Mobile menu button -->
-            <button id="mobile-menu-button" class="mobile-menu-button" aria-label="Menüyü aç/kapat">
-                <img id="menu-icon" src="{% static 'images/icons/menu.svg' %}" alt="Menüyü aç" class="h-6 w-6">
-                <img id="close-icon" src="{% static 'images/icons/close.svg' %}" alt="Menüyü kapat" class="h-6 w-6 hidden">
-            </button>
-        </div>
-    </div>
-
-    <!-- Mobile Navigation -->
-    <div id="mobile-menu" class="mobile-menu">
-        <nav>
+        <nav class="nav-links" aria-label="Ana navigasyon">
             <ul>
-                <li><a href="{% url 'portal:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Ana Sayfa</a></li>
-                <li><a href="{% url 'events:event_list' %}" {% if 'events' in request.path %}class="active"{% endif %}>Etkinlikler</a></li>
-                <li><a href="{% url 'news:news_list' %}" {% if 'news' in request.path %}class="active"{% endif %}>Haberler</a></li>
-                <li><a href="{% url 'projects:project_list' %}" {% if 'projects' in request.path %}class="active"{% endif %}>Projeler</a></li>
-                <li><a href="{% url 'alumni:alumni_list' %}" {% if 'alumni' in request.path %}class="active"{% endif %}>Mezunlar</a></li>
-                {% if user.is_authenticated %}
-                {% if user.profile.user_type == 'staff_student' %}
-                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Yönetici Paneli</a></li>
-                {% elif user.profile.user_type == 'teacher' %}
-                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Akademisyen Paneli</a></li>
-                {% elif user.profile.user_type == 'student' %}
-                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Öğrenci Paneli</a></li>
-                {% elif user.profile.user_type == 'alumni' %}
-                <li><a href="{% url 'dashboard:home' %}" {% if 'dashboard' in request.path %}class="active"{% endif %}>Mezun Paneli</a></li>
-                {% endif %}
-                {% endif %}
-
-                <!-- Mobile Auth Actions -->
-                {% if user.is_authenticated %}
-                    <li class="mobile-profile-section">
-                        <div class="mobile-profile-header">
-                            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="Profil Fotoğrafı" class="mobile-profile-avatar">
-                            <span>{{ user.get_full_name }}</span>
-                        </div>
-                        <ul class="mobile-profile-menu">
-                            <li><a href="{% url 'accounts:profile' %}">Profil</a></li>
-                            {% if user.alumni %}
-                                <li><a href="{% url 'alumni:alumni_profile' %}">Mezun Profilim</a></li>
-                            {% endif %}
-                            <li>
-                                <form method="post" action="{% url 'accounts:logout' %}" class="mobile-logout-form">
-                                    {% csrf_token %}
-                                    <button type="submit">Çıkış</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                {% else %}
-                    <li><a href="{% url 'accounts:login' %}" class="mobile-auth-button">Giriş Yap</a></li>
-                {% endif %}
+                <li><a href="{% url 'projects:project_list' %}" {% if request.resolver_match.app_name == 'projects' %}class="active" aria-current="page"{% endif %}>Projeler</a></li>
+                <li><a href="{% url 'portal:talent_list' %}" {% if request.resolver_match.view_name == 'portal:talent_list' %}class="active" aria-current="page"{% endif %}>Yetenekler</a></li>
+                <li><a href="{% url 'portal:academic_list' %}" {% if request.resolver_match.view_name == 'portal:academic_list' %}class="active" aria-current="page"{% endif %}>Akademisyenler</a></li>
+                <li><a href="{% url 'alumni:alumni_list' %}" {% if request.resolver_match.app_name == 'alumni' %}class="active" aria-current="page"{% endif %}>Mezunlar</a></li>
+                <li><a href="{% url 'news:news_list' %}" {% if request.resolver_match.app_name == 'news' %}class="active" aria-current="page"{% endif %}>Haberler</a></li>
+                <li><a href="{% url 'events:event_list' %}" {% if request.resolver_match.app_name == 'events' %}class="active" aria-current="page"{% endif %}>Etkinlikler</a></li>
+                <li><a href="{% url 'career:opportunity_list' %}" {% if request.resolver_match.app_name == 'career' %}class="active" aria-current="page"{% endif %}>Kariyer</a></li>
+                <li><a href="{% if request.resolver_match.view_name == 'portal:index' %}#kurumlar-icin{% else %}{% url 'portal:index' %}#kurumlar-icin{% endif %}" class="institution-nav-link">Kurumlar İçin</a></li>
             </ul>
         </nav>
-    </div>
-</header>
 
-<script src="{% static 'js/header.js' %}"></script> 
+        <div class="nav-actions">
+            <div class="nav-search" data-inline-search>
+            <button type="button" class="nav-search-action" aria-label="Sitede ara" title="Ara" aria-expanded="false" aria-controls="nav-search-panel" data-search-toggle>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div id="nav-search-panel" class="nav-search-panel" inert aria-hidden="true">
+                <form action="{% url 'portal:global_search' %}" method="get" role="search" data-search-form>
+                    <label class="sr-only" for="nav-search-input">Portal içinde ara</label>
+                    <input id="nav-search-input" type="search" name="q" autocomplete="off" maxlength="120" placeholder="Proje, kişi, etkinlik ara…" aria-controls="nav-search-results">
+                    <button type="submit" class="nav-search-submit">Ara</button>
+                    <button type="button" class="nav-search-close" aria-label="Aramayı kapat" data-search-close>×</button>
+                </form>
+                <div class="nav-search-results" id="nav-search-results">
+                    <p role="status" aria-live="polite" data-search-status>Aramak için en az 2 karakter yazın.</p>
+                    <ul data-search-items aria-label="Arama sonuçları"></ul>
+                    <a href="{% url 'portal:global_search' %}" data-search-more>Gelişmiş filtreleri aç →</a>
+                </div>
+            </div>
+            </div>
+            {% if user.is_authenticated %}
+                <div class="notification-dropdown">
+                    <button id="notification-button" class="notification-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="notification-menu" aria-label="Bildirimler{% if unread_notification_count %}: {{ unread_notification_count }} okunmamış{% endif %}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        {% if unread_notification_count %}<span id="notification-badge" class="notification-badge" aria-hidden="true">{{ unread_notification_count }}</span>{% endif %}
+                    </button>
+                    <div id="notification-menu" class="notification-menu" role="menu" hidden>
+                        <div class="notification-menu-header"><strong>Bildirimler</strong>{% if unread_notification_count %}<form id="notification-read-all" method="post" action="{% url 'core:notification_mark_all_read' %}">{% csrf_token %}<button type="submit">Tümünü okundu yap</button></form>{% endif %}</div>
+                        <div class="notification-items">
+                        {% for notification in recent_notifications %}<form method="post" action="{% url 'core:notification_mark_read' notification.pk %}" role="none">{% csrf_token %}<button type="submit" role="menuitem" class="notification-item {% if not notification.read_at %}unread{% endif %}"><span class="notification-item-copy"><span class="notification-item-title">{{ notification.title|default:'BST Portal' }}</span><span>{{ notification.message }}</span><time>{{ notification.created_at|timesince }} önce</time></span></button></form>{% empty %}<p class="notification-empty">Henüz bildiriminiz yok.</p>{% endfor %}
+                        </div><a href="{% url 'core:notification_list' %}" class="notification-all">Tüm bildirimleri gör</a>
+                    </div>
+                </div>
+                <div class="profile-dropdown nav-desktop-only">
+                    <button id="profile-button" class="profile-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="dropdown-menu">
+                        <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="" class="profile-avatar">
+                        <span>{{ user.get_full_name|default:user.username }}</span>
+                        <img src="{% static 'images/icons/chevron-down.svg' %}" alt="" class="chevron-icon">
+                    </button>
+                    <div id="dropdown-menu" class="dropdown-menu hidden" role="menu">
+                        <a href="{% url 'accounts:profile' %}" role="menuitem">Profilim</a>
+                        <a href="{% url 'accounts:portfolio_settings' %}" role="menuitem">Ayarlar</a>
+                        {% if show_dashboard_link %}<a href="{% url 'dashboard:home' %}" role="menuitem">{{ panel_label|default:'Panelim' }}</a>{% endif %}
+                        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" role="menuitem">Çıkış Yap</button></form>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="auth-button nav-desktop-only">Giriş Yap</a>
+            {% endif %}
+        </div>
+
+        <button id="mobile-menu-button" class="mobile-menu-button" type="button" aria-label="Menüyü aç" aria-controls="mobile-menu" aria-expanded="false">
+            <img id="menu-icon" src="{% static 'images/icons/menu.svg' %}" alt="" class="h-6 w-6">
+            <img id="close-icon" src="{% static 'images/icons/close.svg' %}" alt="" class="h-6 w-6 hidden">
+        </button>
+    </div>
+
+    </header>
+
+    <div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+        <nav aria-label="Mobil navigasyon">
+            <ul>
+                <li><a href="{% url 'portal:index' %}">Ana Sayfa</a></li>
+                <li><a href="{% url 'projects:project_list' %}">Projeler</a></li>
+                <li><a href="{% url 'portal:talent_list' %}">Yetenekler</a></li>
+                <li><a href="{% url 'portal:academic_list' %}">Akademisyenler</a></li>
+                <li><a href="{% url 'alumni:alumni_list' %}">Mezunlar</a></li>
+                <li><a href="{% url 'news:news_list' %}">Haberler</a></li>
+                <li><a href="{% url 'events:event_list' %}">Etkinlikler</a></li>
+                <li><a href="{% url 'career:opportunity_list' %}">Kariyer</a></li>
+                <li><a href="{% url 'portal:index' %}#kurumlar-icin">Kurumlar İçin</a></li>
+                <li><button type="button" class="mobile-search-trigger" data-mobile-search>Ara</button></li>
+            </ul>
+
+            {% if user.is_authenticated %}
+            <div class="mobile-account" aria-label="Hesap menüsü">
+                <div class="mobile-profile-header"><img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}{% static 'images/icons/profile.svg' %}{% endif %}" alt="" class="mobile-profile-avatar"><span>{{ user.get_full_name|default:user.username }}</span></div>
+                <a href="{% url 'accounts:profile' %}">Profilim</a>
+                <a href="{% url 'accounts:portfolio_settings' %}">Ayarlar</a>
+                <a id="mobile-notification-link" href="{% url 'core:notification_list' %}">Bildirimler<span id="mobile-notification-count">{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</span></a>
+                {% if show_dashboard_link %}<a href="{% url 'dashboard:home' %}">{{ panel_label|default:'Panelim' }}</a>{% endif %}
+                <form method="post" action="{% url 'accounts:logout' %}" class="mobile-logout-form">{% csrf_token %}<button type="submit">Çıkış Yap</button></form>
+            </div>
+            {% else %}<a href="{% url 'accounts:login' %}" class="mobile-auth-button">Giriş Yap</a>{% endif %}
+        </nav>
+    </div>
+<script src="{% static 'js/header.js' %}?v=20260820.1"></script>
+<script src="{% static 'js/inline-search.js' %}?v=20260827.1" defer></script>

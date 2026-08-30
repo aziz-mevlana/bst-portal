@@ -4,17 +4,14 @@
 {% block dashboard_content %}
 <div class="mb-6 flex flex-row justify-between items-center gap-4">
     <div>
-        <h1 class="text-2xl font-bold">Bilgi Kaynaklari</h1>
-        <p class="text-gray-400">AI asistaninin kullanacagi bilgi dokumanlari</p>
+        <h1 class="text-2xl font-bold">Bilgi Kaynakları</h1>
+        <p class="text-gray-400">AI asistanının kullanacağı bilgi dokümanları</p>
     </div>
     <div class="flex items-center gap-3">
         <a href="{% url 'ai_assistant:chat' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            AI Asistana Don
+            AI Asistana Dön
         </a>
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
     </div>
 </div>
 
@@ -22,12 +19,12 @@
 <div class="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
     <h2 class="text-lg font-semibold mb-3">Yeni Kaynak Ekle</h2>
     <form id="sourceForm" onsubmit="addSource(event)">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-                <label class="block text-sm text-gray-400 mb-1">Baslik *</label>
+                <label class="block text-sm text-gray-400 mb-1">Başlık *</label>
                 <input type="text" id="sourceTitle" required
                     class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                    placeholder="Orn: Staj Yonergesi">
+                    placeholder="Örn: Staj Yönergesi">
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-1">Kategori</label>
@@ -40,9 +37,20 @@
                     <option value="general">Genel</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Hedef kitle</label>
+                <select id="sourceAudience"
+                    class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                    <option value="all">Tüm kullanıcılar</option>
+                    <option value="student">Yalnızca öğrenciler</option>
+                    <option value="teacher">Yalnızca akademisyenler</option>
+                    <option value="alumni">Yalnızca mezunlar</option>
+                    <option value="staff">Yalnızca yöneticiler</option>
+                </select>
+            </div>
         </div>
         <div class="mb-4">
-            <label class="block text-sm text-gray-400 mb-1">Aciklama</label>
+            <label class="block text-sm text-gray-400 mb-1">Açıklama</label>
             <input type="text" id="sourceDescription"
                 class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 placeholder="Kisaca aciklama...">
@@ -68,7 +76,7 @@
 <!-- Kaynak Listesi -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for source in sources %}
-    <div onclick="openSourceModal({{ source.id }}, '{{ source.title|escapejs }}', '{{ source.description|escapejs }}', '{{ source.content|escapejs }}', '{{ source.category }}', {{ source.is_active|yesno:"true,false" }})" 
+    <div onclick="openSourceModal({{ source.id }}, '{{ source.title|escapejs }}', '{{ source.description|escapejs }}', '{{ source.content|escapejs }}', '{{ source.category }}', '{{ source.audience }}', {{ source.is_active|yesno:"true,false" }})" 
          class="dashboard-card rounded-xl p-4 cursor-pointer hover:border-blue-500 transition"
          id="source-{{ source.id }}">
         <div class="flex items-start justify-between">
@@ -80,6 +88,7 @@
                     <span class="text-xs {% if source.is_active %}text-green-400{% else %}text-gray-500{% endif %}">
                         {% if source.is_active %}Aktif{% else %}Pasif{% endif %}
                     </span>
+                    <span class="px-2 py-1 text-xs rounded-full bg-gray-700 text-gray-300">{{ source.get_audience_display }}</span>
                 </div>
                 <h3 class="font-semibold mb-1">{{ source.title }}</h3>
                 {% if source.description %}
@@ -112,9 +121,9 @@
 
                 <form id="editSourceForm" onsubmit="updateSource(event)">
                     <input type="hidden" id="editSourceId">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label class="block text-sm text-gray-400 mb-1">Baslik *</label>
+                            <label class="block text-sm text-gray-400 mb-1">Başlık *</label>
                             <input type="text" id="editSourceTitle" required
                                 class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500">
                         </div>
@@ -129,9 +138,20 @@
                                 <option value="general">Genel</option>
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Hedef kitle</label>
+                            <select id="editSourceAudience"
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                <option value="all">Tüm kullanıcılar</option>
+                                <option value="student">Yalnızca öğrenciler</option>
+                                <option value="teacher">Yalnızca akademisyenler</option>
+                                <option value="alumni">Yalnızca mezunlar</option>
+                                <option value="staff">Yalnızca yöneticiler</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-400 mb-1">Aciklama</label>
+                        <label class="block text-sm text-gray-400 mb-1">Açıklama</label>
                         <input type="text" id="editSourceDescription"
                             class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500">
                     </div>
@@ -148,7 +168,7 @@
                     </div>
                     <div class="flex gap-3">
                         <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
-                            Guncelle
+                            Güncelle
                         </button>
                         <button type="button" onclick="deleteSource()" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg transition">
                             Sil
@@ -168,12 +188,13 @@ function getCsrf() {
     return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 }
 
-function openSourceModal(id, title, description, content, category, isActive) {
+function openSourceModal(id, title, description, content, category, audience, isActive) {
     document.getElementById('editSourceId').value = id;
     document.getElementById('editSourceTitle').value = title;
     document.getElementById('editSourceDescription').value = description;
     document.getElementById('editSourceContent').value = content;
     document.getElementById('editSourceCategory').value = category;
+    document.getElementById('editSourceAudience').value = audience;
     document.getElementById('editSourceActive').checked = isActive;
     document.getElementById('sourceModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -191,6 +212,7 @@ async function addSource(e) {
     formData.append('description', document.getElementById('sourceDescription').value);
     formData.append('content', document.getElementById('sourceContent').value);
     formData.append('category', document.getElementById('sourceCategory').value);
+    formData.append('audience', document.getElementById('sourceAudience').value);
     
     const fileInput = document.getElementById('sourceFile');
     if (fileInput.files[0]) {
@@ -232,6 +254,7 @@ async function updateSource(e) {
                 description: document.getElementById('editSourceDescription').value,
                 content: document.getElementById('editSourceContent').value,
                 category: document.getElementById('editSourceCategory').value,
+                audience: document.getElementById('editSourceAudience').value,
                 is_active: document.getElementById('editSourceActive').checked
             })
         });

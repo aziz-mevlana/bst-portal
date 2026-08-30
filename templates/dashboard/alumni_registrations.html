@@ -1,0 +1,22 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Mezun Kayıt Talepleri | BST{% endblock %}
+{% block dashboard_content %}
+<div class="py-4">
+  <p class="text-sm font-semibold uppercase tracking-widest text-blue-300">Hesap doğrulama</p>
+  <h1 class="mt-1 text-3xl font-black">Mezun kayıt talepleri</h1>
+  <p class="mt-2 text-gray-400">Mevcut kayda bağlantı otomatik yapılmaz; önerileri inceleyip açıkça seçmeniz gerekir.</p>
+  <form method="get" class="mt-6 flex max-w-lg gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+    <select name="status" class="min-h-11 flex-1 rounded-xl border p-3">
+      <option value="">Tüm durumlar</option>{% for value, label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select><button class="rounded-xl bg-blue-600 px-5 font-bold">Filtrele</button>
+  </form>
+  <div class="mt-6 grid gap-4">
+    {% for item in registrations %}
+    <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 md:flex md:items-center md:justify-between">
+      <div><h2 class="text-lg font-bold">{{ item.full_name }}</h2><p class="mt-1 text-sm text-gray-400">{{ item.email }} · {{ item.graduation_year }} mezunu{% if item.student_number %} · No: ••••{{ item.student_number|slice:'-4:' }}{% endif %}</p><span class="mt-2 inline-block rounded-full bg-gray-800 px-3 py-1 text-xs">{{ item.get_status_display }}</span></div>
+      <a href="{% url 'dashboard:alumni_registration_detail' item.pk %}" class="mt-4 inline-flex rounded-xl border border-blue-500 px-4 py-2 font-semibold text-blue-300 md:mt-0">İncele</a>
+    </article>
+    {% empty %}<p class="rounded-2xl border border-dashed border-[var(--border)] p-8 text-center text-gray-400">Bu filtrede kayıt talebi yok.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

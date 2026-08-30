@@ -1,247 +1,198 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}
-  BST Akademi
+{% block title %}BST Portal | Projeler, Yetenekler ve Mezun Ağı{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage.css' %}?v=20260821.3">
 {% endblock %}
 
 {% block content %}
-  <div>
-    <!-- Hero Section -->
-    <div class="hero-container" style="margin-bottom: 2rem;">
-      <!-- Swiper Carousel -->
-      <div class="swiper hero-carousel">
-        <div class="swiper-wrapper">
-          {% for item in homepage_news %}
-            <div class="swiper-slide">
-              <a href="{% url 'news:news_detail' item.id %}">
-                {% if item.image %}
-                  <img src="{{ item.image.url }}" alt="{{ item.title }}" class="slide-image">
-                {% else %}
-                  <img src="{% static 'images/placeholder.jpg' %}" alt="Placeholder" class="slide-image">
-                {% endif %}
-                <div class="slide-overlay"></div>
-                <div class="slide-content">
-                  <h2 class="slide-title">{{ item.title }}</h2>
-                  <p class="slide-description">{{ item.content|truncatewords:20 }}</p>
-                </div>
-              </a>
-            </div>
-          {% endfor %}
+<main class="bst-home" id="ana-icerik">
+  <section class="home-hero" aria-labelledby="home-hero-title">
+    <div class="home-container home-hero-layout {% if not hero_project and not hero_team_role and not hero_opportunity and not hero_event and not featured_students %}home-hero-layout--copy-only{% endif %}">
+      <div class="home-hero-copy" data-home-reveal>
+        <p class="home-kicker"><span></span>Trakya Üniversitesi · Keşan</p>
+        <h1 id="home-hero-title">Fikirlerin projeye, projelerin <em>gerçek etkiye</em> dönüştüğü yer.</h1>
+        <p class="home-hero-lead">Öğrenci projelerini, doğrulanmış yetenekleri, akademik rehberliği ve mezunların sektör deneyimini üretim odaklı tek bir ekosistemde buluşturuyoruz.</p>
+        <div class="home-actions">
+          <a href="{% url 'projects:project_list' %}" class="home-button home-button--primary">Projeleri Keşfet<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+          <a href="{% url 'portal:talent_list' %}" class="home-button home-button--secondary">Yetenek Ağını Keşfet</a>
         </div>
-        <!-- Add Pagination -->
-        <div class="swiper-pagination"></div>
-        <!-- Add Navigation -->
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
+        <a href="#kurumlar-icin" class="home-institution-link">Kurumunuz için iş birliği <span aria-hidden="true">→</span></a>
+      </div>
+
+      {% if hero_project or hero_team_role or hero_opportunity or hero_event or featured_students %}
+      <div class="home-mosaic" aria-label="BST Portal canlı ekosistem vitrini" data-home-reveal>
+        {% if hero_project %}
+        <a href="{{ hero_project.get_absolute_url }}" class="home-mosaic-project">
+          <div class="home-mosaic-cover">
+            {% include 'portal/partials/home_abstract_cover.html' with project=hero_project eager=True %}
+            <span class="home-project-badge">{{ hero_project.home_label }}</span>
+          </div>
+          <div class="home-mosaic-project-copy">
+            <p>{{ hero_project.project_type.name }} <span>·</span> {{ hero_project.get_development_status_display }}</p>
+            <h2>{{ hero_project.title }}</h2>
+            <div class="home-mosaic-project-meta">
+              <div class="home-tag-list">{% for technology in hero_project.technologies.all|slice:':3' %}<span>{{ technology.name }}</span>{% endfor %}</div>
+              <div class="home-project-team" aria-label="Proje ekibi"><span title="{{ hero_project.created_by.get_full_name|default:hero_project.created_by.username }}">{{ hero_project.created_by.first_name|first }}{{ hero_project.created_by.last_name|first }}</span>{% for member in hero_project.team.all|slice:':3' %}{% if member.pk != hero_project.created_by_id %}<span title="{{ member.get_full_name|default:member.username }}">{{ member.first_name|first }}{{ member.last_name|first }}</span>{% endif %}{% endfor %}</div>
+            </div>
+          </div>
+        </a>
+        {% endif %}
+
+        {% if hero_team_role %}
+        <a href="{{ hero_team_role.home_url }}" class="home-mosaic-signal home-mosaic-signal--role">
+          <span class="home-mosaic-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg></span>
+          <p><small>Açık ekip rolü</small><strong>{{ hero_team_role.title }}</strong><span>{{ hero_team_role.team.name }} · Ekibi incele</span></p>
+        </a>
+        {% elif hero_opportunity %}
+        <a href="{{ hero_opportunity.home_url }}" class="home-mosaic-signal home-mosaic-signal--role">
+          <span class="home-mosaic-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg></span>
+          <p><small>{{ hero_opportunity.home_kind }}</small><strong>{{ hero_opportunity.title }}</strong><span>Fırsatı incele</span></p>
+        </a>
+        {% endif %}
+
+        {% if hero_event %}
+        <a href="{% url 'events:event_detail' hero_event.pk %}" class="home-mosaic-signal home-mosaic-signal--event">
+          <time datetime="{{ hero_event.start_date|date:'c' }}"><strong>{{ hero_event.start_date|date:'d' }}</strong><span>{{ hero_event.start_date|date:'M' }}</span></time>
+          <p><small>Yaklaşan etkinlik</small><strong>{{ hero_event.title }}</strong><span>{{ hero_event.location|default:'Konum yakında' }}</span></p>
+        </a>
+        {% elif featured_students %}
+        <a href="{% url 'portal:talent_list' %}" class="home-mosaic-signal home-mosaic-signal--people">
+          <div class="home-avatar-group" aria-label="Öne çıkan topluluk üyeleri">{% for profile in featured_students|slice:':4' %}<span title="{{ profile.user.get_full_name|default:profile.user.username }}">{% if profile.profile_picture %}<img src="{{ profile.profile_picture.url }}" alt="">{% else %}{{ profile.user.first_name|first }}{{ profile.user.last_name|first }}{% endif %}</span>{% endfor %}</div>
+          <p><small>Üreten topluluk</small><strong>{{ stats.students }} yetenek profili</strong><span>İnsanları keşfet</span></p>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="home-metrics" aria-labelledby="home-metrics-title">
+    <div class="home-container">
+      <div class="home-metrics-intro" data-home-reveal><p class="home-eyebrow">Canlı ekosistem</p><h2 id="home-metrics-title">Rakamların arkasında gerçek üretim var.</h2></div>
+      <div class="home-metrics-grid">
+        {% for key, value in stats.items %}
+        <article class="home-metric home-metric--{{ key }}" data-home-reveal>
+          <div class="home-metric-top">
+            <span class="home-metric-icon">{% if key == 'projects' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v10H4zM8 13h8M8 16h5"/></svg>{% elif key == 'students' %}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.4-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></svg>{% elif key == 'alumni' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5M21 9v6"/></svg>{% elif key == 'technologies' %}<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M20 9h3M1 15h3M20 15h3"/></svg>{% else %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg>{% endif %}</span>
+            <span class="home-metric-mark"></span>
+          </div>
+          <strong>{{ value }}</strong>
+          <h3>{% if key == 'projects' %}Yayındaki Proje{% elif key == 'students' %}Üreten Öğrenci{% elif key == 'alumni' %}Mezun Bağlantısı{% elif key == 'technologies' %}Teknoloji Ekosistemi{% else %}Açık Fırsat{% endif %}</h3>
+          <p>{% if key == 'projects' %}İncelenebilir proje çıktısı{% elif key == 'students' %}Herkese açık yetenek profili{% elif key == 'alumni' %}Akademiden sektöre uzanan ağ{% elif key == 'technologies' %}Projelerde kullanılan araçlar{% else %}Başvuruya açık ilan ve roller{% endif %}</p>
+        </article>
+        {% endfor %}
       </div>
     </div>
+  </section>
 
-    <!-- Events & News Section -->
-    <section class="content-section" style="padding-top: 0;">
-      <div class="section-grid">
-        <!-- Events -->
-        <div>
-          <div class="section-header">
-            <h2 class="section-title">Etkinlikler</h2>
-            <a href="{% url 'events:event_list' %}" class="section-link">
-              Tüm etkinlikleri gör
-              <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="ml-1 h-4 w-4 section-link-icon" />
-            </a>
-          </div>
-
-          {% if events %}
-            <div class="card-grid">
-              {% for event in events %}
-                <a href="{% url 'events:event_detail' event.id %}">
-                  <div class="card event-card">
-                    <div class="card-content md:w-full">
-                      <div class="card-icon d-flex align-items-center mb-2">
-                        <img src="{% static 'images/icons/calendar.svg' %}" alt="Takvim" class="img-fluid rounded icon-32" />
-                        <div class="card-date-container">
-                          <div class="card-date">{{ event.start_date|date:'d M' }}</div>
-                        </div>
-                      </div>
-                      <div class="card-body">
-                        <div>
-                          <h3 class="card-title">{{ event.title }}</h3>
-                          <p class="card-description">{{ event.description }}</p>
-                        </div>
-                        <div class="card-meta">
-                          <span class="event-location">{{ event.location }}</span>
-                          <span class="card-meta-separator">•</span>
-                          <span class="event-time">{{ event.created_at}}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card-grid">
-              {% for _ in '123'|make_list %}
-                <div class="loading-skeleton"></div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        </div>
-
-        <!-- News -->
-        <div>
-          <div class="section-header">
-            <h2 class="section-title">Haberler</h2>
-            <a href="{% url 'news:news_list' %}" class="section-link">
-              Tüm haberleri gör
-              <img src="{% static 'images/icons/arrow-right.svg' %}" alt="" class="section-link-icon ml-1 h-4 w-4" />
-            </a>
-          </div>
-
-          {% if all_news %}
-            <div class="card-grid">
-              {% for item in all_news %}
-                <a href="{% url 'news:news_detail' item.id %}">
-                  <div class="card news-card">
-                    <div class="card-content md:w-full">
-                      <div class="card-icon d-flex align-items-center mb-2">
-                        <img src="{% static 'images/icons/newspaper.svg' %}" alt="haber" class="img-fluid rounded icon-32" />
-                        <div class="card-date-container">
-                          <div class="card-date">{{ item.date|date:'d M' }}</div>
-                        </div>
-                      </div>
-                      <div class="card-body">
-                        <div>
-                          <h3 class="card-title">{{ item.title }}</h3>
-                          <p class="card-description">{{ item.content }}</p>
-                        </div>
-                        <div class="flex flex-col flex-1 justify-end">
-                          <div class="card-meta">
-                            <span>{{ item.source }}</span>
-                            <span class="card-meta-separator">•</span>
-                            <span>{{ item.date }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card-grid">
-              {% for _ in '123'|make_list %}
-                <div class="loading-skeleton"></div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        </div>
+  {% if home_projects %}
+  <section class="home-section home-projects" aria-labelledby="home-projects-title">
+    <div class="home-container">
+      <header class="home-section-heading" data-home-reveal>
+        <div><p class="home-eyebrow">Üretilen işler</p><h2 id="home-projects-title">Fikirden çalışan ürüne.</h2><p>Öğrencilerin teknoloji, araştırma ve ekip çalışmasıyla gerçek çıktılara dönüştürdüğü projeler.</p></div>
+        <a href="{% url 'projects:project_list' %}" class="home-text-link">Tüm projeleri gör <span aria-hidden="true">→</span></a>
+      </header>
+      <div class="home-project-grid" data-count="{{ home_projects|length }}">
+        {% for project in home_projects %}{% include 'portal/partials/home_project.html' with project=project %}{% endfor %}
       </div>
-    </section>
+    </div>
+  </section>
+  {% endif %}
 
-    <!-- Features Section -->
-    <div class="home-main-container">
-      <div class="text-center">
-        <h2 class="section-title">Neler Sunuyoruz?</h2>
-        <div style="align-self: center;">
-          <p class="section-desc">Platformumuz, Bilişim Sistemleri ve Teknolojileri bölümü öğrencilerini, öğretim üyelerini ve mezunlarını bir araya getiriyor.</p>
-        </div>
+  {% if featured_students or open_team_roles or open_project_requests or open_opportunities or events %}
+  <section class="home-section home-community" aria-labelledby="home-community-title">
+    <div class="home-container">
+      <header class="home-section-heading" data-home-reveal>
+        <div><p class="home-eyebrow">Community ecosystem</p><h2 id="home-community-title">Doğru insan, doğru fırsat, doğru an.</h2><p>Yetenekler, açık roller ve topluluk buluşmaları aynı üretim akışında bir araya geliyor.</p></div>
+        <div class="home-community-nav"><a href="{% url 'projects:team_list' %}">Ekipler</a><a href="{% url 'projects:request_list' %}">İlanlar</a><a href="{% url 'events:event_list' %}">Etkinlikler</a></div>
+      </header>
+
+      <div class="home-ecosystem-grid {% if featured_students and not open_team_roles and not open_project_requests and not open_opportunities and not events %}home-ecosystem-grid--talent-only{% endif %}">
+        {% if featured_students %}
+        <article class="home-ecosystem-panel home-ecosystem-talent" data-home-reveal>
+          <header class="home-panel-heading"><div><span class="home-panel-icon home-panel-icon--talent"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.4-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></svg></span><p><small>Yetenek ağı</small><strong>Birlikte üreteceğin insanları bul.</strong></p></div><a href="{% url 'portal:talent_list' %}">Tümünü gör →</a></header>
+          <div class="home-talent-grid" data-count="{{ featured_students|length }}">{% for profile in featured_students|slice:':4' %}{% include 'portal/partials/home_talent.html' with profile=profile %}{% endfor %}</div>
+        </article>
+        {% endif %}
+
+        {% if open_team_roles or open_project_requests or open_opportunities %}
+        <article class="home-ecosystem-panel home-ecosystem-opportunities" data-home-tabs data-home-reveal>
+          <header class="home-panel-heading home-panel-heading--stack">
+            <div><span class="home-panel-icon home-panel-icon--opportunity"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg></span><p><small>Açık roller</small><strong>Üretime katılabileceğin fırsatlar.</strong></p></div>
+            {% if open_team_roles or open_project_requests %}{% if open_opportunities %}<div class="home-tab-list" role="tablist" aria-label="Fırsat türü"><button type="button" role="tab" id="project-opportunities-tab" aria-controls="project-opportunities" aria-selected="true" tabindex="0">Ekip &amp; Proje</button><button type="button" role="tab" id="career-opportunities-tab" aria-controls="career-opportunities" aria-selected="false" tabindex="-1">Kariyer</button></div>{% endif %}{% endif %}
+          </header>
+
+          {% if open_team_roles or open_project_requests %}
+          <div class="home-tab-panel" id="project-opportunities" {% if open_opportunities %}role="tabpanel" aria-labelledby="project-opportunities-tab"{% endif %}>
+            {% for team_role in open_team_roles|slice:':2' %}<a href="{{ team_role.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--team"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.4-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></svg></span><span class="home-opportunity-copy"><small>Açık ekip rolü</small><strong>{{ team_role.title }}</strong><span>{{ team_role.team.name }}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
+            {% for request_item in open_project_requests|slice:':3' %}<a href="{{ request_item.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v10H4zM8 13h8M8 16h5"/></svg></span><span class="home-opportunity-copy"><small>{{ request_item.project_type.name }}</small><strong>{{ request_item.title }}</strong><span>{% if request_item.deadline %}Son tarih {{ request_item.deadline|date:'d M' }}{% else %}Başvuruya açık{% endif %}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
+            <a href="{% url 'projects:request_list' %}" class="home-list-footer">Tüm ekip ve proje ilanları →</a>
+          </div>
+          {% endif %}
+
+          {% if open_opportunities %}
+          <div class="home-tab-panel" id="career-opportunities" {% if open_team_roles or open_project_requests %}role="tabpanel" aria-labelledby="career-opportunities-tab" hidden{% endif %}>
+            {% for opportunity in open_opportunities|slice:':3' %}<a href="{{ opportunity.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--career"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg></span><span class="home-opportunity-copy"><small>{{ opportunity.get_opportunity_type_display }} · {{ opportunity.get_work_mode_display }}</small><strong>{{ opportunity.title }}</strong><span>{{ opportunity.organization }}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
+            <a href="{% url 'career:opportunity_list' %}" class="home-list-footer">Tüm kariyer fırsatları →</a>
+          </div>
+          {% endif %}
+        </article>
+        {% endif %}
+
+        {% if events %}
+        <aside class="home-ecosystem-panel home-ecosystem-events" aria-labelledby="home-events-title" data-home-reveal>
+          <header class="home-panel-heading"><div><span class="home-panel-icon home-panel-icon--event"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><p><small>Takvim</small><strong id="home-events-title">Yaklaşan buluşmalar.</strong></p></div><a href="{% url 'events:event_list' %}">Tümü →</a></header>
+          <div class="home-event-list">{% for event in events %}<a href="{% url 'events:event_detail' event.pk %}" class="home-event-row"><time datetime="{{ event.start_date|date:'c' }}"><strong>{{ event.start_date|date:'d' }}</strong><span>{{ event.start_date|date:'M' }}</span></time><span><strong>{{ event.title }}</strong><small>{{ event.location|default:'Konum yakında açıklanacak' }}</small></span></a>{% endfor %}</div>
+        </aside>
+        {% endif %}
       </div>
-      <div class="features-grid">
-        <!-- Feature 1 -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <img src="{% static 'images/icons/document.svg' %}" alt="" class="h-6 w-6" />
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="home-section home-network" aria-labelledby="home-network-title">
+    <div class="home-container">
+      <header class="home-section-heading" data-home-reveal><div><p class="home-eyebrow">Akademi × sektör</p><h2 id="home-network-title">Deneyim, üretimin yönünü değiştirir.</h2><p>Akademik uzmanlık ve mezunların sektör bağlantıları öğrenci projelerine güven, bağlam ve gerçek dünya perspektifi kazandırır.</p></div></header>
+      <div class="home-network-layout">
+        <div class="home-academics" data-home-reveal>
+          <div class="home-network-subhead"><div><small>Akademik rehberlik</small><strong>Uzmanlıkla yön verenler</strong></div><a href="{% url 'portal:academic_list' %}">Tüm akademisyenler →</a></div>
+          <div class="home-academic-grid">
+            {% for profile in academics|slice:':4' %}<article class="home-academic-card"><span class="home-academic-avatar">{% if profile.profile_picture %}<img src="{{ profile.profile_picture.url }}" alt="" loading="lazy">{% else %}{{ profile.user.first_name|first }}{{ profile.user.last_name|first }}{% endif %}</span><div><strong>{{ profile.get_display_title }} {{ profile.user.get_full_name }}</strong><p>{% for category in profile.categories.all|slice:':1' %}{{ category.name }}{% empty %}{{ profile.department|default:'Bilişim Sistemleri ve Teknolojileri' }}{% endfor %}</p></div></article>{% empty %}<p class="home-inline-empty">Akademik profiller güncellendiğinde burada yer alacak.</p>{% endfor %}
           </div>
-          <h3 class="feature-title">Proje Vitrini</h3>
-          <p class="feature-description">Projelerinizi yükleyin ve sergileyin. Öğretim üyeleri ve arkadaşlarınızdan geri bildirim alarak çalışmalarınızı geliştirin.</p>
         </div>
-        <!-- Feature 2 -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <img src="{% static 'images/icons/users.svg' %}" alt="" class="h-6 w-6" />
-          </div>
-          <h3 class="feature-title">Mezun Ağı</h3>
-          <p class="feature-description">Sizden önce mezun olanlarla bağlantı kurun. Deneyimlerinden öğrenin ve profesyonel ilişkiler geliştirin.</p>
-        </div>
-        <!-- Feature 3 -->
-        <div class="feature-card">
-          <div class="feature-icon">
-            <img src="{% static 'images/icons/newspaper.svg' %}" alt="" class="h-6 w-6" />
-          </div>
-          <h3 class="feature-title">Teknoloji Haberleri</h3>
-          <p class="feature-description">BST öğrencileri için özel olarak seçilmiş teknoloji dünyasındaki son gelişmeler ve haberlerle güncel kalın.</p>
+        <div class="home-alumni-network" data-home-reveal>
+          <div class="home-network-subhead"><div><small>Mezun ve sektör ağı</small><strong>Akademiden gerçek dünyaya</strong></div><a href="{% url 'alumni:alumni_list' %}">Mezunları keşfet →</a></div>
+          <div class="home-alumni-primary"><strong>{{ stats.alumni }}</strong><span>mezun bağlantısı</span><p>BST topluluğunun sektöre uzanan deneyim ağı.</p></div>
+          <div class="home-alumni-secondary"><p><strong>{{ career_stats.companies }}</strong><span>farklı şirket</span></p><p><strong>{{ career_stats.mentors }}</strong><span>mentorluğa açık mezun</span></p></div>
+          {% if top_companies %}<div class="home-company-cloud" aria-label="Mezunların çalıştığı öne çıkan şirketler">{% for company in top_companies|slice:':8' %}<span>{{ company.company }}</span>{% endfor %}</div>{% endif %}
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-   {% block extra_js %}
-   <script>
-     document.addEventListener('DOMContentLoaded', function () {
-       // Mobil cihaz kontrolü
-       const isMobile = window.innerWidth <= 767;
+  <section class="home-partnership" id="kurumlar-icin" aria-labelledby="home-partnership-title">
+    <div class="home-container">
+      <div class="home-partnership-surface" data-home-reveal>
+        <div class="home-partnership-copy"><p class="home-eyebrow">Kurumlar için</p><h2 id="home-partnership-title">BST Akademi ile iş birliği yapın.</h2><p>Proje geliştirme, yetenek erişimi, staj, mentorluk ve ortak etkinlikler için öğrenci topluluğumuzla bağlantı kurun.</p></div>
+        <div class="home-partnership-actions"><ul><li><span>01</span>Gerçek problem için doğru ekip</li><li><span>02</span>Akademik inceleme ve yönlendirme</li><li><span>03</span>Güvenli, takip edilebilir iletişim</li></ul><a href="{% url 'career:collaboration_create' %}" class="home-button home-button--light">İş Birliği Talebi Oluştur<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
+      </div>
+    </div>
+  </section>
 
-       const swiper = new Swiper('.hero-carousel', {
-         // Otomatik geçiş ve döngü
-         rewind: true,
+  <section class="home-final-cta" aria-labelledby="home-final-title">
+    <div class="home-container home-final-layout" data-home-reveal>
+      <p class="home-eyebrow">Sıradaki proje senin olabilir</p>
+      <h2 id="home-final-title">Fikrini gerçeğe dönüştür.</h2>
+      <p>BST Portal’da ekibini kur, üret ve çalışmalarını görünür hale getir.</p>
+      <div class="home-actions"><a href="{% url 'projects:project_create' %}" class="home-button home-button--primary">Yeni Proje Oluştur</a><a href="{% url 'projects:project_list' %}" class="home-button home-button--secondary">Projeleri Keşfet <span aria-hidden="true">→</span></a></div>
+    </div>
+  </section>
+</main>
+{% endblock %}
 
-         autoplay: {
-           delay: isMobile ? 3000 : 5000, // Mobil'de daha hızlı geçiş
-           disableOnInteraction: false,
-         },
-
-         // Geçiş efekti - mobil'de slide efekti daha iyi
-         effect: isMobile ? 'slide' : 'fade',
-         fadeEffect: {
-           crossFade: true
-         },
-
-         // İleri/Geri butonları - mobil'de gizli
-         navigation: {
-           nextEl: '.swiper-button-next',
-           prevEl: '.swiper-button-prev',
-         },
-
-         // Nokta göstergeleri
-         pagination: {
-           el: '.swiper-pagination',
-           clickable: true,
-         },
-
-         // Mobil dostu ayarlar
-         touchRatio: 1.5,
-         touchAngle: 45,
-         grabCursor: true,
-
-         // Responsive ayarlar
-         breakpoints: {
-           // Mobil
-           0: {
-             slidesPerView: 1,
-             spaceBetween: 0,
-           },
-           // Tablet ve üstü
-           768: {
-             slidesPerView: 1,
-             spaceBetween: 0,
-           }
-         }
-       });
-
-       // Mobil'de daha iyi performans için
-       if (isMobile) {
-         swiper.on('slideChange', function () {
-           // Geçiş sırasında performans optimizasyonu
-           const activeSlide = swiper.slides[swiper.activeIndex];
-           const images = activeSlide.querySelectorAll('img');
-           images.forEach(img => {
-             if (img.complete) {
-               img.style.transform = 'scale(1.05)';
-             }
-           });
-         });
-       }
-     });
-   </script>
-   {% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/homepage.js' %}?v=20260821.2" defer></script>
 {% endblock %}

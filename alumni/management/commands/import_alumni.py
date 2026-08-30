@@ -3,6 +3,9 @@ import os
 import re
 from datetime import datetime, date
 from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.db import transaction
+from django.db.models import Q
 from alumni.models import Alumni
 
 
@@ -13,7 +16,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--db-path',
             type=str,
-            default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), 'Mezun-Board-main', 'linkedin_data.db'),
+            default=os.path.join(settings.BASE_DIR, 'linkedin_data.db'),
             help='SQLite veritabanı dosya yolu',
         )
         parser.add_argument(
@@ -22,6 +25,7 @@ class Command(BaseCommand):
             help='Mevcut user=None mezun kayıtlarını sil ve yeniden yükle',
         )
 
+    @transaction.atomic
     def handle(self, *args, **options):
         db_path = options['db_path']
         
@@ -50,8 +54,13 @@ class Command(BaseCommand):
             linkedin_url = profile['linkedin_url'] or ''
             profile_photo = profile['profile_photo'] or ''
 
-            # Aynı isimde zaten kayıt var mı kontrol et
-            if Alumni.objects.filter(full_name=name, user__isnull=True).exists():
+            existing = Alumni.objects.filter(user__isnull=True).filter(
+                Q(linkedin_url=linkedin_url) if linkedin_url else Q(full_name=name)
+            ).first()
+            if existing:
+                if not existing.is_show_in_alumni_list:
+                    existing.is_show_in_alumni_list = True
+                    existing.save(update_fields=['is_show_in_alumni_list', 'updated_at'])
                 skipped_count += 1
                 continue
 
@@ -106,7 +115,7 @@ class Command(BaseCommand):
                 graduation_year=graduation_year,
                 experience_level=experience_level,
                 bio='',
-                is_show_in_alumni_list=False,
+                is_show_in_alumni_list=True,
             )
             created_count += 1
 

@@ -4,17 +4,14 @@
 {% block dashboard_content %}
 <div class="mb-6 flex flex-row justify-between items-center gap-4">
     <div>
-        <h1 class="text-2xl font-bold">FAQ Istatistikleri</h1>
-        <p class="text-gray-400">Onceden cevaplanmis sorular ve kullanilma verileri</p>
+        <h1 class="text-2xl font-bold">SSS İstatistikleri</h1>
+        <p class="text-gray-400">Önceden cevaplanmış sorular ve kullanım verileri</p>
     </div>
     <div class="flex items-center gap-3">
         <a href="{% url 'ai_assistant:chat' %}" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition text-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            AI Asistana Don
+            AI Asistana Dön
         </a>
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
     </div>
 </div>
 
@@ -26,7 +23,7 @@
                 <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             </div>
             <div>
-                <p class="text-sm text-gray-400">Toplam Cache</p>
+                <p class="text-sm text-gray-400">Toplam Önbellek Kaydı</p>
                 <p class="text-2xl font-bold">{{ total_cache }}</p>
             </div>
         </div>
@@ -59,7 +56,7 @@
 {% if caches %}
 <div class="mb-4">
     <button onclick="clearAllCache()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition text-sm">
-        Tum Cache Temizle
+        Tüm Önbelleği Temizle
     </button>
 </div>
 {% endif %}
@@ -70,7 +67,7 @@
         <thead>
             <tr class="bg-gray-700">
                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Soru</th>
-                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-20">Hit</th>
+                <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-20">Kullanım</th>
                 <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-32">Olusturulma</th>
                 <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-32">Son Kullanim</th>
                 <th class="px-4 py-3 text-center text-sm font-medium text-gray-300 w-24">Islem</th>
@@ -116,6 +113,37 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<div class="mt-8">
+    <div class="mb-3">
+        <h2 class="text-xl font-semibold">Cevaplanamayan Sorular</h2>
+        <p class="text-sm text-gray-400">Kişisel veri örüntüleri ayıklanarak gruplanan, kaynak eksiğini gösteren sorular.</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-x-auto">
+        <table class="w-full min-w-[640px]">
+            <thead>
+                <tr class="bg-gray-700">
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Güvenli soru özeti</th>
+                    <th class="px-4 py-3 text-center text-sm font-medium text-gray-300">Tekrar</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Rol dağılımı</th>
+                    <th class="px-4 py-3 text-center text-sm font-medium text-gray-300">Son sorulma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in unanswered %}
+                <tr class="border-t border-gray-700">
+                    <td class="px-4 py-3 text-sm">{{ item.safe_summary }}</td>
+                    <td class="px-4 py-3 text-center text-sm font-semibold">{{ item.ask_count }}</td>
+                    <td class="px-4 py-3 text-xs text-gray-400">{{ item.roles }}</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-400">{{ item.last_asked_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">Henüz cevaplanamayan soru kaydı yok.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>

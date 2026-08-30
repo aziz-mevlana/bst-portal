@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Arama | BST Portal{% endblock %}
+{% block content %}
+<main class="min-h-screen bg-[#080d18] px-4 py-12">
+  <div class="mx-auto max-w-7xl">
+    <p class="text-sm font-semibold uppercase tracking-widest text-blue-400">Keşfet</p>
+    <h1 class="mt-2 text-4xl font-black text-white">Portal genelinde ara</h1>
+    <p class="mt-3 text-gray-400">Bir ifade yazın veya yalnızca filtreleri kullanarak keşfedin.</p>
+    <form method="get" class="search-filter-form mt-7 rounded-2xl border border-gray-700 bg-[#111827] p-4 sm:p-6">
+      {{ form.tab }}
+      <label for="{{ form.q.id_for_label }}" class="sr-only">Aranacak ifade</label>
+      <div class="flex flex-col gap-3 sm:flex-row">{{ form.q }}<button class="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white">Ara</button></div>
+      {{ form.q.errors }}{{ form.tab.errors }}
+      <details class="mt-4" {% if has_filters or form.errors %}open{% endif %}>
+        <summary class="cursor-pointer text-sm font-semibold text-gray-300">Gelişmiş filtreler</summary>
+        <p class="mt-3 text-xs text-gray-400">Filtreler birlikte uygulanır. Proje filtreleri yalnızca projeleri; sınıf ve uygunluk filtreleri ilgili kişileri gösterir.</p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {% for field in form.filters %}<div><label for="{{ field.id_for_label }}" class="mb-2 block text-sm text-gray-300">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+        </div>
+        <div class="mt-5 flex flex-wrap items-center gap-4"><button class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white">Filtreleri uygula</button><a href="{% url 'portal:global_search' %}" class="text-sm text-gray-300 hover:text-white">Filtreleri temizle</a></div>
+      </details>
+    </form>
+    <nav aria-label="Arama kategorileri" class="mt-7 flex gap-2 overflow-x-auto pb-2">
+      {% for tab in tabs %}<a href="{{ tab.url }}" {% if active_tab == tab.key %}aria-current="page"{% endif %} class="whitespace-nowrap rounded-full px-4 py-2 text-sm {% if active_tab == tab.key %}bg-blue-600 text-white{% else %}bg-gray-800 text-gray-300{% endif %}">{{ tab.label }}{% if has_search %} <span class="ml-1 opacity-70">{{ tab.count }}</span>{% endif %}</a>{% endfor %}
+    </nav>
+    {% if has_search %}<p class="mt-5 text-sm text-gray-400">{{ total_visible }} sonuç bulundu.{% if active_tab == 'all' %} Her kategoriden ilk 6 sonuç gösteriliyor.{% endif %}</p>{% endif %}
+    {% if active_tab == 'alumni' and not user.is_authenticated %}<p class="mt-5 text-gray-400">Mezunları aramak için <a class="text-blue-300" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">giriş yapın</a>.</p>{% endif %}
+    <div class="mt-8 space-y-10">
+      {% for section in sections %}
+      <section><div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold text-white">{{ section.label }}</h2>{% if section.has_more %}<a href="{{ section.more_url }}" class="text-sm text-blue-300">{{ section.count }} sonucun tümü →</a>{% endif %}</div>
+        <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{% for card in section.cards %}
+          <a href="{{ card.url }}" class="min-w-0 rounded-2xl border border-gray-700 bg-[#111827] p-5 hover:border-blue-500"><h3 class="break-words text-lg font-bold text-white">{{ card.label }}</h3><p class="mt-2 line-clamp-2 break-words text-sm text-gray-400">{{ card.subtitle|truncatechars:180 }}</p></a>
+        {% endfor %}</div>
+      </section>
+      {% empty %}{% if has_search %}<div class="rounded-2xl border border-gray-800 bg-gray-900/50 p-10 text-center text-gray-400">Sonuç bulunamadı. Filtreleri azaltabilir veya farklı bir ifade deneyebilirsiniz.</div>{% endif %}{% endfor %}
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}<nav aria-label="Sonuç sayfaları" class="mt-8 flex items-center justify-center gap-5">{% if previous_url %}<a href="{{ previous_url }}" class="rounded-xl bg-gray-800 px-4 py-2 text-white">← Önceki</a>{% endif %}<span class="text-gray-400">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>{% if next_url %}<a href="{{ next_url }}" class="rounded-xl bg-gray-800 px-4 py-2 text-white">Sonraki →</a>{% endif %}</nav>{% endif %}
+  </div>
+</main>
+{% endblock %}

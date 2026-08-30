@@ -6,11 +6,6 @@
         <h1 class="text-2xl font-bold">Yetenekler</h1>
         <p class="text-gray-400 hidden sm:block">Kategoriler ve teknolojileri yönetin.</p>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -89,18 +84,19 @@
             <input type="hidden" id="skillType" name="type">
             <input type="hidden" id="skillId" name="id">
             <div>
-                <label class="block text-sm font-medium text-gray-400 mb-2">İsim</label>
+                <label for="skillName" class="block text-sm font-medium text-gray-400 mb-2">İsim</label>
                 <input type="text" id="skillName" name="name" required
                        class="w-full px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-400 mb-2">Renk</label>
-                <div class="flex items-center gap-3">
+                <label for="skillColorText" class="block text-sm font-medium text-gray-400 mb-2">Renk</label>
+                <div class="skill-color-field">
                     <input type="color" id="skillColor" name="color" value="#3B82F6"
+                           aria-label="Renk seç"
                            class="w-12 h-10 rounded cursor-pointer border-0">
                     <input type="text" id="skillColorText" value="#3B82F6"
-                           class="flex-1 px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
-                           onchange="document.getElementById('skillColor').value = this.value">
+                           aria-label="Renk kodu" maxlength="7" pattern="#[0-9a-fA-F]{6}" required
+                           class="flex-1 px-4 py-2 bg-[#181e29] border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                 </div>
             </div>
             <div class="flex gap-3 pt-2">
@@ -170,7 +166,13 @@
     }
 
     document.getElementById('skillColor').addEventListener('input', function(e) {
-        document.getElementById('skillColorText').value = e.target.value;
+        document.getElementById('skillColorText').value = e.target.value.toUpperCase();
+    });
+
+    document.getElementById('skillColorText').addEventListener('input', function(e) {
+        if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
+            document.getElementById('skillColor').value = e.target.value;
+        }
     });
 
     document.getElementById('skillForm').addEventListener('submit', function(e) {

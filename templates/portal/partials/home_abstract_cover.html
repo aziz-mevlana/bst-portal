@@ -1,0 +1,18 @@
+{% with cover=project.cover_media %}
+  {% if cover and cover.file %}
+    <img src="{{ cover.file.url }}" alt="{{ cover.alt_text|default:project.title }}" loading="{% if eager %}eager{% else %}lazy{% endif %}">
+  {% elif cover and cover.external_url %}
+    <img src="{{ cover.external_url }}" alt="{{ cover.alt_text|default:project.title }}" loading="{% if eager %}eager{% else %}lazy{% endif %}">
+  {% else %}
+    <div class="home-abstract-cover home-abstract-cover--{{ project.home_cover_theme|default:'blue' }}" role="img" aria-label="{{ project.title }} için soyut teknoloji görseli">
+      <span class="home-cover-orbit home-cover-orbit--one"></span>
+      <span class="home-cover-orbit home-cover-orbit--two"></span>
+      <span class="home-cover-core"></span>
+      <svg viewBox="0 0 240 160" aria-hidden="true">
+        <path d="M22 126 70 78l31 29 57-68 60 49"/>
+        <path d="M26 34h42M175 128h39M36 48h21M190 114h21"/>
+        <circle cx="70" cy="78" r="4"/><circle cx="101" cy="107" r="4"/><circle cx="158" cy="39" r="4"/>
+      </svg>
+    </div>
+  {% endif %}
+{% endwith %}

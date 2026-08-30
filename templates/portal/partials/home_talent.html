@@ -1,0 +1,9 @@
+<a href="{% url 'portal:portfolio_detail' slug=profile.public_slug %}" class="home-talent-card">
+  <span class="home-talent-avatar">{% if profile.profile_picture %}<img src="{{ profile.profile_picture.url }}" alt="" loading="lazy">{% else %}{{ profile.user.first_name|first }}{{ profile.user.last_name|first }}{% endif %}</span>
+  <span class="home-talent-copy">
+    <span><strong>{{ profile.user.get_full_name|default:profile.user.username }}</strong>{% if profile.user_type == 'staff_student' %}<small>BST Yetkilisi</small>{% endif %}</span>
+    <em>{{ profile.headline|default:'BST öğrencisi' }}</em>
+    <span class="home-talent-tags">{% for technology in profile.technologies.all|slice:':3' %}<small>{{ technology.name }}</small>{% endfor %}</span>
+  </span>
+  <span class="home-talent-foot"><span><strong>{{ profile.completed_project_count }}</strong> tamamlanan proje</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+</a>

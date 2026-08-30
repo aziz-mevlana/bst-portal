@@ -1,3 +1,70 @@
+/* Proje bölümü ikincil navigasyonu ve liste yüzeyleri */
+.project-section-nav {
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 16, 28, 0.94);
+}
+
+.project-section-nav-inner {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0.65rem 1rem;
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.project-section-nav a {
+    flex: 0 0 auto;
+    padding: 0.62rem 0.85rem;
+    border-radius: 0.7rem;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.project-section-nav a:hover,
+.project-section-nav a:focus-visible {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.055);
+    outline: none;
+}
+
+.project-section-nav a.active {
+    color: #dbeafe;
+    background: rgba(47, 111, 237, 0.18);
+}
+
+.project-list-hero {
+    padding: clamp(1rem, 2.5vw, 1.75rem) 0;
+    border-bottom: 1px solid var(--border);
+    background: radial-gradient(circle at 15% 10%, rgba(47, 111, 237, 0.08), transparent 42%);
+}
+
+.project-filter-panel {
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+.project-more-filters summary {
+    width: fit-content;
+    cursor: pointer;
+    color: #93c5fd;
+    font-size: 0.88rem;
+    font-weight: 600;
+    list-style-position: inside;
+}
+
+.project-more-filters summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 0.25rem;
+}
+
 /* Proje Kartları */
 .project-card {
     /* Tailwind ile kontrol edilecek, arka plan ve gölge kaldırıldı */

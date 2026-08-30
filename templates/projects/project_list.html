@@ -1,286 +1,39 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'projects/base.html' %}
 
-{% block title %}
-  BST Akademi | Projeler
+{% block title %}BST Portal | Projeler{% endblock %}
+
+{% block project_content %}
+    <header class="project-page-header project-list-hero">
+      <div class="max-w-3xl"><p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-400">BST Proje Vitrini</p><h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl">Fikirlerin ürüne dönüştüğü yer</h1><p class="mt-3 text-base leading-7 text-gray-400 sm:text-lg">Öğrencilerin, akademisyenlerin ve mezunların geliştirdiği teknoloji projelerini keşfedin.</p></div>
+    </header>
+
+    <form method="get" class="project-filter-panel mb-6 rounded-2xl border p-4">
+      <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Proje, problem veya çözüm ara" class="bst-field lg:col-span-2">
+        <select name="type" class="bst-field"><option value="">Tüm proje türleri</option>{% for type in project_types %}<option value="{{ type.pk }}" {% if selected_type == type.pk|stringformat:'s' %}selected{% endif %}>{{ type.name }}</option>{% endfor %}</select>
+        <select name="technology" class="bst-field"><option value="">Tüm teknolojiler</option>{% for technology in technologies %}<option value="{{ technology.pk }}" {% if selected_technology == technology.pk|stringformat:'s' %}selected{% endif %}>{{ technology.name }}</option>{% endfor %}</select>
+        <details class="project-more-filters md:col-span-2 lg:col-span-4" {% if selected_status or selected_source or selected_program or selected_category %}open{% endif %}>
+          <summary>Diğer filtreler</summary>
+          <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <select name="status" class="bst-field"><option value="">Tüm geliştirme durumları</option>{% for value, label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <select name="source" class="bst-field"><option value="">Tüm kaynaklar</option>{% for value, label in creation_sources %}<option value="{{ value }}" {% if selected_source == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <select name="program" class="bst-field"><option value="">Tüm programlar</option>{% for program in programs %}<option value="{{ program.pk }}" {% if selected_program == program.pk|stringformat:'s' %}selected{% endif %}>{{ program.name }}</option>{% endfor %}</select>
+            <select name="category" class="bst-field"><option value="">Tüm kategoriler</option>{% for category in categories %}<option value="{{ category.pk }}" {% if selected_category == category.pk|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>
+            <select name="sort" class="bst-field"><option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>En yeniler</option><option value="liked" {% if selected_sort == 'liked' %}selected{% endif %}>En çok beğenilen</option></select>
+          </div>
+        </details>
+        <div class="flex flex-wrap items-center gap-3 md:col-span-2 lg:col-span-4"><button class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-500">Filtrele</button>{% if has_active_filters %}<a href="{% url 'projects:project_list' %}" class="rounded-xl border border-gray-600 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800">Filtreleri temizle</a>{% endif %}</div>
+      </div>
+    </form>
+
+    {% if active_filter_labels %}<div class="mb-4 flex flex-wrap gap-2" aria-label="Aktif filtreler">{% for label in active_filter_labels %}<span class="rounded-full border border-blue-800/60 bg-blue-950/30 px-3 py-1 text-xs text-blue-200">{{ label }}</span>{% endfor %}</div>{% endif %}
+    <div class="mb-5"><p class="text-sm text-gray-400"><span class="font-semibold text-white">{{ total_count }}</span> proje bulundu</p></div>
+
+    <div id="project-grid" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {% include 'projects/partials/project_item.html' with projects=projects %}
+        {% if not projects %}<div class="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-700 px-5 py-10 text-center"><h2 class="text-xl font-semibold text-white">Bu filtrelerle eşleşen proje yok</h2><p class="mt-2 text-gray-500">Filtreleri değiştirerek tekrar deneyin.</p><div class="mt-5 flex flex-wrap justify-center gap-3">{% if has_active_filters %}<a href="{% url 'projects:project_list' %}" class="rounded-xl border border-gray-600 px-4 py-2 text-sm text-gray-300">Filtreleri temizle</a>{% endif %}<a href="{% url 'projects:request_list' %}" class="rounded-xl border border-blue-700 px-4 py-2 text-sm text-blue-200">Proje ilanlarını incele</a>{% if can_share_content %}<a href="{% url 'projects:project_create' %}" class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Yeni proje oluştur</a>{% endif %}</div></div>{% endif %}
+    </div>
+
+    {% if has_more %}<div class="mt-10 text-center"><button id="load-more" data-offset="{{ next_offset }}" class="rounded-xl border border-gray-600 px-6 py-3 font-semibold text-gray-300 hover:bg-gray-800">Daha fazla proje yükle</button></div>{% endif %}
+{% if has_more %}<script nonce="{{ csp_nonce }}">document.getElementById('load-more')?.addEventListener('click', async function(){this.disabled=true;const params=new URLSearchParams(window.location.search);params.set('offset',this.dataset.offset);try{const response=await fetch('{% url "projects:project_load_more" %}?'+params.toString(),{headers:{'X-Requested-With':'XMLHttpRequest'}});if(!response.ok)throw new Error();const data=await response.json();document.getElementById('project-grid').insertAdjacentHTML('beforeend',data.items);this.dataset.offset=data.next_offset;if(!data.has_more)this.remove();}catch(e){this.textContent='Tekrar dene';this.disabled=false;}finally{if(document.body.contains(this))this.disabled=false;}});</script>{% endif %}
 {% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/projects.css' %}">
-<style>
-/* Technology tag styling */
-.technology-tag {
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.technology-tag::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.technology-tag:hover::before {
-  left: 100%;
-}
-
-/* Apply dynamic colors to technology tags */
-.technology-tag[data-technology-color] {
-  background-color: var(--technology-bg);
-  color: var(--technology-color);
-  border: 1px solid var(--technology-border);
-}
-
-.technology-tag:hover {
-  transform: translateY(-1px);
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 py-6 page-container-large"> 
-    <div class="mb-8">    
-        <!-- Mobilde Açılır Filtre Bölümü -->
-        <div class="md:hidden">
-            <button type="button" onclick="toggleFilters()" class="w-full flex items-center justify-between px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700">
-                <span class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-                    </svg>
-                    Filtreleme Araçları
-                </span>
-                <svg id="filterToggleIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 transition-transform">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                </svg>
-            </button>
-            <div id="filterContent" class="hidden mt-4">
-                <form method="get" class="grid grid-cols-1 gap-4">
-                    <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
-                    <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                        <option value="">Tüm Kategoriler</option>
-                        {% for category in categories %}
-                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <select name="technology" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                        <option value="">Tüm Teknolojiler</option>
-                        {% for technology in technologies %}
-                        <option value="{{ technology.id }}" {% if selected_technology == technology.id|stringformat:"s" %}selected{% endif %}>
-                            {{ technology.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <select name="status" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                        <option value="">Tüm Durumlar</option>
-                        {% for status_value, status_label in statuses %}
-                        <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>
-                            {{ status_label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button> 
-                </form>
-            </div>
-        </div>
-
-        <!-- Desktop Filtreleme -->
-        <form method="get" class=" md:block hidden md:grid grid-cols-5 gap-4">
-            <input type="text" name="q" class="project-list-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Proje ara..." value="{{ request.GET.q }}">
-            <select name="category" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                <option value="">Tüm Kategoriler</option>
-                {% for category in categories %}
-                <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
-                    {{ category.name }}
-                </option>
-                {% endfor %}
-            </select>
-            <select name="technology" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                <option value="">Tüm Teknolojiler</option>
-                {% for technology in technologies %}
-                <option value="{{ technology.id }}" {% if selected_technology == technology.id|stringformat:"s" %}selected{% endif %}>
-                    {{ technology.name }}
-                </option>
-                {% endfor %}
-            </select>
-            <select name="status" class="project-list-input px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                <option value="">Tüm Durumlar</option>
-                {% for status_value, status_label in statuses %}
-                <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>
-                    {{ status_label }}
-                </option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">Filtrele</button> 
-        </form>
-        
-    </div>
-    
-     <!-- Proje Listesi -->
-     <div id="project-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-         {% if is_authenticated %}
-         <!-- Proje Ekle Kartı -->
-         <a href="{% url 'projects:project_create' %}" class="project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 hover:border-blue-400 bg-gray-800 hover:bg-gray-750 group">
-             <div class="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center mb-4 group-hover:bg-blue-800 transition">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-400">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                 </svg>
-             </div>
-             <h3 class="text-xl font-bold group-hover:text-blue-400 transition">Yeni Proje</h3>
-             <p class=" text-center mt-2">Proje eklemek için tıklayın</p>
-         </a>
-         {% endif %}
-        
-        {% for project in projects %}
-        <a href="{% url 'projects:project_detail' project.id %}" class="project-item project-list-card rounded-xl shadow-lg hover:shadow-2xl transition p-6 flex flex-col justify-between">
-            <div>
-                <div class="flex items-start justify-between mb-2">
-                    <h3 class="text-xl font-bold flex-1 mr-2 flex items-center gap-2">
-                        {{ project.title }}
-                        {% if project.is_private %}
-                            <i class="fas fa-lock text-red-400 text-sm"></i>
-                        {% endif %}
-                    </h3>
-                    <span class="px-2 py-1 text-xs rounded-full whitespace-nowrap font-semibold
-                      {% if project.status == 'in_review' %}bg-yellow-900 text-yellow-300
-                      {% elif project.status == 'approved' %}bg-blue-900 text-blue-300
-                      {% elif project.status == 'in_progress' %}bg-green-900 text-green-300
-                      {% elif project.status == 'completed' %}bg-purple-900 text-purple-300
-                      {% else %}bg-gray-700 text-gray-300{% endif %}">{{ project.get_status_display }}</span>
-                </div>
-                <p class="mb-4 line-clamp-3">{{ project.description|truncatewords:30 }}</p>
-                
-                <!-- Etiketler -->
-                <div class="flex flex-wrap gap-2 mb-4">
-                    {% for category in project.categories.all %}
-                    <span class="dynamic-tag" 
-                          style="--tag-bg: {{ category.color }}20; --tag-color: {{ category.color }}; --tag-border: {{ category.color }}40;">
-                        {{ category.name }}
-                    </span>
-                    {% endfor %}
-                    {% for technology in project.technologies.all %}
-                    <span class="dynamic-tag" 
-                          style="--tag-bg: {{ technology.color }}20; --tag-color: {{ technology.color }}; --tag-border: {{ technology.color }}40;">
-                        {% if technology.icon %}<i class="{{ technology.icon }} mr-1"></i>{% endif %}
-                        {{ technology.name }}
-                    </span>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="flex flex-col gap-2 text-sm mt-4">
-                <div class="flex items-center justify-between">
-                    <span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 1115 0v.75A2.25 2.25 0 0117.25 22.5h-10.5A2.25 2.25 0 014.5 20.25V19.5z" /></svg>{{ project.created_by.get_full_name }}</span>
-                    <span class="flex items-center gap-1 text-xs text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3"><circle cx="12" cy="12" r="9" stroke="currentColor"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12V7"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 12l4 2" /></svg>{{ project.created_at|date:"d.m.Y" }}
-                    </span>
-                </div>
-                {% if project.project_request %}
-                <div class="flex items-center gap-1 text-xs text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-                    </svg>
-                    {{ project.project_request.title|truncatewords:5 }}
-                </div>
-                {% endif %}
-            </div>
-        </a>
-        
-        {% empty %}
-        <div class="col-span-full">
-            <div class="text-center font-semibold">Henüz proje bulunmuyor.</div>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Load More Trigger -->
-    <div id="project-load-trigger" class="flex justify-center py-6 {% if not has_more %}hidden{% endif %}">
-        <div class="flex items-center gap-3 text-gray-400">
-            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Yükleniyor...</span>
-        </div>
-    </div>
-</div>
-
-<script>
-function toggleFilters() {
-    const filterContent = document.getElementById('filterContent');
-    const filterIcon = document.getElementById('filterToggleIcon');
-    filterContent.classList.toggle('hidden');
-    filterIcon.classList.toggle('rotate-180');
-}
-
-// Enhanced technology tag functionality
-document.addEventListener('DOMContentLoaded', function() {
-  const technologyTags = document.querySelectorAll('.technology-tag[data-technology-color]');
-  
-  technologyTags.forEach((tag) => {
-    const color = tag.dataset.technologyColor;
-    
-    // Apply dynamic colors
-    tag.style.setProperty('--technology-bg', color + '20');
-    tag.style.setProperty('--technology-color', color);
-    tag.style.setProperty('--technology-border', color + '40');
-  });
-  
-  // Infinite Scroll
-  const gridContainer = document.getElementById('project-grid');
-  const loadTrigger = document.getElementById('project-load-trigger');
-  
-  if (loadTrigger && gridContainer) {
-    let projectOffset = {{ next_offset|default:12 }};
-    let projectHasMore = {{ has_more|yesno:"true,false" }};
-    let projectLoading = false;
-
-    const observer = new IntersectionObserver(function(entries) {
-      if (entries[0].isIntersecting && projectHasMore && !projectLoading) {
-        projectLoading = true;
-        
-        let url = `/projects/load-more/?offset=${projectOffset}`;
-        {% if request.GET.q %}url += `&q={{ request.GET.q }}`;{% endif %}
-        {% if request.GET.category %}url += `&category={{ request.GET.category }}`;{% endif %}
-        {% if request.GET.technology %}url += `&technology={{ request.GET.technology }}`;{% endif %}
-        {% if request.GET.status %}url += `&status={{ request.GET.status }}`;{% endif %}
-        
-        fetch(url)
-          .then(response => response.json())
-          .then(data => {
-            gridContainer.insertAdjacentHTML('beforeend', data.items);
-            
-            const newTags = gridContainer.querySelectorAll('.technology-tag[data-technology-color]');
-            newTags.forEach((tag) => {
-              const color = tag.dataset.technologyColor;
-              tag.style.setProperty('--technology-bg', color + '20');
-              tag.style.setProperty('--technology-color', color);
-              tag.style.setProperty('--technology-border', color + '40');
-            });
-            
-            projectHasMore = data.has_more;
-            projectOffset = data.next_offset;
-            projectLoading = false;
-            
-            if (!projectHasMore) {
-              loadTrigger.classList.add('hidden');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            projectLoading = false;
-          });
-      }
-    }, { rootMargin: '200px' });
-    
-    observer.observe(loadTrigger);
-  }
-});
-</script>
-{% endblock %} 

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}BST Portal | Portfolyo Geri Bildirimi{% endblock %}
+
+{% block content %}
+<main class="min-h-screen px-4 py-8">
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div><p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-400">İçerik tamlık analizi</p><h1 class="text-3xl font-bold text-white">Portfolyo geri bildirimi</h1><p class="mt-2 text-gray-400">Eksik veya belirsiz alanları somut adımlarla tamamlayın.</p></div>
+      <a href="{% url 'accounts:portfolio_settings' %}" class="rounded-xl border border-gray-600 px-5 py-3 text-center font-semibold text-gray-300 hover:bg-gray-800">Ayarları aç</a>
+    </div>
+
+    <section class="rounded-2xl border border-blue-700/40 bg-blue-950/20 p-6 sm:p-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm text-blue-300">Tamlık puanı</p><p class="mt-1 text-5xl font-bold text-white">{{ feedback.score }}<span class="text-2xl text-gray-400">/100</span></p></div><p class="max-w-xl text-sm leading-6 text-gray-400">{{ feedback.disclaimer }}</p></div>
+    </section>
+
+    <div class="mt-8 space-y-3">
+      {% for item in feedback.items %}
+      <article class="rounded-xl border {% if item.severity == 'high' %}border-red-800/60{% elif item.severity == 'low' %}border-gray-700{% else %}border-amber-800/60{% endif %} bg-[#111827]/90 p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 class="font-semibold text-white">{{ item.title }}</h2><p class="mt-2 text-sm leading-6 text-gray-400">{{ item.detail }}</p></div><a href="{{ item.target_url }}" class="shrink-0 text-sm font-semibold text-blue-300 hover:text-blue-200">Düzenle →</a></div>
+      </article>
+      {% empty %}
+      <div class="rounded-2xl border border-green-800/50 bg-green-950/20 p-8 text-center"><h2 class="text-xl font-semibold text-green-200">Temel portfolyo alanları tamamlandı</h2><p class="mt-2 text-gray-400">Projelerinizi güncel ve doğrulanabilir tutmaya devam edin.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</main>
+{% endblock %}

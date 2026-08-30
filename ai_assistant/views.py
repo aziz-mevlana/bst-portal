@@ -1,32 +1,62 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db.models import Q
+import logging
+import re
+from PyPDF2.errors import PdfReadError
 from .models import KnowledgeSource
 from .gemini_service import get_gemini_response
+from .analytics import record_unanswered_question
 from .pdf_utils import extract_text_from_pdf
+from core.rate_limit import is_rate_limited
+from core.audit import record_audit_event
+from core.analytics import record_analytics_event
+from django.views.decorators.http import require_POST
+
+
+logger = logging.getLogger(__name__)
+MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024
 import json
 
 
 def is_teacher_or_staff(user):
     if not user.is_authenticated:
         return False
-    if not hasattr(user, 'profile'):
-        return False
-    return user.profile.user_type in ['teacher', 'staff_student']
+    if user.is_staff or user.is_superuser:
+        return True
+    return hasattr(user, 'profile') and user.profile.user_type in ['teacher', 'staff_student']
+
+
+def audience_key_for_user(user):
+    if user.is_staff or user.is_superuser:
+        return 'staff'
+    role = getattr(getattr(user, 'profile', None), 'user_type', 'all')
+    if role == 'staff_student':
+        return 'staff'
+    return role if role in {'student', 'teacher', 'alumni'} else 'all'
+
+
+def authorized_sources_for_user(user):
+    sources = KnowledgeSource.objects.filter(is_active=True)
+    audience_key = audience_key_for_user(user)
+    if audience_key == 'staff':
+        return sources
+    return sources.filter(Q(audience='all') | Q(audience=audience_key))
 
 
 def filter_relevant_sources(sources, query):
     """Soruya gore ilgili kaynaklari filtrele"""
-    query_lower = query.lower()
+    query_lower = query.casefold()
     
     # Turkce stopwords
     stopwords = {'bir', 'bu', 've', 'ile', 'mi', 'mu', 'ne', 'nasil', 'nedir', 'hangi', 'kac', 'var', 'olan', 'icin'}
     
     # 3 harften uzun kelimeleri al, stopwordleri cikar
-    keywords = [w for w in query_lower.split() if len(w) > 3 and w not in stopwords]
+    keywords = [w for w in re.findall(r'\w+', query_lower) if len(w) > 3 and w not in stopwords]
     
     if not keywords:
-        return list(sources[:3])  # Keyword yoksa ilk 3 kaynagi dondur
+        return []
     
     scored_sources = []
     for source in sources:
@@ -48,13 +78,13 @@ def filter_relevant_sources(sources, query):
     relevant = [s[1] for s in scored_sources[:3]]
     
     # Hiç eşleşme yoksa ilk 2 kaynağı dondur
-    return relevant if relevant else list(sources[:2])
+    return relevant
 
 
 @login_required
 def chat_page(request):
     """AI Asistan chat sayfasi"""
-    sources = KnowledgeSource.objects.filter(is_active=True)
+    sources = authorized_sources_for_user(request.user)
     context = {
         'sources': sources,
         'user_type': request.user.profile.user_type if hasattr(request.user, 'profile') else None,
@@ -67,6 +97,8 @@ def chat_send(request):
     """Chat mesaj gonderme endpoint"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Sadece POST desteklenir.'})
+    if is_rate_limited(request, scope='ai-chat', limit=20, window_seconds=60):
+        return JsonResponse({'success': False, 'error': 'Çok fazla istek gönderildi. Lütfen kısa süre sonra tekrar deneyin.'}, status=429)
 
     try:
         data = json.loads(request.body)
@@ -79,20 +111,45 @@ def chat_send(request):
             return JsonResponse({'success': False, 'error': 'Mesaj cok uzun (max 2000 karakter).'})
 
         # Aktif bilgi kaynaklarini al ve ilgili olanlari filtrele
-        all_sources = KnowledgeSource.objects.filter(is_active=True)
+        audience_key = audience_key_for_user(request.user)
+        all_sources = authorized_sources_for_user(request.user)
         
         if not all_sources.exists():
+            record_unanswered_question(message, audience_key)
+            record_analytics_event(request, event_type='ai_answer', succeeded=False, metadata={'source_count': 0})
             return JsonResponse({
                 'success': True,
-                'response': 'Henuz bilgi kaynagi eklenmemis. Yonetici panelinden bilgi kaynagi eklenmesini talep edin.',
+                'response': 'Yetkiniz dahilindeki kaynaklarda bu soruyu yanıtlayacak bilgi bulunmuyor. Yöneticiden bilgi kaynağı eklemesini isteyebilirsiniz.',
+                'sources_used': [],
                 'cached': False
             })
 
         # Sadece ilgili kaynaklari sec
         sources = filter_relevant_sources(all_sources, message)
 
+        if not sources:
+            record_unanswered_question(message, audience_key)
+            record_analytics_event(request, event_type='ai_answer', succeeded=False, metadata={'source_count': 0})
+            return JsonResponse({
+                'success': True,
+                'response': 'Yetkiniz dahilindeki kaynaklarda bu soruyu yanıtlamak için yeterli bilgi bulunmuyor.',
+                'sources_used': [],
+                'cached': False,
+            })
+
         # Gemini'den cevap al (cache kontrol dahil)
-        result = get_gemini_response(message, sources)
+        result = get_gemini_response(message, sources, audience_key=audience_key)
+        if not result.get('sources_used'):
+            record_unanswered_question(message, audience_key)
+        record_analytics_event(
+            request,
+            event_type='ai_answer',
+            succeeded=bool(result.get('sources_used')),
+            metadata={
+                'source_count': len(result.get('sources_used') or []),
+                'cached': bool(result.get('cached')),
+            },
+        )
 
         return JsonResponse({
             'success': True,
@@ -103,8 +160,9 @@ def chat_send(request):
 
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Gecersiz JSON.'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('AI sohbet isteği işlenemedi.')
+        return JsonResponse({'success': False, 'error': 'İstek işlenirken bir hata oluştu.'}, status=500)
 
 
 @login_required
@@ -121,6 +179,7 @@ def source_list(request):
 
 
 @login_required
+@require_POST
 def source_add(request):
     """Bilgi kaynagi ekle"""
     if not is_teacher_or_staff(request.user):
@@ -134,14 +193,38 @@ def source_add(request):
         description = request.POST.get('description', '').strip()
         content = request.POST.get('content', '').strip()
         category = request.POST.get('category', 'general')
+        audience = request.POST.get('audience', 'all')
         source_file = request.FILES.get('source_file')
 
         if not title:
             return JsonResponse({'success': False, 'error': 'Baslik gerekli.'})
 
-        # PDF dosyasi yuklenmisse metin cikar
-        if source_file and source_file.name.endswith('.pdf'):
-            pdf_text = extract_text_from_pdf(source_file)
+        valid_categories = {value for value, _ in KnowledgeSource.CATEGORY_CHOICES}
+        if category not in valid_categories:
+            return JsonResponse({'success': False, 'error': 'Geçersiz kategori.'}, status=400)
+
+        valid_audiences = {value for value, _ in KnowledgeSource.AUDIENCE_CHOICES}
+        if audience not in valid_audiences:
+            return JsonResponse({'success': False, 'error': 'Geçersiz hedef kitle.'}, status=400)
+
+        if source_file:
+            if source_file.size > MAX_SOURCE_FILE_SIZE:
+                return JsonResponse({'success': False, 'error': 'PDF en fazla 10 MB olabilir.'}, status=400)
+            if not source_file.name.lower().endswith('.pdf'):
+                return JsonResponse({'success': False, 'error': 'Yalnızca PDF dosyası yükleyebilirsiniz.'}, status=400)
+            content_type = getattr(source_file, 'content_type', '')
+            if content_type and content_type != 'application/pdf':
+                return JsonResponse({'success': False, 'error': 'Geçersiz PDF dosyası.'}, status=400)
+            position = source_file.tell()
+            source_file.seek(0)
+            signature = source_file.read(5)
+            source_file.seek(position)
+            if signature != b'%PDF-':
+                return JsonResponse({'success': False, 'error': 'Dosya içeriği geçerli bir PDF değil.'}, status=400)
+            try:
+                pdf_text = extract_text_from_pdf(source_file)
+            except (ValueError, PdfReadError):
+                return JsonResponse({'success': False, 'error': 'PDF okunamadı veya metin içermiyor.'}, status=400)
             if content:
                 content += "\n\n" + pdf_text
             else:
@@ -155,9 +238,11 @@ def source_add(request):
             description=description,
             content=content,
             category=category,
+            audience=audience,
             source_file=source_file if source_file else None,
             created_by=request.user,
         )
+        record_audit_event(actor=request.user, action='ai.knowledge_source_added', target=source, request=request)
 
         return JsonResponse({
             'success': True,
@@ -165,11 +250,13 @@ def source_add(request):
             'message': f'"{source.title}" eklendi.'
         })
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('Bilgi kaynağı eklenemedi.')
+        return JsonResponse({'success': False, 'error': 'Kaynak eklenirken bir hata oluştu.'}, status=500)
 
 
 @login_required
+@require_POST
 def source_delete(request):
     """Bilgi kaynagi sil"""
     if not is_teacher_or_staff(request.user):
@@ -183,14 +270,16 @@ def source_delete(request):
         source_id = data.get('source_id')
 
         source = KnowledgeSource.objects.get(id=source_id)
+        record_audit_event(actor=request.user, action='ai.knowledge_source_deleted', target=source, request=request)
         source.delete()
 
         return JsonResponse({'success': True, 'message': 'Silindi.'})
 
     except KnowledgeSource.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Kaynak bulunamadi.'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('Bilgi kaynağı silinemedi.')
+        return JsonResponse({'success': False, 'error': 'Kaynak silinirken bir hata oluştu.'}, status=500)
 
 
 @login_required
@@ -209,6 +298,7 @@ def source_update(request):
         description = data.get('description', '').strip()
         content = data.get('content', '').strip()
         category = data.get('category', 'general')
+        audience = data.get('audience', 'all')
         is_active = data.get('is_active', True)
 
         if not source_id:
@@ -217,11 +307,20 @@ def source_update(request):
         if not title:
             return JsonResponse({'success': False, 'error': 'Baslik gerekli.'})
 
+        valid_categories = {value for value, _ in KnowledgeSource.CATEGORY_CHOICES}
+        if category not in valid_categories:
+            return JsonResponse({'success': False, 'error': 'Geçersiz kategori.'}, status=400)
+
+        valid_audiences = {value for value, _ in KnowledgeSource.AUDIENCE_CHOICES}
+        if audience not in valid_audiences:
+            return JsonResponse({'success': False, 'error': 'Geçersiz hedef kitle.'}, status=400)
+
         source = KnowledgeSource.objects.get(id=source_id)
         source.title = title
         source.description = description
         source.content = content
         source.category = category
+        source.audience = audience
         source.is_active = is_active
         source.save()
 
@@ -232,8 +331,9 @@ def source_update(request):
 
     except KnowledgeSource.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Kaynak bulunamadi.'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('Bilgi kaynağı güncellenemedi.')
+        return JsonResponse({'success': False, 'error': 'Kaynak güncellenirken bir hata oluştu.'}, status=500)
 
 
 @login_required
@@ -242,18 +342,20 @@ def faq_stats(request):
     if not is_teacher_or_staff(request.user):
         return render(request, 'dashboard/access_denied.html')
 
-    from .models import ChatCache
+    from .models import ChatCache, UnansweredQuestion
     
     caches = ChatCache.objects.all()
     total_cache = caches.count()
     total_hits = sum(c.hit_count for c in caches)
     most_asked = caches.order_by('-hit_count').first()
+    unanswered = UnansweredQuestion.objects.filter(resolved_at__isnull=True)[:50]
 
     context = {
         'caches': caches,
         'total_cache': total_cache,
         'total_hits': total_hits,
         'most_asked': most_asked,
+        'unanswered': unanswered,
     }
     return render(request, 'ai_assistant/faq_stats.html', context)
 
@@ -277,8 +379,9 @@ def faq_delete(request):
 
         return JsonResponse({'success': True, 'message': 'Cache silindi.'})
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('FAQ kaydı silinemedi.')
+        return JsonResponse({'success': False, 'error': 'Kayıt silinirken bir hata oluştu.'}, status=500)
 
 
 @login_required
@@ -296,5 +399,6 @@ def faq_clear_all(request):
 
         return JsonResponse({'success': True, 'message': f'{count} cache silindi.'})
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception:
+        logger.exception('FAQ önbelleği temizlenemedi.')
+        return JsonResponse({'success': False, 'error': 'Önbellek temizlenirken bir hata oluştu.'}, status=500)

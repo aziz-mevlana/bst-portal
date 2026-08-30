@@ -5,10 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BST Akademi{% endblock %}</title>
+    <meta name="description" content="{{ meta_description|default:'BST Portal; öğrencileri, akademisyenleri, mezunları ve nitelikli projeleri aynı dijital toplulukta buluşturur.' }}">
+    <meta name="robots" content="{{ meta_robots|default:'index,follow' }}">
+    <link rel="canonical" href="{{ canonical_url|default:request.build_absolute_uri }}">
+    <meta property="og:site_name" content="BST Portal">
+    <meta property="og:title" content="{{ meta_title|default:'BST Portal' }}">
+    <meta property="og:description" content="{{ meta_description|default:'BST topluluğunun proje ve yetenek vitrini.' }}">
+    <meta property="og:url" content="{{ canonical_url|default:request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/x-icon" href="{% static 'images/logo.svg' %}">
     <script src="{% static 'js/tailwind.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260830.1">
+    <link rel="stylesheet" href="{% static 'css/form-components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/project-section.css' %}">
     <link rel="stylesheet" href="{% static 'css/swiper-bundle.min.css' %}">
+    {# Benzersiz dosya adi eski tarayici onbellegindeki tema/form CSS'ini kesin olarak asar. #}
+    <link rel="stylesheet" href="{% static 'css/bst-ui-v2.css' %}?v=20260827.1">
+    <link rel="stylesheet" href="{% static 'css/community-tools.css' %}?v=20260830.1">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -17,29 +31,33 @@
 
     <!-- Modern Toast Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="djangoMessages" hidden>
+        {% for message in messages %}
+        <span data-message="{{ message }}" data-tags="{{ message.tags }}"></span>
+        {% endfor %}
+    </div>
 
-    <main>
+    <div id="site-content" class="site-content">
         {% block content %}{% endblock %}
-    </main>
+    </div>
 
     {% block footer %}
         {% include 'includes/footer.html' %}
     {% endblock %}
     <script src="{% static 'js/swiper-bundle.min.js' %}"></script>
+    <script src="{% static 'js/multiselect.js' %}" defer></script>
     
     <!-- Toast Notification System -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Messages from Django template
-        const messages = [
-            {% for message in messages %}
-            {
-                text: "{{ message|safe }}",
-                type: "{{ message.tags }}",
-                duration: 5000
-            },
-            {% endfor %}
-        ];
+        const messages = Array.from(
+            document.querySelectorAll('#djangoMessages [data-message]')
+        ).map((item) => ({
+            text: item.dataset.message,
+            type: item.dataset.tags || 'info',
+            duration: 5000
+        }));
 
         // Toast notification function
         function showToast(text, type = 'info', duration = 5000) {
@@ -65,19 +83,22 @@
 
             // Create toast HTML
             toast.className = `toast-enter flex items-center gap-3 min-w-[320px] max-w-md ${colors[type] || colors.info} text-white px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm transform transition-all duration-300 ease-out`;
-            toast.innerHTML = `
-                <div class="flex-shrink-0">
-                    ${icons[type] || icons.info}
-                </div>
-                <div class="flex-1">
-                    <p class="text-sm font-medium">${text}</p>
-                </div>
-                <button onclick="this.parentElement.remove()" class="ml-3 flex-shrink-0 text-white/70 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            `;
+            const icon = document.createElement('div');
+            icon.className = 'flex-shrink-0';
+            icon.innerHTML = icons[type] || icons.info;
+            const body = document.createElement('div');
+            body.className = 'flex-1';
+            const paragraph = document.createElement('p');
+            paragraph.className = 'text-sm font-medium';
+            paragraph.textContent = text;
+            body.appendChild(paragraph);
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'ml-3 flex-shrink-0 text-white/70 hover:text-white transition-colors';
+            close.setAttribute('aria-label', 'Bildirimi kapat');
+            close.textContent = '×';
+            close.addEventListener('click', () => toast.remove());
+            toast.append(icon, body, close);
 
             // Add to container
             container.appendChild(toast);

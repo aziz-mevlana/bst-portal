@@ -6,16 +6,11 @@
         <h1 class="text-2xl font-bold">Mezunlar</h1>
         <p class="text-gray-400 hidden sm:block">Toplam {{ total_count }} mezun kayıtlı.</p>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </div>
 </div>
 
 <!-- Filters -->
 <div class="dashboard-card rounded-xl shadow p-4 mb-6">
-    <form method="get" class="flex flex-col sm:flex-row gap-4">
+    <form method="get" class="dashboard-filter-form" aria-label="Mezunları filtrele">
         <input type="text" name="q" value="{{ query }}" placeholder="İsim, şirket veya pozisyon ara..."
                class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
         <select name="experience" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
@@ -99,14 +94,14 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 <span class="text-sm font-medium">Profili Gör</span>
             </a>
-            <button id="actionMatchBtn" onclick="closeActionModal(); openMatchModal(currentActionAlumniId, currentActionAlumniName)" class="w-full flex items-center gap-3 px-4 py-3 text-green-400 hover:bg-gray-700 rounded-lg transition">
+            {% if can_match_accounts %}<button id="actionMatchBtn" onclick="closeActionModal(); openMatchModal(currentActionAlumniId, currentActionAlumniName)" class="w-full flex items-center gap-3 px-4 py-3 text-green-400 hover:bg-gray-700 rounded-lg transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.181 8.68a4.503 4.503 0 011.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 006.364 6.365l.299-.299m3.683 3.685l.299-.299a4.5 4.5 0 006.364-6.365l-2.782-2.782m0 0a4.503 4.503 0 00-1.903-6.405m0 0a4.503 4.503 0 016.405 1.903M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-sm font-medium">Kullanıcı Eşleştir</span>
             </button>
             <button id="actionUnmatchBtn" onclick="closeActionModal(); openUnmatchModal(currentActionAlumniId, currentActionAlumniName)" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-gray-700 rounded-lg transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.181 8.68a4.503 4.503 0 011.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 006.364 6.365l.299-.299m3.683 3.685l.299-.299a4.5 4.5 0 006.364-6.365l-2.782-2.782m0 0a4.503 4.503 0 00-1.903-6.405m0 0a4.503 4.503 0 016.405 1.903M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-sm font-medium">Bağlantıyı Kes</span>
-            </button>
+            </button>{% endif %}
         </div>
     </div>
 </div>
@@ -183,13 +178,13 @@
         if (hasUser && username) {
             profilLink.href = '/alumni/' + username + '/';
             profilLink.classList.remove('hidden');
-            matchBtn.classList.add('hidden');
-            unmatchBtn.classList.remove('hidden');
+            matchBtn?.classList.add('hidden');
+            unmatchBtn?.classList.remove('hidden');
         } else {
             profilLink.href = '/alumni/detail/' + alumniId + '/';
             profilLink.classList.remove('hidden');
-            matchBtn.classList.remove('hidden');
-            unmatchBtn.classList.add('hidden');
+            matchBtn?.classList.remove('hidden');
+            unmatchBtn?.classList.add('hidden');
         }
 
         const modal = document.getElementById('actionModal');
@@ -228,6 +223,12 @@
         currentAlumniId = null;
     }
 
+    function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = String(value ?? '');
+        return element.innerHTML;
+    }
+
     // User Search
     let searchTimeout = null;
     function searchUsers(query) {
@@ -252,8 +253,8 @@
                         return '<div class="p-3 bg-[#181e29] rounded-lg border border-gray-700 hover:border-gray-500 transition cursor-pointer ' + matchedClass + '" ' + clickHandler + '>' +
                             '<div class="flex items-center justify-between">' +
                                 '<div>' +
-                                    '<div class="text-sm font-medium text-white">' + user.name + matchedText + '</div>' +
-                                    '<div class="text-xs text-gray-400">' + user.email + ' · ' + user.user_type + '</div>' +
+                                    '<div class="text-sm font-medium text-white">' + escapeHtml(user.name) + matchedText + '</div>' +
+                                    '<div class="text-xs text-gray-400">' + escapeHtml(user.email) + ' · ' + escapeHtml(user.user_type) + '</div>' +
                                 '</div>' +
                                 (!user.already_matched ? '<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.181 8.68a4.503 4.503 0 011.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 006.364 6.365l.299-.299m3.683 3.685l.299-.299a4.5 4.5 0 006.364-6.365l-2.782-2.782m0 0a4.503 4.503 0 00-1.903-6.405m0 0a4.503 4.503 0 016.405 1.903M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' : '') +
                             '</div>' +

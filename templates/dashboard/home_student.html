@@ -1,103 +1,51 @@
 {% extends 'dashboard/base.html' %}
 
+{% block title %}{{ panel_label }} | BST Portal{% endblock %}
+
 {% block dashboard_content %}
-<div class="mb-6 flex flex-row justify-between items-center gap-4">
-    <div>
-        <h1 class="text-2xl font-bold">Öğrenci Paneli</h1>
-        <p class="text-gray-400">Hoş geldiniz, {{ request.user.get_full_name }}!</p>
+<div class="space-y-7">
+  <header class="relative overflow-hidden rounded-3xl border border-blue-900/50 bg-gradient-to-br from-blue-950/70 via-[#101827] to-[#101827] p-6 sm:p-8">
+    <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-600/15 blur-3xl"></div>
+    <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div class="max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.16em]"><span class="text-blue-300">Öğrenci çalışma alanı</span>{% if user_type == 'staff_student' %}<span class="rounded-full border border-violet-700/60 bg-violet-950/50 px-3 py-1 text-violet-300">BST Yetkilisi</span>{% endif %}{% if student_class %}<span class="rounded-full border border-gray-700 bg-gray-900/70 px-3 py-1 text-gray-400">{{ student_class }}. sınıf</span>{% endif %}</div>
+        <h1 class="mt-4 text-3xl font-black text-white sm:text-4xl">Hoş geldin, {{ request.user.first_name|default:request.user.username }}</h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-gray-400">Projelerini, ekip davetlerini, başvurularını ve portfolyo gelişimini tek ekrandan takip et.</p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <a href="{% url 'accounts:profile' %}#manage-showcase" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-700/60 bg-blue-950/50 px-5 text-sm font-bold text-blue-200 hover:border-blue-500">Portfolyomu düzenle</a>
+        <a href="{% url 'projects:project_create' %}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500">Yeni proje oluştur</a>
+      </div>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </div>
-</div>
+  </header>
 
-{% if student_class %}
-<div class="mb-4 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
-    <p class="text-blue-300">Sınıfınız: <span class="font-semibold">Sınıf {{ student_class }}</span></p>
-</div>
-{% endif %}
+  {% if user_type == 'staff_student' %}
+  <aside class="rounded-2xl border border-violet-800/50 bg-violet-950/20 p-5" aria-label="BST Yetkilisi bilgi notu"><div class="flex items-start gap-4"><div class="grid h-10 w-10 flex-none place-items-center rounded-xl bg-violet-900/60 text-violet-200"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6zM9 12l2 2 4-4"/></svg></div><div><h2 class="font-bold text-violet-200">Öğrenci profilin korunuyor</h2><p class="mt-1 text-sm leading-6 text-gray-400">BST Yetkilisi rolü sana yalnız atanmış moderasyon araçlarını ekler. Admin yetkileri vermez; öğrenci portfolyon, projelerin ve ekiplerin aynı şekilde devam eder.</p></div></div></aside>
+  {% endif %}
 
-<!-- My Projects -->
-<div class="mb-8">
-    <h2 class="text-xl font-semibold mb-4">Projelerim</h2>
-    {% if my_projects %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for project in my_projects %}
-                <a href="{% url 'projects:project_detail' project.id %}" class="dashboard-card rounded-xl p-4 border border-gray-700 hover:border-blue-500 transition block">
-                    <div class="flex items-start justify-between mb-2">
-                        <h3 class="font-semibold text-lg">{{ project.title }}</h3>
-                        <span class="px-2 py-1 text-xs rounded-full
-                            {% if project.status == 'completed' %}bg-green-900 text-green-300
-                            {% elif project.status == 'in_progress' %}bg-blue-900 text-blue-300
-                            {% elif project.status == 'in_review' %}bg-yellow-900 text-yellow-300
-                            {% else %}bg-gray-700 text-gray-300{% endif %}">
-                            {{ project.get_status_display }}
-                        </span>
-                    </div>
-                    <p class="text-sm text-gray-400 mb-3 line-clamp-2">{{ project.description|truncatechars:100 }}</p>
-                    {% if project.advisor %}
-                        <p class="text-xs text-gray-500">Danışman: {{ project.advisor.get_full_name }}</p>
-                    {% endif %}
-                </a>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="dashboard-card rounded-xl p-6 text-center">
-            <p class="text-gray-400 mb-4">Henüz bir projeniz yok.</p>
-            <a href="{% url 'projects:project_list' %}" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">
-                Proje Bul
-            </a>
-        </div>
-    {% endif %}
-</div>
+  <section class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Öğrenci özeti">
+    <a href="{% url 'dashboard:my_projects' %}" class="dashboard-card rounded-2xl p-5 transition hover:border-blue-600"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Projelerim</p><p class="mt-2 text-3xl font-black text-white">{{ project_count }}</p><p class="mt-1 text-xs text-gray-500">{{ active_project_count }} aktif</p></a>
+    <a href="{% url 'projects:saved_projects' %}" class="dashboard-card rounded-2xl p-5 transition hover:border-blue-600"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Kaydedilen</p><p class="mt-2 text-3xl font-black text-white">{{ saved_project_count }}</p><p class="mt-1 text-xs text-gray-500">sonra incelemek için</p></a>
+    <a href="{% url 'projects:team_invitations' %}" class="dashboard-card rounded-2xl p-5 transition hover:border-blue-600"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Ekipler</p><p class="mt-2 text-3xl font-black text-white">{{ team_count }}</p><p class="mt-1 text-xs {% if pending_invitation_count %}text-amber-300{% else %}text-gray-500{% endif %}">{{ pending_invitation_count }} bekleyen davet</p></a>
+    <a href="{% url 'projects:request_list' %}" class="dashboard-card rounded-2xl p-5 transition hover:border-blue-600"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Proje ilanları</p><p class="mt-2 text-3xl font-black text-white">{{ available_request_count }}</p><p class="mt-1 text-xs text-gray-500">{{ pending_application_count }} başvuru bekliyor</p></a>
+  </section>
 
-<!-- Available Project Requests -->
-<div class="mb-8">
-    <h2 class="text-xl font-semibold mb-4">Müsait Proje İstekleri</h2>
-    {% if available_requests %}
-        <div class="space-y-3">
-            {% for req in available_requests %}
-                <div class="dashboard-card rounded-xl p-4 border border-gray-700">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <h3 class="font-semibold">{{ req.title }}</h3>
-                            <p class="text-sm text-gray-400 mt-1">{{ req.description|truncatechars:120 }}</p>
-                            {% if req.teacher %}
-                                <p class="text-xs text-gray-500 mt-2">Danışman: {{ req.teacher.get_full_name }}</p>
-                            {% endif %}
-                        </div>
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-900 text-green-300">Açık</span>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="dashboard-card rounded-xl p-6 text-center">
-            <p class="text-gray-400">Şu anda müsait proje isteği yok.</p>
-        </div>
-    {% endif %}
-</div>
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,.75fr)]">
+    <section class="dashboard-card rounded-3xl p-5 sm:p-7" aria-labelledby="student-projects-title">
+      <div class="flex flex-wrap items-end justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-400">Üretim alanım</p><h2 id="student-projects-title" class="mt-2 text-2xl font-bold text-white">Son projelerim</h2></div><a href="{% url 'dashboard:my_projects' %}" class="text-sm font-semibold text-blue-300 hover:text-blue-200">Tümünü gör →</a></div>
+      {% if my_projects %}<div class="mt-6 grid gap-4 md:grid-cols-2">{% for project in my_projects %}<a href="{{ project.get_absolute_url }}" class="group rounded-2xl border border-gray-800 bg-[#0c1422] p-5 transition hover:-translate-y-0.5 hover:border-blue-600"><div class="flex items-start justify-between gap-3"><span class="text-xs font-semibold text-blue-300">{{ project.project_type.name }}</span><span class="rounded-full bg-gray-800 px-2.5 py-1 text-[11px] text-gray-400">{{ project.get_development_status_display }}</span></div><h3 class="mt-3 text-lg font-bold text-white group-hover:text-blue-300">{{ project.title }}</h3><p class="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">{{ project.description|default:'Proje açıklaması henüz eklenmedi.' }}</p>{% if project.advisor %}<p class="mt-4 border-t border-gray-800 pt-3 text-xs text-gray-600">Danışman: {{ project.advisor.get_full_name|default:project.advisor.username }}</p>{% endif %}</a>{% endfor %}</div>{% else %}<div class="mt-6 rounded-2xl border border-dashed border-gray-700 bg-[#0c1422] p-8 text-center"><h3 class="font-bold text-white">Henüz bir projeye katılmadın</h3><p class="mt-2 text-sm text-gray-500">Kendi fikrini oluşturabilir veya akademisyen ilanlarına başvurabilirsin.</p><div class="mt-5 flex flex-wrap justify-center gap-3"><a href="{% url 'projects:project_create' %}" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white">Proje oluştur</a><a href="{% url 'projects:request_list' %}" class="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-300">İlanları incele</a></div></div>{% endif %}
+    </section>
 
-<!-- Quick Actions -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="dashboard-card rounded-xl shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Hızlı Erişim</h3>
-        <div class="space-y-3">
-            <a href="{% url 'projects:project_list' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-                <span>Tüm Projeler</span>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </a>
-        </div>
-    </div>
+    <section class="dashboard-card rounded-3xl p-5 sm:p-7" aria-labelledby="portfolio-status-title">
+      <p class="text-xs font-bold uppercase tracking-widest text-emerald-400">Portfolyo durumu</p><div class="mt-3 flex items-end justify-between gap-3"><h2 id="portfolio-status-title" class="text-2xl font-bold text-white">İçerik tamlığı</h2><strong class="text-3xl font-black text-emerald-300">%{{ portfolio_score }}</strong></div><div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-800" aria-label="Portfolyo tamlığı yüzde {{ portfolio_score }}"><div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-400" style="width:{{ portfolio_score }}%"></div></div>
+      <div class="mt-6 space-y-3">{% for item in portfolio_next_steps %}<a href="{{ item.target_url }}" class="block rounded-xl border border-gray-800 bg-[#0c1422] p-4 hover:border-blue-700"><strong class="block text-sm text-gray-200">{{ item.title }}</strong><span class="mt-1 block text-xs leading-5 text-gray-500">{{ item.detail }}</span></a>{% empty %}<div class="rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4 text-sm leading-6 text-emerald-200">Temel portfolyo alanların tamamlandı. Projelerini güncel tutmaya devam et.</div>{% endfor %}</div><a href="{% url 'accounts:portfolio_feedback' %}" class="mt-5 inline-flex text-sm font-semibold text-blue-300">Tüm geliştirme önerileri →</a>
+    </section>
+  </div>
 
-    <div class="dashboard-card rounded-xl shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Bilgi</h3>
-        <div class="space-y-3 text-sm text-gray-400">
-            <p>• {{ my_projects.count }} projeye katılıyorsunuz.</p>
-            <p>• Projelerinizi takip etmek için paneli kullanabilirsiniz.</p>
-        </div>
-    </div>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="dashboard-card rounded-3xl p-5 sm:p-7" aria-labelledby="open-requests-title"><div class="flex items-end justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-widest text-amber-400">Yeni fırsatlar</p><h2 id="open-requests-title" class="mt-2 text-xl font-bold text-white">Açık proje ilanları</h2></div><a href="{% url 'projects:request_list' %}" class="text-sm font-semibold text-blue-300">Tümü →</a></div><div class="mt-5 space-y-3">{% for req in available_requests %}<a href="{% url 'projects:request_detail' req.pk %}" class="flex items-start justify-between gap-4 rounded-xl border border-gray-800 bg-[#0c1422] p-4 hover:border-blue-700"><div class="min-w-0"><strong class="block truncate text-gray-200">{{ req.title }}</strong><span class="mt-1 block text-xs text-gray-500">{{ req.teacher.get_full_name|default:req.teacher.username }} · {{ req.project_type.name }}</span></div>{% if req.deadline %}<time class="flex-none text-xs text-amber-300">{{ req.deadline|date:'d.m.Y' }}</time>{% endif %}</a>{% empty %}<p class="rounded-xl border border-dashed border-gray-700 p-6 text-center text-sm text-gray-500">Şu anda başvuruya açık proje ilanı yok.</p>{% endfor %}</div></section>
+
+    <section class="dashboard-card rounded-3xl p-5 sm:p-7" aria-labelledby="upcoming-events-title"><div class="flex items-end justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-widest text-violet-400">Takvimim</p><h2 id="upcoming-events-title" class="mt-2 text-xl font-bold text-white">Yaklaşan etkinlik kayıtlarım</h2></div><a href="{% url 'events:event_list' %}" class="text-sm font-semibold text-blue-300">Etkinlikler →</a></div><div class="mt-5 space-y-3">{% for registration in upcoming_registrations %}<a href="{% url 'events:event_detail' registration.event.pk %}" class="flex items-center gap-4 rounded-xl border border-gray-800 bg-[#0c1422] p-4 hover:border-blue-700"><time class="grid h-12 w-12 flex-none place-items-center rounded-xl bg-violet-950/70 text-center text-xs font-bold text-violet-200">{{ registration.event.start_date|date:'d' }}<br>{{ registration.event.start_date|date:'M' }}</time><div class="min-w-0"><strong class="block truncate text-gray-200">{{ registration.event.title }}</strong><span class="mt-1 block text-xs text-gray-500">{{ registration.event.start_date|date:'H:i' }} · {{ registration.get_status_display }}</span></div></a>{% empty %}<div class="rounded-xl border border-dashed border-gray-700 p-6 text-center"><p class="text-sm text-gray-500">Yaklaşan bir etkinlik kaydın yok.</p><a href="{% url 'events:event_list' %}" class="mt-3 inline-flex text-sm font-semibold text-blue-300">Etkinlikleri keşfet</a></div>{% endfor %}</div></section>
+  </div>
 </div>
 {% endblock %}

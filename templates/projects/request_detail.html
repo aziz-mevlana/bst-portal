@@ -1,0 +1,103 @@
+{% extends 'projects/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}BST Portal | {{ project_request.title }}{% endblock %}
+
+{% block project_content %}
+<div>
+  <div class="mx-auto max-w-5xl">
+    <a href="{% url 'projects:request_list' %}" class="mb-6 inline-flex text-sm text-gray-400 hover:text-white">← İlanlara dön</a>
+
+    <section class="overflow-hidden rounded-2xl border border-gray-700 bg-[#111827]/90 shadow-2xl">
+      <div class="border-b border-gray-700 p-6 sm:p-8">
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+          <span class="rounded-full px-3 py-1 text-xs font-semibold" style="background-color: {{ project_request.project_type.color }}22; color: {{ project_request.project_type.color }};">{{ project_request.project_type.name }}</span>
+          <span class="rounded-full border border-gray-600 bg-gray-800 px-3 py-1 text-xs text-gray-300">{{ project_request.get_status_display }}</span>
+          {% if project_request.is_past_deadline %}<span class="rounded-full border border-red-700 bg-red-950/50 px-3 py-1 text-xs text-red-300">Başvuru süresi doldu</span>{% endif %}
+        </div>
+        <h1 class="text-3xl font-bold text-white sm:text-4xl">{{ project_request.title }}</h1>
+        <p class="mt-3 text-gray-400">{{ project_request.teacher.get_full_name|default:project_request.teacher.username }}</p>
+        {% if project_request.source_collaboration %}<p class="mt-4 inline-flex rounded-lg border border-blue-800 bg-blue-950/50 px-3 py-2 text-sm text-blue-200">{{ project_request.source_collaboration.organization }} tarafından iletilmiş ve BST Akademi tarafından onaylanmıştır.</p>{% endif %}
+      </div>
+
+      <div class="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_280px]">
+        <div class="space-y-8">
+          <div>
+            <h2 class="mb-3 text-lg font-semibold text-white">Proje hakkında</h2>
+            <div class="whitespace-pre-line leading-7 text-gray-300">{{ project_request.description|default:'Açıklama eklenmemiş.' }}</div>
+          </div>
+          {% if project_request.requirements %}
+            <div>
+              <h2 class="mb-3 text-lg font-semibold text-white">Aranan bilgi ve yetenekler</h2>
+              <div class="whitespace-pre-line leading-7 text-gray-300">{{ project_request.requirements }}</div>
+            </div>
+          {% endif %}
+          {% if project_request.expected_output %}
+            <div>
+              <h2 class="mb-3 text-lg font-semibold text-white">Beklenen çıktı</h2>
+              <div class="whitespace-pre-line leading-7 text-gray-300">{{ project_request.expected_output }}</div>
+            </div>
+          {% endif %}
+          {% if project_request.technologies.exists %}
+            <div>
+              <h2 class="mb-3 text-lg font-semibold text-white">Teknolojiler</h2>
+              <div class="flex flex-wrap gap-2">
+                {% for technology in project_request.technologies.all %}<span class="rounded-full bg-gray-800 px-3 py-1.5 text-sm text-gray-300">{{ technology.name }}</span>{% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <aside class="space-y-3 rounded-xl bg-gray-800/50 p-5 text-sm">
+          <div><span class="block text-xs text-gray-500">Son başvuru</span><span class="mt-1 block text-gray-200">{{ project_request.deadline|date:'d.m.Y'|default:'Belirtilmedi' }}</span></div>
+          <div><span class="block text-xs text-gray-500">Tahmini süre</span><span class="mt-1 block text-gray-200">{{ project_request.estimated_duration|default:'Belirtilmedi' }}</span></div>
+          <div><span class="block text-xs text-gray-500">Ekip büyüklüğü</span><span class="mt-1 block text-gray-200">{{ project_request.team_size|default:'Belirtilmedi' }}</span></div>
+          {% if project_request.course %}<div><span class="block text-xs text-gray-500">Ders</span><span class="mt-1 block text-gray-200">{{ project_request.course }}</span></div>{% endif %}
+        </aside>
+      </div>
+    </section>
+
+    {% if user.profile.user_type == 'student' %}
+      <section class="mt-8 rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+        {% if own_application %}
+          <h2 class="text-xl font-semibold text-white">Başvurunuz</h2>
+          <p class="mt-2 text-gray-400">Durum: <span class="font-semibold text-blue-300">{{ own_application.get_status_display }}</span></p>
+          {% if own_application.status == 'pending' %}
+            <form method="post" action="{% url 'projects:request_application_withdraw' application_id=own_application.pk %}" class="mt-5">
+              {% csrf_token %}
+              <button class="rounded-xl border border-red-700 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-950/40">Başvuruyu geri çek</button>
+            </form>
+          {% endif %}
+        {% elif project_request.accepts_applications %}
+          <h2 class="text-xl font-semibold text-white">Bu projeye başvur</h2>
+          <p class="mt-2 text-sm text-gray-400">Akademisyene motivasyonunuzu ve nasıl katkı sunacağınızı anlatın.</p>
+          <form method="post" action="{% url 'projects:request_apply' request_id=project_request.pk %}" class="mt-6 space-y-5">
+            {% csrf_token %}
+            {% for field in application_form %}
+              <div>
+                <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-gray-200">{{ field.label }}</label>
+                {{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500' }}
+              </div>
+            {% endfor %}
+            <button class="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500">Başvuruyu gönder</button>
+          </form>
+        {% else %}
+          <p class="text-gray-400">Bu ilan şu anda başvuru kabul etmiyor.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if project_request.teacher == user or user.is_staff or user.is_superuser %}
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="{% url 'projects:request_applications' request_id=project_request.pk %}" class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">Başvuruları yönet</a>
+        <a href="{% url 'projects:request_edit' request_id=project_request.pk %}" class="rounded-xl border border-gray-600 px-5 py-3 font-semibold text-gray-300 hover:bg-gray-800">İlanı düzenle</a>
+      </div>
+      <details class="mt-6 rounded-2xl border border-red-900/70 bg-red-950/15 p-5">
+        <summary class="cursor-pointer font-bold text-red-300">Proje ilanını sil</summary>
+        <p class="mt-3 text-sm leading-6 text-gray-400">İlan ve başvuruları kalıcı olarak silinir. İlandan oluşturulan projeler korunur.</p>
+        <form method="post" action="{% url 'projects:request_delete' request_id=project_request.pk %}" class="mt-4" onsubmit="return confirm('Bu proje ilanını kalıcı olarak silmek istediğinize emin misiniz?');">{% csrf_token %}<input type="hidden" name="confirm_delete" value="yes"><label class="flex items-start gap-3 text-sm text-gray-300"><input type="checkbox" required><span>Bu işlemin geri alınamayacağını anlıyorum.</span></label><button type="submit" class="mt-4 rounded-xl bg-red-700 px-5 py-3 font-bold text-white hover:bg-red-600">İlanı kalıcı olarak sil</button></form>
+      </details>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

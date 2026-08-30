@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from projects.models import Project, ProjectRequest, ProjectCategory, Technology
+from projects.models import Project, ProjectRequest, ProjectCategory, ProjectType, Technology
 from events.models import Event
 from news.models import Article
 from datetime import datetime, timedelta
@@ -73,13 +73,16 @@ class Command(BaseCommand):
 
         for i, title in enumerate(project_titles):
             # Create project request first
+            project_type = ProjectType.objects.get(code='COURSE')
             project_req, _ = ProjectRequest.objects.get_or_create(
                 title=f'{title} - Request',
                 defaults={
+                    'project_type': project_type,
                     'course': 'Bilgisayar Mühendisliği',
-                    'duration': '4 ay',
+                    'estimated_duration': '4 ay',
                     'team_size': 4,
-                    'teacher': user
+                    'teacher': user,
+                    'status': 'open',
                 }
             )
             
@@ -87,6 +90,8 @@ class Command(BaseCommand):
                 title=title,
                 defaults={
                     'project_request': project_req,
+                    'project_type': project_type,
+                    'creation_source': 'COURSE_ASSIGNMENT',
                     'description': f'{title} projesi, modern teknolojiler kullanılarak geliştirilmiş kapsamlı bir uygulamadır. '
                                    f'Kullanıcı dostu arayüzü ve güçlü altyapısı ile öne çıkmaktadır. '
                                    f'Bu proje, gerçek dünya problemlerini çözmek için tasarlanmıştır.',

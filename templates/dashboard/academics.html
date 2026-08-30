@@ -17,15 +17,12 @@
             {{ active_count }} Onaylandı
         </span>
         {% endif %}
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
     </div>
 </div>
 
 <!-- Filters -->
 <div class="dashboard-card rounded-xl shadow p-4 mb-6">
-    <form method="get" class="flex flex-col sm:flex-row gap-4">
+    <form method="get" class="dashboard-filter-form" aria-label="Akademisyenleri filtrele">
         <input type="text" name="q" value="{{ query }}" placeholder="İsim veya e-posta ara..."
                class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
         <select name="status" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
@@ -91,6 +88,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             Onayla
                         </button>
+                        <button onclick="rejectAcademic({{ academic.id }})" class="ml-2 inline-flex items-center px-3 py-1.5 rounded-lg border border-red-700 text-sm font-medium text-red-300 hover:bg-red-950/40">Reddet</button>
                         {% else %}
                         <span class="text-sm text-gray-500">-</span>
                         {% endif %}
@@ -144,6 +142,21 @@ function approveAcademic(userId, userName) {
         }
     })
     .catch(() => alert('Bir hata oluştu.'));
+}
+
+function rejectAcademic(userId) {
+    const reason = window.prompt('Akademisyen kayıt talebinin red nedenini yazın:');
+    if (!reason || !reason.trim()) return;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    fetch('{% url "dashboard:reject_academic" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify({user_id: userId, reason: reason.trim()})
+    }).then(async response => {
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'İşlem başarısız.');
+        window.location.reload();
+    }).catch(error => alert(error.message));
 }
 </script>
 {% endblock %}

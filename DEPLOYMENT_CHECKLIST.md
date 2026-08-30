@@ -6,7 +6,7 @@
 - [ ] Set `DEBUG=False` in production
 - [ ] Configure `ALLOWED_HOSTS` with production domain
 - [ ] Set up secure `SECRET_KEY` in environment variables
-- [ ] Configure database connection (PostgreSQL recommended)
+- [ ] Configure the persistent SQLite path and automated SQLite backup schedule
 - [ ] Set up email backend credentials
 
 ### 2. Security Settings
@@ -37,7 +37,7 @@
 
 ### 1. System Requirements
 - [ ] Install Python 3.11+
-- [ ] Install PostgreSQL (or use SQLite for small sites)
+- [ ] Reserve persistent storage for SQLite and uploaded media
 - [ ] Install Nginx
 - [ ] Install Certbot for SSL
 
@@ -83,8 +83,9 @@ DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=False
 ALLOWED_HOSTS=bstakademi.com,www.bstakademi.com
 
-# Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/bstakademi
+# Database (this release uses SQLite)
+SQLITE_DATABASE_PATH=/var/lib/bst-portal/db.sqlite3
+SQLITE_TIMEOUT_SECONDS=20
 
 # Email Settings
 EMAIL_HOST=smtp.gmail.com
@@ -117,9 +118,9 @@ LOG_LEVEL=INFO
    - Verify file permissions
 
 2. **Database connection errors**
-   - Check database credentials in `.env`
-   - Verify PostgreSQL is running: `sudo systemctl status postgresql`
-   - Check database user permissions
+   - Check `SQLITE_DATABASE_PATH` in `.env`
+   - Verify the application user can read/write the database directory
+   - Verify sufficient free disk space and restore only from a validated SQLite backup
 
 3. **Gunicorn service not starting**
    - Check logs: `sudo journalctl -u bstakademi`

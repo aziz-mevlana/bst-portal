@@ -1,103 +1,67 @@
 {% extends 'dashboard/base.html' %}
 
 {% block dashboard_content %}
-<div class="mb-6 flex flex-row justify-between items-center gap-4">
-    <div>
-        <h1 class="text-2xl font-bold">Yönetici Paneli</h1>
-        <p class="text-gray-400">Hoş geldiniz, {{ request.user.get_full_name }}!</p>
-    </div>
-    <div class="flex items-center gap-2">
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </div>
+<div class="mb-7 flex items-center justify-between gap-4">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-widest text-blue-400">Genel görünüm</p>
+    <h1 class="mt-1 text-3xl font-bold">Yönetim Paneli</h1>
+    <p class="mt-1 text-sm text-gray-400">Hoş geldiniz, {{ request.user.get_full_name|default:request.user.username }}.</p>
+  </div>
 </div>
 
-<!-- Stats Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<section aria-labelledby="main-kpis-title">
+  <h2 id="main-kpis-title" class="sr-only">Ana göstergeler</h2>
+  <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="dashboard-card rounded-2xl p-5"><dt class="text-sm text-gray-400">Öğrenciler</dt><dd class="mt-2 text-3xl font-bold text-white">{{ kpis.students }}</dd></div>
+    <div class="dashboard-card rounded-2xl p-5"><dt class="text-sm text-gray-400">Projeler</dt><dd class="mt-2 text-3xl font-bold text-white">{{ kpis.projects }}</dd></div>
+    <div class="dashboard-card rounded-2xl p-5"><dt class="text-sm text-gray-400">Mezunlar</dt><dd class="mt-2 text-3xl font-bold text-white">{{ kpis.alumni }}</dd></div>
+    <div class="dashboard-card rounded-2xl border-amber-800/50 p-5"><dt class="text-sm text-amber-300">Bekleyen İşlemler</dt><dd class="mt-2 text-3xl font-bold text-white">{{ kpis.pending_operations }}</dd></div>
+  </dl>
+</section>
 
-    <!-- Total Students -->
-    <a href="{% url 'dashboard:students' %}" class="dashboard-card rounded-xl shadow-lg p-6 border-purple-500 hover:scale-[1.02] transition-transform">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-400 uppercase tracking-wide">Öğrenciler</p>
-                <p class="text-3xl font-bold">{{ total_students }}</p>
-            </div>
-            <div class="bg-purple-900 p-3 rounded-full">
-                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            </div>
-        </div>
-    </a>
+<div class="mt-6 grid gap-6 xl:grid-cols-2">
+  <section class="dashboard-card rounded-2xl p-5 sm:p-6" aria-labelledby="pending-title">
+    <div class="flex items-start justify-between gap-4"><div><h2 id="pending-title" class="text-lg font-semibold">Bekleyen İşlemler</h2><p class="mt-1 text-sm text-gray-500">İnceleme gerektiren işler tek listede.</p></div><span class="rounded-full bg-amber-950/50 px-3 py-1 text-sm font-bold text-amber-300">{{ kpis.pending_operations }}</span></div>
+    {% if kpis.pending_operations %}
+      <dl class="mt-5 divide-y divide-gray-800">
+        {% for item in pending_breakdown %}<div class="flex items-center justify-between gap-4 py-2.5 {% if not item.count %}text-gray-600{% endif %}"><dt class="text-sm">{{ item.label }}</dt><dd class="text-sm font-bold">{{ item.count }}</dd></div>{% endfor %}
+      </dl>
+    {% else %}
+      <div class="mt-5 rounded-xl border border-dashed border-gray-700 px-4 py-7 text-center text-sm text-gray-500">Şu anda bekleyen işlem bulunmuyor.</div>
+    {% endif %}
+  </section>
 
-    <!-- Total Projects -->
-    <a href="{% url 'dashboard:projects' %}" class="dashboard-card rounded-xl shadow-lg p-6 border-green-500 hover:scale-[1.02] transition-transform">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-400 uppercase tracking-wide">Projeler</p>
-                <p class="text-3xl font-bold">{{ total_projects }}</p>
-            </div>
-            <div class="bg-green-900 p-3 rounded-full">
-                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            </div>
-        </div>
-    </a>
+  <section class="dashboard-card rounded-2xl p-5 sm:p-6" aria-labelledby="class-title">
+    <h2 id="class-title" class="text-lg font-semibold">Sınıf Dağılımı</h2>
+    <div class="mt-4 space-y-3">
+      {% for row in class_distribution %}<div class="grid grid-cols-[76px_minmax(0,1fr)_24px] items-center gap-3"><span class="text-sm text-gray-400">{{ row.label }}</span><div class="h-2 overflow-hidden rounded-full bg-gray-800" role="img" aria-label="{{ row.label }}: {{ row.count }} kişi"><div class="h-full rounded-full bg-blue-500" style="width: {{ row.percent }}%"></div></div><strong class="text-right text-sm">{{ row.count }}</strong></div>{% endfor %}
+    </div>
+  </section>
 
-    <!-- Pending Approvals -->
-    <a href="{% url 'dashboard:projects' %}?status=in_review" class="dashboard-card rounded-xl shadow-lg p-6 border-yellow-500 hover:scale-[1.02] transition-transform">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-400 uppercase tracking-wide">Bekleyen Onay</p>
-                <p class="text-3xl font-bold">{{ pending_approvals }}</p>
-            </div>
-            <div class="bg-yellow-900 p-3 rounded-full">
-                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            </div>
-        </div>
-    </a>
+  <section class="dashboard-card rounded-2xl p-5 sm:p-6" aria-labelledby="status-title">
+    <h2 id="status-title" class="text-lg font-semibold">Proje Durumu</h2>
+    <dl class="mt-4 grid grid-cols-2 gap-3">
+      <div class="rounded-xl bg-gray-800 p-4"><dt class="flex items-center gap-2 text-sm text-gray-400"><span class="h-2.5 w-2.5 rounded bg-blue-500"></span>Aktif</dt><dd class="mt-2 text-2xl font-bold">{{ project_ratio.active }}</dd></div>
+      <div class="rounded-xl bg-gray-800 p-4"><dt class="flex items-center gap-2 text-sm text-gray-400"><span class="h-2.5 w-2.5 rounded bg-emerald-500"></span>Tamamlanan</dt><dd class="mt-2 text-2xl font-bold">{{ project_ratio.completed }}</dd></div>
+    </dl>
+    {% if project_ratio.active or project_ratio.completed %}<div class="mt-4 flex h-2 overflow-hidden rounded-full bg-gray-800" role="img" aria-label="Aktif {{ project_ratio.active }}, tamamlanan {{ project_ratio.completed }} proje"><span class="bg-blue-500" style="width:{{ project_ratio.active_percent }}%"></span><span class="bg-emerald-500" style="width:{{ project_ratio.completed_percent }}%"></span></div>{% endif %}
+  </section>
 
-    <!-- Total Alumni -->
-    <a href="{% url 'dashboard:alumni' %}" class="dashboard-card rounded-xl shadow-lg p-6 border-blue-500 hover:scale-[1.02] transition-transform">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-400 uppercase tracking-wide">Mezunlar</p>
-                <p class="text-3xl font-bold">{{ total_alumni }}</p>
-            </div>
-            <div class="bg-blue-900 p-3 rounded-full">
-                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
-        </div>
-    </a>
-
+  <section class="dashboard-card rounded-2xl p-5 sm:p-6" aria-labelledby="project-analytics-title">
+    <h2 id="project-analytics-title" class="text-lg font-semibold">Proje Analitiği</h2>
+    <div class="mt-4 grid gap-6 sm:grid-cols-2">
+      <div><h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Teknolojiler</h3><div class="mt-3 space-y-2">{% for row in technology_distribution %}<div class="flex items-center justify-between gap-3 text-sm"><span class="truncate text-gray-300">{{ row.name }}</span><strong>{{ row.total }}</strong></div>{% empty %}<p class="text-sm text-gray-600">Henüz veri yok.</p>{% endfor %}</div></div>
+      <div><h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Kategoriler</h3><div class="mt-3 space-y-2">{% for row in category_distribution %}<div class="flex items-center justify-between gap-3 text-sm"><span class="truncate text-gray-300">{{ row.name }}</span><strong>{{ row.total }}</strong></div>{% empty %}<p class="text-sm text-gray-600">Henüz veri yok.</p>{% endfor %}</div></div>
+    </div>
+  </section>
 </div>
 
+<div class="mt-6 grid gap-6 xl:grid-cols-2">
+  {% if analytics_summary %}<section class="dashboard-card rounded-2xl p-5 sm:p-6" aria-labelledby="analytics-title"><h2 id="analytics-title" class="text-lg font-semibold">Son 30 Gün</h2><p class="mt-1 text-sm text-gray-500">Gizlilik dostu, günlük tekilleştirilmiş kullanım özeti.</p><dl class="mt-4 grid grid-cols-2 gap-3">{% for item in analytics_summary %}<div class="rounded-xl bg-gray-800 p-4"><dt class="text-xs text-gray-400">{{ item.label }}</dt><dd class="mt-2 text-2xl font-bold">{{ item.total }}</dd>{% if item.show_success %}<p class="mt-1 text-xs text-gray-500">{{ item.successful }} başarılı</p>{% endif %}</div>{% endfor %}</dl></section>{% endif %}
 
-<!-- Quick Actions -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="dashboard-card rounded-xl shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Hızlı Erişim</h3>
-        <div class="space-y-3">
-            <a href="{% url 'dashboard:alumni' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-                <span>Mezunlar</span>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </a>
-            <a href="{% url 'dashboard:students' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-                <span>Öğrenci Listesi</span>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </a>
-            <a href="{% url 'dashboard:projects' %}" class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-                <span>Projeler</span>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </a>
-        </div>
-    </div>
-
-    <div class="dashboard-card rounded-xl shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4">Son Aktiviteler</h3>
-        <div class="space-y-3 text-sm text-gray-400">
-            <p>• Toplam {{ total_alumni }} mezun kayıtlı.</p>
-            <p>• {{ total_projects }} proje danışmanlığınızda.</p>
-            <p>• {{ pending_approvals }} adet proje onayınızı bekliyor.</p>
-        </div>
-    </div>
+  <section class="dashboard-card rounded-2xl p-5 sm:p-6 {% if not analytics_summary %}xl:col-span-2{% endif %}" aria-labelledby="activity-title">
+    <h2 id="activity-title" class="text-lg font-semibold">Son Aktiviteler</h2>
+    {% if recent_activities %}<ol class="mt-4 divide-y divide-gray-800">{% for activity in recent_activities %}<li class="py-3"><p class="text-sm text-gray-300">{{ activity.message }}</p><time class="mt-1 block text-xs text-gray-600">{{ activity.created_at|timesince }} önce</time></li>{% endfor %}</ol>{% else %}<div class="mt-4 rounded-xl border border-dashed border-gray-700 px-4 py-7 text-center text-sm text-gray-500">Henüz yeni aktivite bulunmuyor.</div>{% endif %}
+  </section>
 </div>
 {% endblock %}

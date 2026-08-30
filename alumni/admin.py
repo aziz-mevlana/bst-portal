@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Alumni, WorkExperience
+from .models import Alumni, AlumniRegistrationRequest, WorkExperience
 
 @admin.register(Alumni)
 class AlumniAdmin(admin.ModelAdmin):
@@ -11,3 +11,10 @@ class AlumniAdmin(admin.ModelAdmin):
 class WorkExperienceAdmin(admin.ModelAdmin):
     list_display = ('person', 'company', 'position', 'start_date', 'end_date', 'is_current')
     search_fields = ('company', 'position')
+
+
+@admin.register(AlumniRegistrationRequest)
+class AlumniRegistrationRequestAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'email', 'graduation_year', 'status', 'created_at')
+    list_filter = ('status', 'graduation_year')
+    search_fields = ('full_name', 'email', 'student_number')

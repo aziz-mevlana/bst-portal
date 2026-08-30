@@ -1,0 +1,21 @@
+<article class="home-project-card" data-home-reveal>
+  <a href="{{ project.get_absolute_url }}">
+    <div class="home-project-media">
+      {% include 'portal/partials/home_abstract_cover.html' with project=project %}
+      <span class="home-project-badge">{{ project.home_label }}</span>
+    </div>
+    <div class="home-project-body">
+      <div class="home-project-meta"><span>{{ project.project_type.name }}</span><span>{{ project.get_development_status_display }}</span></div>
+      <h3>{{ project.title }}</h3>
+      <p>{{ project.description|default:'Proje detayları yakında eklenecek.'|truncatewords:22 }}</p>
+      <div class="home-tag-list">{% for technology in project.technologies.all|slice:':4' %}<span>{{ technology.name }}</span>{% endfor %}</div>
+      <div class="home-project-footer">
+        <div class="home-project-team" aria-label="Proje ekibi">
+          <span title="{{ project.created_by.get_full_name|default:project.created_by.username }}">{{ project.created_by.first_name|first }}{{ project.created_by.last_name|first }}</span>
+          {% for member in project.team.all|slice:':4' %}{% if member.pk != project.created_by_id %}<span title="{{ member.get_full_name|default:member.username }}">{{ member.first_name|first }}{{ member.last_name|first }}</span>{% endif %}{% endfor %}
+        </div>
+        <span class="home-project-action">Projeyi incele <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </div>
+    </div>
+  </a>
+</article>

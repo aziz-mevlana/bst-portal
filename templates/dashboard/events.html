@@ -1,0 +1,58 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Etkinlik Yönetimi | BST Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6">
+  <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div class="max-w-3xl">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">İçerik yönetimi</p>
+      <h1 class="mt-2 text-3xl font-black text-white sm:text-4xl">Etkinlikler</h1>
+      <p class="mt-3 text-sm leading-6 text-gray-400">Etkinlik takvimini, kayıt durumunu ve katılımcı akışını panelden yönetin.</p>
+    </div>
+    {% if can_create_event %}<a href="{% url 'events:create_event' %}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Yeni etkinlik oluştur</a>{% endif %}
+  </header>
+
+  <section class="grid gap-3 sm:grid-cols-3" aria-label="Etkinlik özeti">
+    <article class="dashboard-card rounded-2xl p-5"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Yaklaşan</p><p class="mt-2 text-3xl font-black text-white">{{ event_stats.upcoming }}</p><p class="mt-1 text-xs text-gray-500">aktif etkinlik</p></article>
+    <article class="dashboard-card rounded-2xl p-5"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Kayıt açık</p><p class="mt-2 text-3xl font-black text-blue-300">{{ event_stats.registration_open }}</p><p class="mt-1 text-xs text-gray-500">katılımcı kabul ediyor</p></article>
+    <article class="dashboard-card rounded-2xl p-5"><p class="text-xs font-bold uppercase tracking-wider text-gray-500">Geçmiş</p><p class="mt-2 text-3xl font-black text-gray-300">{{ event_stats.past }}</p><p class="mt-1 text-xs text-gray-500">arşiv kaydı</p></article>
+  </section>
+
+  <form method="get" class="dashboard-card grid gap-3 rounded-2xl p-4 md:grid-cols-[minmax(220px,1fr)_220px_190px_auto]" aria-label="Etkinlikleri filtrele">
+    <label class="sr-only" for="event-query">Etkinlik ara</label><input id="event-query" name="q" value="{{ query }}" placeholder="Başlık, açıklama veya konum ara" class="min-h-11 rounded-xl border px-4">
+    <label class="sr-only" for="event-type">Etkinlik türü</label><select id="event-type" name="type" class="min-h-11 rounded-xl border px-3"><option value="">Tüm etkinlik türleri</option>{% for value, label in event_types %}<option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <label class="sr-only" for="event-period">Tarih aralığı</label><select id="event-period" name="period" class="min-h-11 rounded-xl border px-3"><option value="upcoming" {% if selected_period == 'upcoming' %}selected{% endif %}>Yaklaşan etkinlikler</option><option value="past" {% if selected_period == 'past' %}selected{% endif %}>Geçmiş etkinlikler</option><option value="all" {% if selected_period == 'all' %}selected{% endif %}>Tüm etkinlikler</option></select>
+    <button class="min-h-11 rounded-xl bg-blue-600 px-5 font-bold text-white hover:bg-blue-500">Filtrele</button>
+  </form>
+
+  <section aria-labelledby="event-list-title">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 id="event-list-title" class="text-xl font-bold text-white">Etkinlik listesi</h2><p class="mt-1 text-sm text-gray-500">{{ events|length }} kayıt gösteriliyor</p></div>{% if query or selected_type or selected_period != 'upcoming' %}<a href="{% url 'dashboard:events' %}" class="text-sm font-semibold text-blue-300 hover:text-blue-200">Filtreleri temizle</a>{% endif %}</div>
+    <div class="grid gap-4 xl:grid-cols-2">
+      {% for event in events %}
+      <article class="dashboard-card flex min-w-0 flex-col rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex flex-wrap gap-2 text-xs"><span class="rounded-full bg-blue-950/70 px-3 py-1.5 font-semibold text-blue-300">{{ event.get_event_type_display }}</span>{% if event.is_active %}<span class="rounded-full bg-emerald-950/70 px-3 py-1.5 font-semibold text-emerald-300">Yayında</span>{% else %}<span class="rounded-full bg-gray-800 px-3 py-1.5 font-semibold text-gray-400">Pasif</span>{% endif %}</div>
+          <time class="text-xs font-semibold text-gray-500">{{ event.start_date|date:'d.m.Y H:i' }}</time>
+        </div>
+        <h3 class="mt-4 text-xl font-bold text-white">{{ event.title }}</h3>
+        <p class="mt-2 line-clamp-2 text-sm leading-6 text-gray-400">{{ event.description }}</p>
+        <dl class="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-[#0c1422] p-4 text-sm sm:grid-cols-4">
+          <div><dt class="text-xs text-gray-600">Konum</dt><dd class="mt-1 truncate font-semibold text-gray-300" title="{{ event.location }}">{{ event.location }}</dd></div>
+          <div><dt class="text-xs text-gray-600">Katılımcı</dt><dd class="mt-1 font-semibold text-gray-300">{{ event.active_registration_count }}</dd></div>
+          <div><dt class="text-xs text-gray-600">Bekleme</dt><dd class="mt-1 font-semibold text-gray-300">{{ event.waitlist_count }}</dd></div>
+          <div><dt class="text-xs text-gray-600">Kontenjan</dt><dd class="mt-1 font-semibold text-gray-300">{{ event.capacity|default:'Sınırsız' }}</dd></div>
+        </dl>
+        <div class="mt-5 flex flex-wrap gap-2 border-t border-gray-800 pt-4">
+          <a href="{% url 'events:event_detail' event.pk %}" class="rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-gray-300 hover:border-blue-600 hover:text-white">Etkinliği görüntüle</a>
+          <a href="{% url 'events:edit_event' event.pk %}" class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500">Düzenle</a>
+          {% if event.allow_registration %}<a href="{% url 'events:event_participants' event.pk %}" class="rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-gray-300 hover:border-blue-600 hover:text-white">Katılımcıları yönet</a>{% endif %}
+        </div>
+      </article>
+      {% empty %}
+      <div class="dashboard-card rounded-2xl border-dashed p-10 text-center xl:col-span-2"><div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gray-800 text-gray-400"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 5h14v15H5zM8 3v4M16 3v4M5 9h14"/></svg></div><h3 class="mt-4 text-lg font-bold text-white">Bu filtrelerle etkinlik bulunamadı</h3><p class="mt-2 text-sm text-gray-500">Filtreleri temizleyin veya yeni bir etkinlik oluşturun.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

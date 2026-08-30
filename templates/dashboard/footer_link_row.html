@@ -1,0 +1,12 @@
+<div class="footer-link-row">
+  {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+  {{ form.non_field_errors }}
+  <div><label for="{{ form.section.id_for_label }}">Bölüm</label>{{ form.section }}{{ form.section.errors }}</div>
+  <div><label for="{{ form.label.id_for_label }}">Görünen ad</label>{{ form.label }}{{ form.label.errors }}</div>
+  <div><label for="{{ form.url.id_for_label }}">Bağlantı</label>{{ form.url }}{{ form.url.errors }}</div>
+  <div><label for="{{ form.sort_order.id_for_label }}">Sıra</label>{{ form.sort_order }}{{ form.sort_order.errors }}</div>
+  <div class="footer-link-flags">
+    <label>{{ form.is_active }} Yayında</label><label>{{ form.open_new_tab }} Yeni sekmede aç</label>
+    <label class="text-red-300">{{ form.DELETE }} Kaydederken sil</label>
+  </div>
+</div>

@@ -25,16 +25,14 @@
             <span class="hidden sm:inline">Yeni Proje</span>
         </a>
         {% endif %}
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
     </div>
 </div>
 
 <!-- Filters -->
 <div class="dashboard-card rounded-xl shadow p-4 mb-6">
-    <form method="get" class="flex flex-col sm:flex-row gap-4">
+    <form method="get" class="dashboard-filter-form" aria-label="Projeleri filtrele">
         <input type="text" name="q" value="{{ query }}" placeholder="Proje ara..." 
+               aria-label="Proje ara"
                class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
         {% if is_teacher_or_staff %}
         <select name="project_request" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
@@ -207,6 +205,12 @@
 <script>
     let currentProjectId = null;
 
+    function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = String(value ?? '');
+        return element.innerHTML;
+    }
+
     function openProjectModal(el) {
         currentProjectId = el.dataset.id;
         const statusValue = el.dataset.statusValue;
@@ -237,7 +241,7 @@
         if (techs) {
             techSection.classList.remove('hidden');
             techContainer.innerHTML = techs.split(', ').map(t =>
-                '<span class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">' + t + '</span>'
+                '<span class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">' + escapeHtml(t) + '</span>'
             ).join('');
         } else {
             techSection.classList.add('hidden');

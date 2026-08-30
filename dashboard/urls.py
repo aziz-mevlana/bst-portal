@@ -1,19 +1,24 @@
 from django.urls import path
 from . import views
+from .footer_views import footer_settings
 
 app_name = 'dashboard'
 
 urlpatterns = [
+    path('footer/', footer_settings, name='footer_settings'),
     path('', views.dashboard_home, name='home'),
     path('my-projects/', views.student_my_projects, name='my_projects'),
     path('alumni-projects/', views.alumni_projects, name='alumni_projects'),
     path('news/', views.dashboard_news, name='news'),
+    path('events/', views.dashboard_events, name='events'),
     path('news/approve/', views.approve_news, name='news_approve'),
     path('news/reject/', views.reject_news, name='news_reject'),
     path('news/delete/', views.delete_news, name='news_delete'),
+    path('news/delete-bulk/', views.bulk_delete_news, name='news_delete_bulk'),
     path('news/approve-all/', views.approve_all_news, name='news_approve_all'),
     path('news/keywords/', views.news_keywords, name='news_keywords'),
     path('news/keywords/delete/', views.delete_keyword, name='delete_keyword'),
+    path('news/<int:news_id>/source-preview/', views.news_source_preview, name='news_source_preview'),
     path('fetch-news/', views.fetch_news_command, name='fetch_news'),
     path('requests/', views.dashboard_requests, name='requests'),
     path('students/', views.dashboard_students, name='students'),
@@ -24,10 +29,26 @@ urlpatterns = [
     path('alumni/load-more/', views.dashboard_alumni_load_more, name='alumni_load_more'),
     path('alumni/match/', views.match_alumni, name='match_alumni'),
     path('alumni/unmatch/', views.unmatch_alumni, name='unmatch_alumni'),
+    path('alumni-registrations/', views.alumni_registrations, name='alumni_registrations'),
+    path('alumni-registrations/<int:registration_id>/', views.alumni_registration_detail, name='alumni_registration_detail'),
+    path('alumni-registrations/<int:registration_id>/link/', views.alumni_registration_link, name='alumni_registration_link'),
+    path('alumni-registrations/<int:registration_id>/create/', views.alumni_registration_create, name='alumni_registration_create'),
+    path('alumni-registrations/<int:registration_id>/reject/', views.alumni_registration_reject, name='alumni_registration_reject'),
     path('academics/', views.dashboard_academics, name='academics'),
     path('academics/approve/', views.approve_academic, name='approve_academic'),
+    path('academics/reject/', views.reject_academic, name='reject_academic'),
     path('users/search/', views.search_users, name='search_users'),
     path('students/update-class/', views.update_student_class, name='update_student_class'),
+    path('users/', views.moderation_users, name='moderation_users'),
+    path('approved-member-applications/', views.contributor_applications, name='approved_member_applications'),
+    path('approved-member-applications/<int:application_id>/review/', views.contributor_application_review, name='approved_member_application_review'),
+    path('contributor-applications/', views.contributor_applications, name='contributor_applications'),
+    path('contributor-applications/<int:application_id>/review/', views.contributor_application_review, name='contributor_application_review'),
+    path('users/<int:user_id>/', views.moderation_user_detail, name='moderation_user_detail'),
+    path('users/<int:user_id>/moderate/', views.moderate_user, name='moderate_user'),
+    path('users/<int:user_id>/role/', views.change_user_role, name='change_user_role'),
+    path('websites/', views.website_moderation, name='website_moderation'),
+    path('websites/<int:profile_id>/review/', views.website_review, name='website_review'),
     path('skills/', views.dashboard_skills, name='skills'),
     path('skills/delete/', views.delete_skill, name='delete_skill'),
 ]

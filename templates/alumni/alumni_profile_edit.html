@@ -7,7 +7,6 @@
 {% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/projects.css' %}" />
   <style>
 .checkbox-group label {
   display: flex !important;
@@ -161,7 +160,7 @@
                                name="current_position" 
                                id="current_position" 
                                value="{{ profile.current_position }}" 
-                               placeholder="Örn: Software Developer"
+                               placeholder="Örn: Yazılım geliştiricisi"
                                class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all" 
                                required>
                     </div>
@@ -374,7 +373,7 @@
                             <input type="text" 
                                    name="exp_position" 
                                    id="exp_position" 
-                                   placeholder="Örn: Software Developer"
+                                   placeholder="Örn: Yazılım geliştiricisi"
                                    class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
                         </div>
 
@@ -566,6 +565,7 @@ function fetchExperienceData(expId) {
 }
 
 function showEditForm(expId, experience) {
+    expId = String(expId || '').replace(/\D/g, '');
     const expCard = document.getElementById(`experience-${expId}`);
     
     const editForm = document.createElement('div');
@@ -576,22 +576,22 @@ function showEditForm(expId, experience) {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-2">Şirket <span class="text-red-500">*</span></label>
-                <input type="text" id="edit-company-${expId}" value="${experience.company}" 
+                <input type="text" id="edit-company-${expId}" value="${escapeAttribute(experience.company)}" 
                        class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Pozisyon <span class="text-red-500">*</span></label>
-                <input type="text" id="edit-position-${expId}" value="${experience.position}" 
+                <input type="text" id="edit-position-${expId}" value="${escapeAttribute(experience.position)}" 
                        class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Başlangıç Tarihi <span class="text-red-500">*</span></label>
-                <input type="date" id="edit-start-date-${expId}" value="${experience.start_date}" 
+                <input type="date" id="edit-start-date-${expId}" value="${escapeAttribute(experience.start_date)}" 
                        class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2">Bitiş Tarihi</label>
-                <input type="date" id="edit-end-date-${expId}" value="${experience.end_date || ''}" 
+                <input type="date" id="edit-end-date-${expId}" value="${escapeAttribute(experience.end_date || '')}" 
                        class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
                        ${experience.is_current ? 'disabled' : ''}>
             </div>
@@ -606,7 +606,7 @@ function showEditForm(expId, experience) {
         <div class="mt-3">
             <label class="block text-sm font-medium mb-2">Açıklama</label>
             <textarea id="edit-description-${expId}" rows="3" 
-                      class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none">${experience.description || ''}</textarea>
+                      class="project-form-input w-full p-4 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none">${escapeHtml(experience.description || '')}</textarea>
         </div>
         <div class="mt-4 flex gap-2">
             <button type="button" onclick="updateExperience(${expId})" 
@@ -733,6 +733,20 @@ function removeSkill(id) {
   updateSkillDisplay();
 }
 
+function escapeHtml(value) {
+  const element = document.createElement('div');
+  element.textContent = String(value ?? '');
+  return element.innerHTML;
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function safeHexColor(value) {
+  return /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '#3B82F6';
+}
+
 function updateSkillDisplay() {
   const list = document.getElementById('selectedSkillsList');
   const hiddenContainer = document.getElementById('skillsHiddenInputs');
@@ -756,13 +770,13 @@ function updateSkillDisplay() {
 
   let html = '';
   checkedBoxes.forEach(cb => {
-    const skillId = cb.dataset.id;
+    const skillId = String(cb.dataset.id || '').replace(/\D/g, '');
     const skillName = cb.dataset.name || '';
-    const color = cb.dataset.color || '#3B82F6';
+    const color = safeHexColor(cb.dataset.color);
     if (!skillName) return;
     html += `
       <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
-        ${skillName}
+        ${escapeHtml(skillName)}
         <button type="button" onclick="removeSkill('${skillId}')" class="hover:text-white">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -844,13 +858,13 @@ function updateCategoryDisplay() {
 
   let html = '';
   checkedBoxes.forEach(cb => {
-    const catId = cb.dataset.id;
+    const catId = String(cb.dataset.id || '').replace(/\D/g, '');
     const catName = cb.dataset.name || '';
-    const color = cb.dataset.color || '#3B82F6';
+    const color = safeHexColor(cb.dataset.color);
     if (!catName) return;
     html += `
       <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
-        ${catName}
+        ${escapeHtml(catName)}
         <button type="button" onclick="removeCategory('${catId}')" class="hover:text-white">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />

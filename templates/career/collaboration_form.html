@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}İş Birliği Başlat | BST Akademi{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-[var(--page-bg)] px-4 py-10 text-white">
+  <div class="mx-auto max-w-4xl">
+    <header class="page-intro mb-7">
+      <p class="text-sm font-semibold uppercase tracking-widest text-blue-400">Şirketler ve kurumlar için</p>
+      <h1 class="mt-2 text-3xl font-black sm:text-4xl">İş birliği talebi oluşturun</h1>
+      <p class="mt-3 max-w-2xl text-[var(--text-secondary)]">Talebiniz e-posta doğrulamasından sonra BST Akademi yöneticileri tarafından incelenir. Hiçbir talep doğrudan öğrencilere iletilmez.</p>
+    </header>
+    <form method="post" class="collaboration-form" novalidate>
+      {% csrf_token %}{{ form.website_check }}
+      {% if form.non_field_errors %}<div class="mb-5 rounded-xl border border-red-700 bg-red-950/30 p-4 text-red-200">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="collaboration-form-grid">
+        {% for field in form.visible_fields %}
+          <div class="collaboration-form-group {% if field.name == 'description' or field.name == 'consent_accepted' %}collaboration-form-group--wide{% endif %}">
+            {% if field.name == 'consent_accepted' %}
+              <label class="collaboration-consent">{{ field }}<span class="text-sm leading-6"><a href="{% url 'portal:kvkk_notice' %}" target="_blank" class="font-semibold text-blue-300 underline-offset-2 hover:underline">KVKK Aydınlatma Metni</a>'ni okudum. Talebimin incelenebilmesi için benimle iletişim kurulacağını biliyorum.</span></label>
+            {% else %}
+              <label for="{{ field.id_for_label }}" class="collaboration-form-label">{{ field.label }}{% if field.field.required %} <span class="text-red-400">*</span>{% endif %}</label>
+              {{ field }}
+            {% endif %}
+            {% for error in field.errors %}<p class="mt-2 text-sm text-red-300">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      <button class="collaboration-submit">Doğrulama kodu gönder</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

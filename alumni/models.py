@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 from projects.models import ProjectCategory, Technology
+from django.templatetags.static import static
 
 
 class Alumni(models.Model):
@@ -15,6 +16,7 @@ class Alumni(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='alumni')
     full_name = models.CharField(max_length=200, blank=True, default='')
     graduation_year = models.IntegerField(default=datetime.now().year, blank=True, null=True)
+    student_number = models.CharField(max_length=20, blank=True, null=True)
     current_position = models.CharField(max_length=200, blank=True, default='')
     company = models.CharField(max_length=200, blank=True, default='')
     experience_level = models.CharField(max_length=15, choices=EXPERIENCE_LEVEL_CHOICES, blank=True, default='junior')
@@ -34,6 +36,13 @@ class Alumni(models.Model):
         ordering = ['-graduation_year']
         verbose_name = "Alumni"
         verbose_name_plural = "Alumni"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student_number'],
+                condition=models.Q(student_number__isnull=False) & ~models.Q(student_number=''),
+                name='unique_nonempty_alumni_student_number',
+            ),
+        ]
         
     def __str__(self):
         if self.user:
@@ -42,15 +51,17 @@ class Alumni(models.Model):
 
     def get_display_name(self):
         if self.user:
-            return self.user.get_full_name()
+            user_name = self.user.get_full_name().strip()
+            if user_name:
+                return user_name
         return self.full_name or 'İsimsiz Mezun'
 
     def get_profile_photo_url(self):
         if self.user and hasattr(self.user, 'profile') and self.user.profile.profile_picture:
             return self.user.profile.profile_picture.url
         if self.profile_photo:
-            filename = self.profile_photo.split('\\')[-1] if '\\' in self.profile_photo else self.profile_photo
-            return f'/linkedin_profile_photos/{filename}'
+            filename = self.profile_photo.replace('\\', '/').split('/')[-1]
+            return static(filename)
         return None
 
 
@@ -73,3 +84,41 @@ class WorkExperience(models.Model):
 
     def __str__(self):
         return f"{self.position} at {self.company}"
+
+
+class AlumniRegistrationRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'İnceleme bekliyor'),
+        ('approved_linked', 'Mevcut mezuna bağlandı'),
+        ('approved_new', 'Yeni mezun olarak onaylandı'),
+        ('rejected', 'Reddedildi'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='alumni_registration_request')
+    full_name = models.CharField(max_length=200)
+    graduation_year = models.PositiveSmallIntegerField()
+    student_number = models.CharField(max_length=20, blank=True)
+    email = models.EmailField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    matched_alumni = models.ForeignKey(
+        Alumni, on_delete=models.PROTECT, null=True, blank=True, related_name='registration_requests'
+    )
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, null=True, blank=True, related_name='reviewed_alumni_registrations'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.CharField(max_length=32, blank=True)
+    moderation_description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email'], condition=models.Q(status='pending'), name='one_pending_alumni_request_per_email'
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.full_name} / {self.get_status_display()}'

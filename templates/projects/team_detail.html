@@ -1,0 +1,96 @@
+{% extends 'projects/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ team.name }} | BST Ekipleri{% endblock %}
+
+{% block project_content %}
+<header class="project-page-header rounded-3xl border border-gray-800 bg-gradient-to-br from-blue-950/25 to-transparent p-6 sm:p-8">
+  <div class="flex flex-wrap items-start justify-between gap-5">
+    <div class="min-w-0">
+      <a href="{% url 'projects:team_list' %}" class="text-sm font-semibold text-gray-400 hover:text-white">← Ekip listesine dön</a>
+      <p class="mt-5 text-sm font-semibold uppercase tracking-widest text-blue-400">BST Ekibi</p>
+      <h1 class="mt-2 break-words text-4xl font-black text-white">{{ team.name }}</h1>
+      <p class="mt-4 max-w-3xl whitespace-pre-line leading-7 text-gray-300">{{ team.description|default:'Ekip açıklaması henüz eklenmedi.' }}</p>
+    </div>
+    <span class="rounded-full px-4 py-2 text-sm font-semibold {% if team.recruitment_open %}bg-emerald-950 text-emerald-300{% else %}bg-gray-800 text-gray-400{% endif %}">{% if team.recruitment_open %}Üye alımı açık{% else %}Üye alımı kapalı{% endif %}</span>
+  </div>
+  <div class="mt-5 flex flex-wrap gap-2">
+    {% for item in team.technologies.all %}<span class="rounded-full bg-gray-800 px-3 py-1 text-sm">{{ item.name }}</span>{% endfor %}
+    {% for item in team.work_areas.all %}<span class="rounded-full border border-blue-800 px-3 py-1 text-sm text-blue-300">{{ item.name }}</span>{% endfor %}
+  </div>
+</header>
+
+<div class="grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+  <main class="min-w-0 space-y-7">
+    <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6">
+      <div class="flex items-center justify-between gap-3"><h2 class="text-2xl font-bold">Ekip üyeleri</h2><span class="text-sm text-gray-500">{{ team.membership_records.count }} kişi</span></div>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2">
+        {% for membership in team.membership_records.all %}
+        <div class="rounded-xl border border-gray-800 bg-gray-800/60 p-4">
+          <strong class="break-words">{{ membership.user.get_full_name|default:membership.user.username }}</strong>
+          <p class="mt-1 text-sm text-gray-400">{{ membership.role|default:'Ekip üyesi' }}{% if membership.user == team.leader %} · Ekip lideri{% endif %}</p>
+        </div>
+        {% empty %}<p class="text-gray-500">Henüz ekip üyesi yok.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="flex items-center justify-between gap-3"><h2 class="text-2xl font-bold">Aktif projeler</h2><span class="text-sm text-gray-500">{{ active_projects|length }} proje</span></div>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        {% for project in active_projects %}<a href="{{ project.get_absolute_url }}" class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-5 transition hover:border-blue-500"><span class="text-xs text-blue-300">{{ project.get_development_status_display }}</span><h3 class="mt-2 font-bold">{{ project.title }}</h3></a>{% empty %}<p class="rounded-xl border border-dashed border-gray-800 p-5 text-gray-500 md:col-span-2">Aktif proje yok.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="flex items-center justify-between gap-3"><h2 class="text-2xl font-bold">Tamamlanan projeler</h2><span class="text-sm text-gray-500">{{ completed_projects|length }} proje</span></div>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        {% for project in completed_projects %}<a href="{{ project.get_absolute_url }}" class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-5 transition hover:border-blue-500"><h3 class="font-bold">{{ project.title }}</h3></a>{% empty %}<p class="rounded-xl border border-dashed border-gray-800 p-5 text-gray-500 md:col-span-2">Tamamlanan proje yok.</p>{% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <aside class="min-w-0 space-y-6">
+    <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-5">
+      <h2 class="text-xl font-bold">Açık roller</h2>
+      <div class="mt-4 space-y-3">
+        {% for role in team.open_roles.all %}{% if role.is_open %}<article class="rounded-xl bg-gray-800/60 p-4"><strong>{{ role.title }}</strong>{% if role.description %}<p class="mt-2 text-sm leading-6 text-gray-400">{{ role.description }}</p>{% endif %}<div class="mt-3 flex flex-wrap gap-1.5">{% for technology in role.required_technologies.all %}<span class="rounded-full border border-gray-700 px-2 py-1 text-xs text-gray-400">{{ technology.name }}</span>{% endfor %}</div></article>{% endif %}{% empty %}<p class="text-sm text-gray-500">Açık rol bulunmuyor.</p>{% endfor %}
+      </div>
+    </section>
+
+    {% if invite_form %}
+    <section class="rounded-2xl border border-blue-800/60 bg-blue-950/20 p-5">
+      <h2 class="text-xl font-bold">Üye davet et</h2>
+      <p class="mt-2 text-sm text-gray-400">Üyelik, kullanıcı daveti kabul ettikten sonra başlar.</p>
+      <form method="post" action="{% url 'projects:team_invite' team.slug %}" class="mt-4 space-y-4">{% csrf_token %}
+        {% for field in invite_form %}<div><label for="{{ field.id_for_label }}" class="block text-sm font-semibold">{{ field.label }}{% if field.field.required %} <span class="text-red-300">*</span>{% endif %}</label>{{ field|add_class:'mt-2 w-full rounded-xl border border-gray-600 bg-[#181e29] p-3' }}{% if field.errors %}<p class="mt-1 text-sm text-red-300">{{ field.errors|striptags }}</p>{% endif %}</div>{% endfor %}
+        <button type="submit" class="min-h-11 w-full rounded-xl bg-blue-600 px-4 py-2 font-bold hover:bg-blue-500">Davet gönder</button>
+      </form>
+    </section>
+
+    <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-5">
+      <h2 class="text-xl font-bold">Açık rol ekle</h2>
+      <form method="post" action="{% url 'projects:team_open_role_add' team.slug %}" class="mt-4 space-y-4">{% csrf_token %}
+        {% for field in role_form %}
+          {% if field.name == 'is_open' %}<label class="flex items-start gap-3 rounded-xl border border-gray-700 p-3 text-sm"><span class="mt-0.5">{{ field }}</span><span><strong>{{ field.label }}</strong><span class="mt-1 block text-xs text-gray-500">Bu rol ekip sayfasında başvuruya açık gösterilsin.</span></span></label>
+          {% else %}<div><label for="{{ field.id_for_label }}" class="block text-sm font-semibold">{{ field.label }}{% if field.field.required %} <span class="text-red-300">*</span>{% endif %}</label>{{ field|add_class:'mt-2 w-full rounded-xl border border-gray-600 bg-[#181e29] p-3' }}{% if field.errors %}<p class="mt-1 text-sm text-red-300">{{ field.errors|striptags }}</p>{% endif %}</div>{% endif %}
+        {% endfor %}
+        <button type="submit" class="min-h-11 w-full rounded-xl bg-blue-600 px-4 py-2 font-bold hover:bg-blue-500">Açık rolü yayımla</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if can_disband %}
+    <section class="rounded-2xl border border-red-900/80 bg-red-950/15 p-5">
+      <p class="text-xs font-bold uppercase tracking-widest text-red-300">Tehlikeli işlem</p>
+      <h2 class="mt-1 text-xl font-bold">Ekibi dağıt</h2>
+      <p class="mt-2 text-sm leading-6 text-gray-400">Üyelikler, davetler ve açık roller silinir. Bağlı projeler silinmez; yalnızca ekip bağlantıları kaldırılır.</p>
+      <form method="post" action="{% url 'projects:team_disband' team.slug %}" class="mt-4" onsubmit="return confirm('Bu ekibi kalıcı olarak dağıtmak istediğinize emin misiniz?');">{% csrf_token %}
+        <label for="team-name-confirmation" class="block text-sm font-semibold">Onaylamak için <strong>{{ team.name }}</strong> yazın</label>
+        <input id="team-name-confirmation" name="team_name" required autocomplete="off" placeholder="Ekip adını eksiksiz yazın" class="mt-2 w-full rounded-xl border border-red-900 bg-[#181e29] p-3">
+        <button type="submit" class="mt-3 min-h-11 w-full rounded-xl bg-red-700 px-4 py-2 font-bold text-white hover:bg-red-600">Ekibi kalıcı olarak dağıt</button>
+      </form>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

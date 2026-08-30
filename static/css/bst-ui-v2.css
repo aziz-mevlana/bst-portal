@@ -1,0 +1,408 @@
+/*
+ * BST public UI compatibility layer.
+ *
+ * This file deliberately has a new URL. It keeps pages on the same navy design
+ * system even when a browser still has an older copy of style.css cached.
+ */
+
+:root {
+    color-scheme: dark;
+    --page-bg: #080d18;
+    --navbar-bg: #0c1422;
+    --surface: #101827;
+    --surface-elevated: #182235;
+    --input-bg: #111a2a;
+    --border: #26344a;
+    --border-strong: #3a4c68;
+    --text-primary: #f5f7fb;
+    --text-secondary: #c8d2e1;
+    --text-muted: #8d9bb0;
+    --accent: #2f6fed;
+    --accent-hover: #245dd2;
+    --header-height: 4.25rem;
+}
+
+html,
+body,
+.site-content {
+    background: var(--page-bg) !important;
+    color: var(--text-primary);
+}
+
+.site-content {
+    flex: 1 0 auto;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Yalnizca ana navigasyon sabit kalir. Sayfa ici header'lar normal akistadir. */
+.site-header {
+    position: sticky !important;
+    inset: 0 0 auto !important;
+    z-index: 50 !important;
+    min-height: var(--header-height);
+    background: color-mix(in srgb, var(--navbar-bg) 97%, transparent) !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: none;
+    backdrop-filter: blur(16px);
+}
+
+.site-header.scrolled {
+    box-shadow: 0 10px 28px rgb(0 0 0 / 22%);
+}
+
+.nav-container,
+.project-section-nav,
+.site-footer {
+    background-color: var(--navbar-bg) !important;
+}
+
+#site-content header {
+    position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+}
+
+#site-content > main,
+main[class*="min-h-screen"] {
+    background-color: var(--page-bg) !important;
+}
+
+/* Eski sabit gri utility renklerini kariyer sayfasinin lacivert paletine esle. */
+#site-content [class*="bg-[#111827]"],
+#site-content [class~="bg-gray-800"],
+#site-content [class*="bg-gray-800/"] {
+    background-color: var(--surface) !important;
+}
+
+#site-content [class*="bg-[#0b1120]"] {
+    background-color: var(--page-bg) !important;
+}
+
+#site-content [class*="bg-[#181e29]"],
+#site-content [class~="bg-gray-900"] {
+    background-color: var(--input-bg) !important;
+}
+
+#site-content [class~="border-gray-700"],
+#site-content [class~="border-gray-800"] {
+    border-color: var(--border) !important;
+}
+
+#site-content [class~="border-gray-600"] {
+    border-color: var(--border-strong) !important;
+}
+
+#site-content [class~="text-gray-300"],
+#site-content [class~="text-gray-400"] {
+    color: var(--text-secondary) !important;
+}
+
+#site-content [class~="text-gray-500"] {
+    color: var(--text-muted) !important;
+}
+
+/* Tum uygulama formlarinin eski CSS'te gorunmez kalmasini engelle. */
+.project-form-input,
+.bst-field,
+#site-content form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+#site-content form select:not(.bst-multiselect-native),
+#site-content form textarea {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 0.75rem;
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    font: inherit;
+    line-height: 1.4;
+    box-shadow: none;
+}
+
+/* Filter controls share the row instead of squeezing the search field to zero. */
+#site-content .dashboard-filter-form {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: stretch;
+    gap: 1rem;
+}
+
+#site-content .dashboard-filter-form > input:not([type="hidden"]) {
+    flex: 2 1 16rem;
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+}
+
+#site-content .dashboard-filter-form > select {
+    flex: 1 1 12rem;
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+}
+
+#site-content .dashboard-filter-form > button {
+    flex: 0 0 auto;
+    min-height: 3rem;
+    white-space: nowrap;
+}
+
+/* Native color swatch stays compact; the editable hex value gets the space. */
+#site-content .skill-color-field {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#site-content form input[type="color"] {
+    width: 3rem;
+    height: 3rem;
+    min-height: 3rem;
+    flex: 0 0 3rem;
+    padding: 0.25rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.75rem;
+    background: var(--input-bg);
+    cursor: pointer;
+}
+
+#site-content form input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#site-content form input[type="color"]::-webkit-color-swatch {
+    border: 0;
+    border-radius: 0.4rem;
+}
+
+#site-content form input[type="color"]::-moz-color-swatch {
+    border: 0;
+    border-radius: 0.4rem;
+}
+
+#site-content .skill-color-field > input[type="text"] {
+    min-width: 0;
+    width: 100%;
+    font-family: ui-monospace, monospace;
+}
+
+@media (max-width: 639px) {
+    #site-content .dashboard-filter-form > input:not([type="hidden"]),
+    #site-content .dashboard-filter-form > select,
+    #site-content .dashboard-filter-form > button {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
+
+#site-content form textarea {
+    min-height: 9rem;
+    resize: vertical;
+}
+
+#site-content form select:not(.bst-multiselect-native) {
+    appearance: none;
+    padding-right: 2.75rem;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+        linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) !important;
+    background-position: calc(100% - 18px) 52%, calc(100% - 12px) 52% !important;
+    background-repeat: no-repeat !important;
+    background-size: 6px 6px, 6px 6px !important;
+}
+
+#site-content form input::placeholder,
+#site-content form textarea::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+}
+
+#site-content form select[data-required-choice="true"]:required:invalid {
+    color: var(--text-muted) !important;
+}
+
+#site-content form select[data-required-choice="true"] option {
+    color: var(--text-primary);
+}
+
+#site-content form select[data-required-choice="true"] option[value=""] {
+    color: var(--text-muted);
+}
+
+.project-form-input:focus-visible,
+.bst-field:focus-visible,
+#site-content form input:focus-visible,
+#site-content form select:not(.bst-multiselect-native):focus-visible,
+#site-content form textarea:focus-visible {
+    outline: none;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgb(47 111 237 / 24%);
+}
+
+#site-content form input[type="checkbox"],
+#site-content form input[type="radio"] {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+}
+
+#site-content form input[type="file"] {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.75rem;
+    background: var(--input-bg);
+    color: var(--text-secondary);
+    font: inherit;
+}
+
+#site-content form input[type="file"]::file-selector-button {
+    min-height: 2.15rem;
+    margin-right: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+/* Is birligi formu Tailwind yuklenmese dahi duzenini ve alanlarini korur. */
+.collaboration-form {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    background: var(--surface);
+}
+
+.collaboration-form-grid {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.collaboration-form-group {
+    min-width: 0;
+}
+
+.collaboration-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.collaboration-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--input-bg);
+}
+
+.collaboration-submit {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.75rem;
+    padding: 0.75rem 1.5rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.collaboration-submit:hover {
+    background: var(--accent-hover);
+}
+
+@media (min-width: 640px) {
+    .collaboration-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .collaboration-form-group--wide {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 639px) {
+    .collaboration-submit {
+        width: 100%;
+    }
+}
+.nav-actions { flex-wrap: nowrap; align-items: center; }
+.nav-actions .nav-search-action,
+.nav-actions .profile-dropdown,
+.nav-actions .notification-dropdown { flex: 0 0 auto; align-self: center; }
+.nav-actions .profile-dropdown,
+.nav-actions .notification-dropdown { position: relative; display: flex; align-items: center; }
+.nav-actions .notification-dropdown { width: 40px; height: 40px; }
+.nav-actions .notification-button { position: relative; display: grid; flex: 0 0 40px; width: 40px; min-width: 40px; height: 40px; min-height: 40px; margin: 0; padding: 0; place-items: center; overflow: visible; border: 1px solid var(--border, #26344a); border-radius: 0.65rem; background: var(--surface-elevated, #182235); color: #dbeafe; line-height: 1; vertical-align: middle; cursor: pointer; box-sizing: border-box; transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.nav-actions .notification-button:hover,
+.nav-actions .notification-button:focus-visible,
+.nav-actions .notification-button[aria-expanded="true"] { border-color: #3b82f6; background: #1d2b43; color: #fff; outline: none; }
+.nav-actions .notification-button:focus-visible { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+.nav-actions .notification-button svg { display: block; flex: none; width: 20px; height: 20px; pointer-events: none; }
+.nav-actions .notification-badge { position: absolute; z-index: 1; top: -5px; right: -5px; display: grid; min-width: 18px; width: auto; height: 18px; margin: 0; padding: 0 4px; place-items: center; border: 2px solid var(--navbar-bg, #0c1422); border-radius: 999px; background: #dc2626; color: white; font-size: 10px; font-weight: 800; line-height: 1; white-space: nowrap; pointer-events: none; box-sizing: border-box; }
+.notification-menu[hidden] { display: none !important; }
+.notification-menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 1000; width: min(390px, calc(100vw - 24px)); overflow: hidden; border: 1px solid var(--border, #26344a); border-radius: 16px; background: #101827; box-shadow: 0 22px 60px rgba(0,0,0,.45); }
+.notification-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #26344a; padding: 14px 16px; }
+.notification-menu-header button { color: #93c5fd; font-size: 12px; }
+.notification-items { max-height: 420px; overflow-y: auto; }
+.notification-item { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; width: 100%; border-bottom: 1px solid #202c40; padding: 13px 16px; text-align: left; color: #c8d2e1; cursor: pointer; }
+.notification-item::before { width: 7px; height: 7px; margin-top: 6px; border-radius: 999px; background: transparent; content: ''; }
+.notification-item.unread::before { background: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,.13); }
+.notification-item-copy { min-width: 0; }
+.notification-item.unread { background: rgba(47,111,237,.13); }
+.notification-item:hover, .notification-item:focus-visible { background: #182235; outline: none; }
+.notification-item-title { display: block; margin-bottom: 3px; color: #f5f7fb; font-weight: 700; }
+.notification-item time { display: block; margin-top: 5px; color: #718096; font-size: 11px; }
+.notification-empty { padding: 24px; text-align: center; color: #8d9bb0; }
+.notification-all { display: block; padding: 13px; text-align: center; color: #93c5fd; font-weight: 700; }
+@media (max-width: 1179px) {
+    .nav-actions { min-width: auto; margin-left: auto; gap: .5rem; }
+    .nav-actions .nav-desktop-only { display: none !important; }
+    .notification-menu { position: fixed; top: calc(var(--header-height, 4rem) + 8px); right: 12px; left: 12px; width: auto; max-height: calc(100dvh - var(--header-height, 4rem) - 20px); }
+    .notification-items { max-height: min(420px, calc(100dvh - 190px)); }
+}
+
+@media (min-width: 1180px) {
+    .nav-links a.institution-nav-link {
+        margin-left: 0.2rem;
+        padding-inline: 0.72rem;
+        border: 1px solid rgba(79, 140, 255, 0.28);
+        border-radius: 0.6rem;
+        color: #b9d0ff;
+    }
+
+    .nav-links a.institution-nav-link::after {
+        display: none;
+    }
+
+    .nav-links a.institution-nav-link:hover {
+        border-color: rgba(79, 140, 255, 0.55);
+        background: rgba(47, 111, 237, 0.08);
+        color: #ffffff;
+    }
+}

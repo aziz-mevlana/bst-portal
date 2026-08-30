@@ -1,840 +1,154 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'projects/base.html' %}
 {% load widget_tweaks %}
 
-{% block title %}
-  BST Akademi | Proje Ekle
-{% endblock %}
+{% block title %}BST Portal | {% if form.instance.pk %}Projeyi Düzenle{% else %}Yeni Proje{% endif %}{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/projects.css' %}" />
-  <style>
-    .checkbox-group label {
-      display: flex !important;
-      align-items: center !important;
-      gap: 0.75rem !important;
-      padding: 0.75rem 1rem !important;
-      background: #1f2937 !important;
-      border: 1px solid #374151 !important;
-      border-radius: 0.5rem !important;
-      cursor: pointer !important;
-      transition: all 0.2s ease !important;
-      margin-bottom: 0.5rem !important;
-    }
-    .checkbox-group label:hover {
-      background: #374151 !important;
-      border-color: #60a5fa !important;
-    }
-    .checkbox-group input[type='checkbox'] {
-      width: 1.25rem !important;
-      height: 1.25rem !important;
-      accent-color: #3b82f6 !important;
-      cursor: pointer !important;
-    }
-    .checkbox-group input[type='checkbox']:checked + span {
-      color: #60a5fa !important;
-    }
-    .checkbox-group span {
-      color: #e5e7eb !important;
-      font-size: 0.875rem !important;
-      transition: color 0.2s ease !important;
-    }
-  </style>
-{% endblock %}
+{% block project_content %}
+  <div class="w-full">
+    <div class="project-page-header">
+      <div>
+        <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-400">Proje çalışma alanı</p>
+        <h1 class="text-3xl font-bold text-white sm:text-4xl">
+          {% if form.instance.pk %}Projeyi düzenle{% else %}Yeni proje oluştur{% endif %}
+        </h1>
+        <p class="mt-3 max-w-3xl text-gray-400">
+          Projenin türünü, kaynağını ve geliştirme durumunu birbirinden bağımsız tanımlayın. Akademisyen ilanından doğan projeler başvuru kabulüyle sistem tarafından oluşturulur.
+        </p>
+      </div>
+    </div>
 
-{% block content %}
-  <div class="min-h-screen px-3 sm:px-4 py-6 sm:py-8">
-    <div class="w-full max-w-4xl mx-auto px-1 sm:px-4">
-      <div class="mb-6 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="text-center sm:text-left">
-          <h2 class="text-2xl sm:text-3xl font-bold text-white">
-            {% if form.instance.pk %}
-              Projeyi Düzenle
-            {% else %}
-              Yeni Proje Ekle
+    <form method="post" enctype="multipart/form-data" class="project-surface space-y-6 rounded-2xl border p-5 shadow-2xl sm:p-8">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-red-500/40 bg-red-950/30 p-4 text-red-300">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {% for field in form %}
+          <div class="{% if field.name == 'description' or field.name == 'expected_output' or field.name == 'team' or field.name == 'categories' or field.name == 'technologies' %}md:col-span-2{% endif %}">
+            <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-gray-200">
+              {{ field.label }}{% if field.field.required %}<span class="ml-1 text-blue-400">*</span>{% endif %}
+            </label>
+            {% if field.errors %}
+              <div class="mb-2 rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-300">{{ field.errors }}</div>
             {% endif %}
-          </h2>
-        </div>
+            {% if field|widget_type == 'checkboxselectmultiple' %}
+              <div class="grid grid-cols-1 gap-2 rounded-xl border border-gray-700 bg-[#181e29] p-4 sm:grid-cols-2 lg:grid-cols-3">
+                {{ field }}
+              </div>
+            {% elif field|widget_type == 'selectmultiple' %}
+              {{ field|add_class:'min-h-44 w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500' }}
+            {% else %}
+              {{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60' }}
+            {% endif %}
+            {% if field.help_text %}<p class="mt-2 text-xs text-gray-500">{{ field.help_text }}</p>{% endif %}
+          </div>
+        {% endfor %}
       </div>
 
-      <form method="post" enctype="multipart/form-data" class="space-y-6 sm:space-y-8">
-        {% csrf_token %}
-
-        <!-- Main Content Grid -->
-        <div class="gap-8">
-          <!-- Temel Bilgiler -->
-          <div class="flex flex-col gap-6 sm:gap-8">
-            <div class="project-detail-item rounded-xl sm:rounded-2xl shadow-2xl border border-gray-700/70 p-4 sm:p-6 lg:p-10">
-              <div class="border-b border-gray-700 pb-3 sm:pb-4 mb-6 sm:mb-8">
-                <h3 class="text-xl sm:text-2xl font-semibold text-blue-400 flex items-center gap-2">
-                  Temel Bilgiler
-                </h3>
-              </div>
-              <div class="space-y-6">
-                <!-- Temel Alanlar -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {% for field in form %}
-                    {% if field.name in 'title description project_link status project_request is_private' %}
-                      <div class="space-y-2 {% if field.name == 'description' %}md:col-span-2{% endif %}">
-                        <label for="{{ field.id_for_label }}" class="text-sm font-medium text-gray-300 flex items-center gap-2">
-                          {% if field.name == 'title' %}
-                            Başlık
-                          {% elif field.name == 'description' %}
-                            Açıklama
-                          {% elif field.name == 'project_link' %}
-                            Proje Linki
-                          {% elif field.name == 'status' %}
-                            Proje Durumu
-                          {% elif field.name == 'project_request' %}
-                            Proje Türü
-                          {% elif field.name == 'is_private' %}
-                            Gizlilik
-                          {% else %}
-                            {{ field.label }}
-                          {% endif %}
-                          {% if field.field.required %}
-                            <span class="text-blue-400">*</span>
-                          {% endif %}
-                        </label>
-
-                        {% if field.errors %}
-                          <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{{ field.errors }}</div>
-                        {% endif %}
-
-                        {% if field.name == 'is_private' %}
-                          <div class="flex items-center gap-3 p-4 bg-[#181e29] border border-gray-600 rounded-lg">
-                            {{ field|add_class:'w-4 h-4 accent-blue-500 cursor-pointer' }}
-                            <div class="flex flex-col">
-                              <span class="text-white">Bu projeyi gizli yap</span>
-                            </div>
-                          </div>
-                        {% elif field.field.widget.input_type == 'textarea' %}
-                          {{ field|add_class:'project-form-input w-full min-h-[120px] p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none' }}
-                        {% elif field.field.widget.input_type == 'file' %}
-                          <div class="w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl">{{ field|add_class:'w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer file:hover:bg-blue-700 file:transition-colors file:text-sm file:font-medium' }}</div>
-                        {% elif field.field.widget.input_type == 'select' %}
-                          <div class="relative">
-                            {{ field|add_class:'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer' }}
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                              </svg>
-                            </div>
-                          </div>
-                        {% elif field.name == 'project_link' %}
-                          <input type="text" name="project_link" id="id_project_link" 
-                            class="project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-                            value="{{ form.project_link.value|default:'' }}"
-                            placeholder="Proje linki giriniz">
-                        {% else %}
-                          {{ field|add_class:'project-form-input w-full p-3 sm:p-4 bg-[#181e29] border border-gray-600 rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all' }}
-                        {% endif %}
-
-                        {% if field.help_text %}
-                          <div class="text-xs text-gray-500">{{ field.help_text }}</div>
-                        {% endif %}
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-                </div>
-
-                <!-- Seçili İstek Bilgi Kutusu -->
-                <div id="requestInfoBox" class="hidden mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                        </svg>
-                        <span class="text-sm font-semibold text-blue-300">Proje Bilgileri</span>
-                    </div>
-                    <div id="requestDescription" class="hidden mb-3">
-                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Açıklama</p>
-                        <p class="text-sm text-gray-300" id="requestDescriptionText"></p>
-                    </div>
-                    <div id="requestRequirements" class="hidden">
-                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Gerekli Koşullar</p>
-                        <p class="text-sm text-gray-300" id="requestRequirementsText"></p>
-                    </div>
-                    <div id="requestCategoryFilter" class="hidden mt-3">
-                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Kategoriler</p>
-                        <p class="text-xs text-gray-400">Sadece istekte belirtilen kategorilerden seçim yapabilirsiniz.</p>
-                    </div>
-                    <div id="requestTechnologyFilter" class="hidden mt-2">
-                        <p class="text-xs font-medium text-blue-400 uppercase tracking-wide mb-1">Teknolojiler</p>
-                        <p class="text-xs text-gray-400">Sadece istekte belirtilen teknolojilerden seçim yapabilirsiniz.</p>
-                    </div>
-                </div>
-
-                <!-- Selection Sections -->
-                <div class="space-y-6 pt-4">
-                  <!-- Ekip Üyeleri -->
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-300">Ekip Üyeleri</label>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
-                      <div id="selectedTeamMembersList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
-                        <span class="text-gray-500 text-sm">Üye seçiniz</span>
-                      </div>
-                      <button type="button" onclick="openTeamModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Ekle
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Kategoriler -->
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-300">Kategoriler</label>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
-                      <div id="selectedCategoriesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
-                        <span class="text-gray-500 text-sm">Kategori seçiniz</span>
-                      </div>
-                      <button type="button" onclick="openCategoryModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Ekle
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Teknolojiler -->
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-300">Teknolojiler</label>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg">
-                      <div id="selectedTechnologiesList" class="flex flex-wrap gap-2 items-center min-h-[44px]">
-                        <span class="text-gray-500 text-sm">Teknoloji seçiniz</span>
-                      </div>
-                      <button type="button" onclick="openTechnologyModal()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Ekle
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div id="teamHiddenInputs"></div>
-                <div id="categoriesHiddenInputs"></div>
-                <div id="technologiesHiddenInputs"></div>
-
-                <!-- Form Actions -->
-              </div>
-            </div>
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
-              <a href="{% url 'projects:project_list' %}" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">İptal</a>
-              <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-semibold transition-colors">
-                {% if form.instance.pk %}
-                  Projeyi Düzenle
-                {% else %}
-                  Yeni Proje Ekle
-                {% endif %}
-              </button>
-            </div>
-          </div>
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/70 p-5 md:p-6">
+        <label for="{{ repository_form.repository_path.id_for_label }}" class="block text-sm font-semibold text-gray-200">
+          {{ repository_form.repository_path.label }} <span class="text-gray-500">(isteğe bağlı)</span>
+        </label>
+        <p class="mb-3 mt-1 text-xs text-gray-500">GitHub bağlantısının yalnızca kullanıcı/depo bölümünü girin.</p>
+        {% if repository_form.non_field_errors %}<div class="mb-3 text-sm text-red-300">{{ repository_form.non_field_errors }}</div>{% endif %}
+        {% if repository_form.repository_path.errors %}<div class="mb-3 text-sm text-red-300">{{ repository_form.repository_path.errors }}</div>{% endif %}
+        <div class="flex min-w-0 overflow-hidden rounded-xl border border-gray-600 bg-[#181e29] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+          <span class="flex shrink-0 items-center border-r border-gray-700 bg-gray-900 px-3 text-sm text-gray-400">github.com/</span>
+          {% render_field repository_form.repository_path class="min-w-0 flex-1 border-0 bg-transparent p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-0" %}
         </div>
-      </form>
-    </div>
+        {% if repository_form.repository_path.help_text %}<p class="mt-2 text-xs text-gray-500">{{ repository_form.repository_path.help_text }}</p>{% endif %}
+      </section>
+
+      <section class="rounded-2xl border border-gray-700 bg-[#111827]/70 p-5 md:p-6" aria-labelledby="project-assets-title">
+        <div class="mb-6"><h2 id="project-assets-title" class="text-xl font-bold text-white">Proje görselleri ve dosyaları</h2><p class="mt-2 text-sm text-gray-400">Tüm alanlar isteğe bağlıdır. Görseller JPG, PNG veya WEBP ve en fazla 5 MB; PDF dosyaları en fazla 20 MB olabilir.</p></div>
+        <div class="grid gap-5 md:grid-cols-2">
+          <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4"><label for="{{ image_form.cover_image.id_for_label }}" class="font-semibold text-gray-100">Kapak Görseli</label><p class="mb-3 mt-1 text-xs text-gray-500">Proje kartlarında ve detay sayfasının üst bölümünde kullanılır.</p>{{ image_form.cover_image }}{% if image_form.cover_image.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.cover_image.errors }}</div>{% endif %}</div>
+          <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4"><label for="{{ image_form.project_logo.id_for_label }}" class="font-semibold text-gray-100">Proje Logosu</label><p class="mb-3 mt-1 text-xs text-gray-500">Varsa projenizin kare veya yatay logosunu yükleyin.</p>{{ image_form.project_logo }}{% if image_form.project_logo.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.project_logo.errors }}</div>{% endif %}</div>
+          <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4 md:col-span-2"><label for="{{ image_form.images.id_for_label }}" class="font-semibold text-gray-100">Proje Görselleri</label><p class="mb-3 mt-1 text-xs text-gray-500">Ekran görüntüsü, afiş, UI tasarımı, mimari diyagram vb. en fazla 12 görseli birlikte seçebilirsiniz.</p>{{ image_form.images }}{{ image_form.cover_index }}{% if image_form.images.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.images.errors }}</div>{% endif %}{% if image_form.cover_index.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.cover_index.errors }}</div>{% endif %}<div id="project-image-previews" data-has-existing-cover="{{ has_existing_cover|yesno:'true,false' }}" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite"></div></div>
+          <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4"><label for="{{ image_form.pitch_deck.id_for_label }}" class="font-semibold text-gray-100">Yatırımcı Sunumu (PDF)</label><p class="mb-3 mt-1 text-xs text-gray-500">Sunum, yatırım veya iş birliği dosyanızı ekleyin.</p>{{ image_form.pitch_deck }}{% if image_form.pitch_deck.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.pitch_deck.errors }}</div>{% endif %}<label class="mt-4 flex items-center gap-2 text-sm text-gray-300">{{ image_form.pitch_deck_is_public }} Herkese açık olsun</label><p class="mt-1 text-xs text-gray-500">Kapalıysa yalnızca proje yöneticileri görüntüleyebilir ve indirebilir.</p></div>
+          <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4"><label for="{{ image_form.documentation.id_for_label }}" class="font-semibold text-gray-100">Proje Dokümantasyonu (PDF)</label><p class="mb-3 mt-1 text-xs text-gray-500">Teknik doküman, kullanım kılavuzu veya proje raporu.</p>{{ image_form.documentation }}{% if image_form.documentation.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.documentation.errors }}</div>{% endif %}</div>
+        </div>
+      </section>
+
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-700 pt-6 sm:flex-row sm:justify-end">
+        <a href="{% url 'projects:project_list' %}" class="rounded-xl border border-gray-600 px-5 py-3 text-center font-medium text-gray-300 transition hover:bg-gray-800">Vazgeç</a>
+        <button type="submit" class="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-500">
+          {% if form.instance.pk %}Değişiklikleri kaydet{% else %}Projeyi oluştur{% endif %}
+        </button>
+      </div>
+    </form>
+
+    {% if form.instance.pk and existing_image_media or form.instance.pk and existing_documents %}
+      <section class="project-surface mt-6 rounded-2xl border p-5 shadow-xl sm:p-8" aria-labelledby="existing-images-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><h2 id="existing-images-title" class="text-xl font-bold text-white">Yüklü görseller ve PDF dosyaları</h2><p class="mt-1 text-sm text-gray-500">Mevcut varlıkları yönetin; yeni dosya seçerseniz aynı türdeki eski dosya değiştirilir.</p></div>
+          <span class="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-400">Mevcut dosyalar</span>
+        </div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {% for media in existing_image_media %}
+            <article class="overflow-hidden rounded-xl border {% if media.is_cover %}border-blue-500{% else %}border-gray-700{% endif %} bg-gray-900">
+              {% if media.file %}<img src="{{ media.file.url }}" alt="{{ media.alt_text|default:form.instance.title }}" class="aspect-video w-full object-cover">{% endif %}
+              <div class="space-y-2 p-3">
+                <p class="text-xs font-semibold text-blue-300">{% if media.is_cover %}Mevcut kapak{% else %}{{ media.get_media_type_display }}{% endif %}</p>{% if not media.is_cover and media.media_type == 'image' %}<form method="post" action="{% url 'projects:project_media_set_cover' media.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="project_edit"><button type="submit" class="w-full rounded-lg border border-blue-700 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-950/40">Kapak yap</button></form>{% endif %}
+                <form method="post" action="{% url 'projects:project_media_delete' media.pk %}" onsubmit="return confirm('Bu proje görselini kalıcı olarak silmek istediğinize emin misiniz?');">{% csrf_token %}<input type="hidden" name="return_to" value="project_edit"><button type="submit" class="w-full rounded-lg border border-red-800 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-950/30">Görseli sil</button></form>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+        {% if existing_documents %}<div class="mt-5 grid gap-3 md:grid-cols-2">{% for media in existing_documents %}<article class="rounded-xl border border-gray-700 bg-gray-900 p-4"><p class="font-semibold text-white">{{ media.get_media_type_display }}</p>{% if media.media_type == 'pitch_deck' %}<p class="mt-1 text-xs text-gray-400">{% if media.is_public %}Herkese açık{% else %}Gizli{% endif %}</p>{% endif %}<div class="mt-3 flex flex-wrap gap-3"><a href="{% url 'projects:project_media_file' media.pk 'view' %}" target="_blank" class="text-sm text-blue-300">Görüntüle</a><a href="{% url 'projects:project_media_file' media.pk 'download' %}" class="text-sm text-blue-300">İndir</a><form method="post" action="{% url 'projects:project_media_delete' media.pk %}" onsubmit="return confirm('Bu dosya kalıcı olarak silinsin mi?');">{% csrf_token %}<input type="hidden" name="return_to" value="project_edit"><button class="text-sm text-red-300">Sil</button></form></div></article>{% endfor %}</div>{% endif %}
+      </section>
+    {% endif %}
   </div>
+{% endblock %}
 
-  <script> 
-    const requestData = {{ request_data_json|default:'{}'|safe }};
-
-    function findFieldByName(name) {
-      return document.querySelector('[name="' + name + '"]');
-    }
-
-    function openTeamModal() {
-      const modal = document.getElementById('teamMemberModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
-      document.getElementById('teamSearchInput').focus();
-    }
-
-    function closeTeamModal() {
-      const modal = document.getElementById('teamMemberModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      document.body.style.overflow = 'auto';
-      document.getElementById('teamSearchInput').value = '';
-      const allItems = document.querySelectorAll('.team-member-item');
-      allItems.forEach(item => item.style.display = 'flex');
-    }
-
-    function searchTeamMembers() {
-      const searchValue = document.getElementById('teamSearchInput').value.toLowerCase();
-      const allItems = document.querySelectorAll('.team-member-item');
-      allItems.forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        if (name.includes(searchValue)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('{{ image_form.images.id_for_label }}');
+  const cover = document.getElementById('{{ image_form.cover_index.id_for_label }}');
+  const previews = document.getElementById('project-image-previews');
+  if (!input || !cover || !previews) return;
+  const hasExistingCover = previews.dataset.hasExistingCover === 'true';
+  let objectUrls = [];
+  input.addEventListener('change', function () {
+    objectUrls.forEach(URL.revokeObjectURL);
+    objectUrls = [];
+    previews.replaceChildren();
+    const files = Array.from(input.files || []);
+    const initialCoverIndex = files.length && !hasExistingCover ? 0 : null;
+    cover.value = initialCoverIndex === null ? '' : String(initialCoverIndex);
+    files.forEach(function (file, index) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'overflow-hidden rounded-xl border-2 border-gray-700 bg-gray-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500';
+      const initiallySelected = index === initialCoverIndex;
+      button.setAttribute('aria-pressed', initiallySelected ? 'true' : 'false');
+      const url = URL.createObjectURL(file);
+      objectUrls.push(url);
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = file.name + ' ön izlemesi';
+      image.className = 'aspect-video w-full object-cover';
+      const label = document.createElement('span');
+      label.className = 'block px-3 py-2 text-xs font-semibold text-gray-300';
+      label.textContent = initiallySelected ? 'Kapak seçildi' : 'Kapak yap';
+      button.append(image, label);
+      button.addEventListener('click', function () {
+        cover.value = String(index);
+        previews.querySelectorAll('button').forEach(function (item, itemIndex) {
+          const selected = itemIndex === index;
+          item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+          item.classList.toggle('border-blue-500', selected);
+          item.classList.toggle('border-gray-700', !selected);
+          item.querySelector('span').textContent = selected ? 'Kapak seçildi' : 'Kapak yap';
+        });
       });
-    }
-
-    function toggleTeamMember(userId, checkbox) {
-      const teamCheckboxes = document.querySelectorAll('input[name="team"][value="' + userId + '"]');
-      teamCheckboxes.forEach(cb => {
-        cb.checked = checkbox.checked;
-        cb.dispatchEvent(new Event('change'));
-      });
-      updateSelectedCount();
-    }
-
-    function updateSelectedCount() {
-      const checkedCount = document.querySelectorAll('input[name="team"]:checked').length;
-      const countElement = document.getElementById('selectedMemberCount');
-      if (countElement) {
-        countElement.textContent = checkedCount + ' üye seçildi';
-      }
-      updateTeamDisplay();
-    }
-
-    // Category Modal Functions
-    function openCategoryModal() {
-      const modal = document.getElementById('categoryModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
-      document.getElementById('categorySearchInput').focus();
-    }
-
-    function closeCategoryModal() {
-      const modal = document.getElementById('categoryModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      document.body.style.overflow = 'auto';
-      document.getElementById('categorySearchInput').value = '';
-      document.querySelectorAll('.category-item').forEach(item => {
-        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
-        item.style.display = isFilteredByRequest ? 'none' : 'flex';
-      });
-    }
-
-    function searchCategories() {
-      const searchValue = document.getElementById('categorySearchInput').value.toLowerCase();
-      document.querySelectorAll('.category-item').forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
-        if (name.includes(searchValue) && !isFilteredByRequest) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
-      });
-    }
-
-    function updateTeamDisplay() {
-      const list = document.getElementById('selectedTeamMembersList');
-      const hiddenContainer = document.getElementById('teamHiddenInputs');
-      if (!list || !hiddenContainer) return;
-
-      const checkedMembers = document.querySelectorAll('input[name="team"]:checked');
-      hiddenContainer.innerHTML = '';
-      checkedMembers.forEach(cb => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'team';
-        input.value = cb.value;
-        hiddenContainer.appendChild(input);
-      });
-
-      if (!checkedMembers.length) {
-        list.innerHTML = `<span class="text-gray-500 text-sm">Üye seçiniz</span>`;
-        return;
-      }
-
-      let html = '';
-      checkedMembers.forEach(cb => {
-        const memberId = cb.value;
-        const name = cb.dataset.name || '';
-        if (!name) return;
-        html += `
-          <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-600/20 text-blue-200 border border-blue-500/40">
-            ${name}
-            <button type="button" onclick="removeTeamMember('${memberId}')" class="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
-        `;
-      });
-      list.innerHTML = html;
-    }
-
-    function removeTeamMember(memberId) {
-      const teamCheckboxes = document.querySelectorAll('input[name="team"][value="' + memberId + '"]');
-      teamCheckboxes.forEach(cb => {
-        cb.checked = false;
-        cb.dispatchEvent(new Event('change'));
-      });
-      updateTeamDisplay();
-    }
-
-    function toggleCategory(id, name, checkbox) {
-      updateCategoryDisplay();
-    }
-
-    function removeCategory(id) {
-      const modalCheckboxes = document.querySelectorAll('#categoryModal input[type="checkbox"]');
-      modalCheckboxes.forEach(cb => {
-        if (cb.dataset.id === String(id)) {
-          cb.checked = false;
-        }
-      });
-      updateCategoryDisplay();
-    }
-
-    function updateCategoryDisplay() {
-      const list = document.getElementById('selectedCategoriesList');
-      const hiddenContainer = document.getElementById('categoriesHiddenInputs');
-      if (!list || !hiddenContainer) return;
-      
-      const checkedBoxes = document.querySelectorAll('#categoryModal input[type="checkbox"]:checked');
-      
-      hiddenContainer.innerHTML = '';
-      checkedBoxes.forEach(cb => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'categories';
-        input.value = cb.dataset.id;
-        hiddenContainer.appendChild(input);
-      });
-      
-      if (!checkedBoxes.length) {
-        list.innerHTML = `<span class="text-gray-500 text-sm">Kategori seçiniz</span>`;
-        return;
-      }
-
-      let html = '';
-      checkedBoxes.forEach(cb => {
-        const catId = cb.dataset.id;
-        const catName = cb.dataset.name || '';
-        const color = cb.dataset.color || '#3B82F6';
-        if (!catName) return;
-        html += `
-          <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
-            ${catName}
-            <button type="button" onclick="removeCategory('${catId}')" class="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
-        `;
-      });
-
-      list.innerHTML = html;
-    }
-
-    // Technology Modal Functions
-    function openTechnologyModal() {
-      const modal = document.getElementById('technologyModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
-      document.getElementById('technologySearchInput').focus();
-    }
-
-    function closeTechnologyModal() {
-      const modal = document.getElementById('technologyModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      document.body.style.overflow = 'auto';
-      document.getElementById('technologySearchInput').value = '';
-      document.querySelectorAll('.technology-item').forEach(item => {
-        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
-        item.style.display = isFilteredByRequest ? 'none' : 'flex';
-      });
-    }
-
-    function searchTechnologies() {
-      const searchValue = document.getElementById('technologySearchInput').value.toLowerCase();
-      document.querySelectorAll('.technology-item').forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        const isFilteredByRequest = item.getAttribute('data-filtered') === 'true';
-        if (name.includes(searchValue) && !isFilteredByRequest) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
-      });
-    }
-
-    function toggleTechnology(id, name, checkbox) {
-      updateTechnologyDisplay();
-    }
-
-    function removeTechnology(id) {
-      const modalCheckboxes = document.querySelectorAll('#technologyModal input[type="checkbox"]');
-      modalCheckboxes.forEach(cb => {
-        if (cb.dataset.id === String(id)) {
-          cb.checked = false;
-        }
-      });
-      updateTechnologyDisplay();
-    }
-
-    function updateTechnologyDisplay() {
-      const list = document.getElementById('selectedTechnologiesList');
-      const hiddenContainer = document.getElementById('technologiesHiddenInputs');
-      if (!list || !hiddenContainer) return;
-      
-      const checkedBoxes = document.querySelectorAll('#technologyModal input[type="checkbox"]:checked');
-      
-      hiddenContainer.innerHTML = '';
-      checkedBoxes.forEach(cb => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'technologies';
-        input.value = cb.dataset.id;
-        hiddenContainer.appendChild(input);
-      });
-      
-      if (!checkedBoxes.length) {
-        list.innerHTML = `<span class="text-gray-500 text-sm">Teknoloji seçiniz</span>`;
-        return;
-      }
-
-      let html = '';
-      checkedBoxes.forEach(cb => {
-        const techId = cb.dataset.id;
-        const techName = cb.dataset.name || '';
-        const color = cb.dataset.color || '#3B82F6';
-        if (!techName) return;
-        html += `
-          <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold" style="background-color:${color}20;color:${color};border:1px solid ${color}40;">
-            ${techName}
-            <button type="button" onclick="removeTechnology('${techId}')" class="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
-        `;
-      });
-
-      list.innerHTML = html;
-    }
-
-    function onRequestChange() {
-      const requestField = findFieldByName('project_request');
-      const val = requestField ? requestField.value : '';
-      const infoBox = document.getElementById('requestInfoBox');
-      const descDiv = document.getElementById('requestDescription');
-      const reqDiv = document.getElementById('requestRequirements');
-      const catFilter = document.getElementById('requestCategoryFilter');
-      const techFilter = document.getElementById('requestTechnologyFilter');
-
-      if (val && requestData[val]) {
-        const data = requestData[val];
-
-        // Show info box
-        infoBox.classList.remove('hidden');
-
-        // Description
-        if (data.description) {
-          descDiv.classList.remove('hidden');
-          document.getElementById('requestDescriptionText').textContent = data.description;
-        } else {
-          descDiv.classList.add('hidden');
-        }
-
-        // Requirements
-        if (data.requirements) {
-          reqDiv.classList.remove('hidden');
-          document.getElementById('requestRequirementsText').textContent = data.requirements;
-        } else {
-          reqDiv.classList.add('hidden');
-        }
-
-        // Category filter indicator
-        if (data.category_ids && data.category_ids.length > 0) {
-          catFilter.classList.remove('hidden');
-        } else {
-          catFilter.classList.add('hidden');
-        }
-
-        // Technology filter indicator
-        if (data.technology_ids && data.technology_ids.length > 0) {
-          techFilter.classList.remove('hidden');
-        } else {
-          techFilter.classList.add('hidden');
-        }
-
-        // Filter categories and technologies
-        filterModalItems(data.category_ids, data.technology_ids);
-      } else {
-        // Hide info box
-        infoBox.classList.add('hidden');
-        filterModalItems(null, null);
-      }
-    }
-
-    function filterModalItems(allowedCatIds, allowedTechIds) {
-      // Filter categories
-      document.querySelectorAll('.category-item').forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (!checkbox) return;
-        const id = parseInt(checkbox.dataset.id);
-        if (allowedCatIds && allowedCatIds.length > 0) {
-          if (allowedCatIds.includes(id)) {
-            item.style.display = 'flex';
-            item.setAttribute('data-filtered', 'false');
-          } else {
-            item.style.display = 'none';
-            item.setAttribute('data-filtered', 'true');
-            // Uncheck if hidden
-            if (checkbox.checked) {
-              checkbox.checked = false;
-              updateCategoryDisplay();
-            }
-          }
-        } else {
-          item.style.display = 'flex';
-          item.setAttribute('data-filtered', 'false');
-        }
-      });
-
-      // Filter technologies
-      document.querySelectorAll('.technology-item').forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (!checkbox) return;
-        const id = parseInt(checkbox.dataset.id);
-        if (allowedTechIds && allowedTechIds.length > 0) {
-          if (allowedTechIds.includes(id)) {
-            item.style.display = 'flex';
-            item.setAttribute('data-filtered', 'false');
-          } else {
-            item.style.display = 'none';
-            item.setAttribute('data-filtered', 'true');
-            // Uncheck if hidden
-            if (checkbox.checked) {
-              checkbox.checked = false;
-              updateTechnologyDisplay();
-            }
-          }
-        } else {
-          item.style.display = 'flex';
-          item.setAttribute('data-filtered', 'false');
-        }
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-      const requestField = findFieldByName('project_request');
-
-      // Initialize displays
-      updateTeamDisplay();
-      updateCategoryDisplay();
-      updateTechnologyDisplay();
-
-      // Sync modal checkboxes with form checkboxes
-      const teamCheckboxes = document.querySelectorAll('input[name="team"]');
-      teamCheckboxes.forEach(cb => {
-        cb.addEventListener('change', updateSelectedCount);
-      });
-
-      // Listen for request change
-      if (requestField) {
-        requestField.addEventListener('change', onRequestChange);
-        // Trigger on page load if pre-selected
-        if (requestField.value) {
-          onRequestChange();
-        }
-      }
+      if (initiallySelected) button.classList.replace('border-gray-700', 'border-blue-500');
+      previews.appendChild(button);
     });
-  </script>
-
-  <!-- Team Member Modal -->
-  <div id="teamMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <h3 class="text-lg font-semibold text-white">Ekip Üyeleri</h3>
-        </div>
-        <button onclick="closeTeamModal()" class="text-gray-400 hover:text-white transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Search Bar -->
-      <div class="p-4 border-b border-gray-700 shrink-0">
-        <div class="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-          </svg>
-          <input type="text" id="teamSearchInput" onkeyup="searchTeamMembers()" 
-                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-                 placeholder="Üye ara...">
-        </div>
-        <div id="selectedMemberCount" class="text-sm text-gray-400 mt-2 text-center">0 üye seçildi</div>
-      </div>
-
-      <!-- Team Members List -->
-      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-        {% for member in team_members %}
-          <label class="team-member-item flex items-center gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ member.get_full_name|default:member.username }}">
-            <input type="checkbox" 
-                   name="team"
-                   value="{{ member.id }}"
-                   data-id="{{ member.id }}"
-                   data-name="{{ member.get_full_name|default:member.username }}"
-                   onchange="toggleTeamMember('{{ member.id }}', this)"
-                   {% if form.instance.pk and member in form.instance.team.all %}checked{% endif %}
-                   class="w-5 h-5 accent-blue-500 cursor-pointer">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-              {% if member.profile.profile_picture %}
-                <img src="{{ member.profile.profile_picture.url }}" alt="{{ member.username }}" class="w-8 h-8 rounded-full object-cover border border-gray-600">
-              {% else %}
-                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center border border-gray-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-400">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                  </svg>
-                </div>
-              {% endif %}
-              <div class="flex flex-col min-w-0">
-                <span class="text-white font-medium text-sm truncate">{{ member.get_full_name|default:member.username }}</span>
-                <span class="text-gray-500 text-xs truncate">@{{ member.username }}</span>
-              </div>
-            </div>
-          </label>
-        {% empty %}
-          <div class="text-center text-gray-400 py-8">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto mb-2 text-gray-600">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-            </svg>
-            <p>Henüz öğrenci üye bulunmuyor</p>
-          </div>
-        {% endfor %}
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-4 border-t border-gray-700 shrink-0">
-        <button type="button" onclick="closeTeamModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
-          Tamam
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Category Modal -->
-  <div id="categoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
-      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <h3 class="text-lg font-semibold text-white">Kategoriler</h3>
-        </div>
-        <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div class="p-4 border-b border-gray-700 shrink-0">
-        <div class="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-          </svg>
-          <input type="text" id="categorySearchInput" onkeyup="searchCategories()" 
-                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-                 placeholder="Kategori ara...">
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-        {% for category in categories %}
-          <label class="category-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ category.name }}">
-            <div class="flex items-center gap-3 text-white">
-              <input type="checkbox" 
-                     data-id="{{ category.id }}"
-                     data-name="{{ category.name }}"
-                     data-color="{{ category.color }}"
-                     onchange="toggleCategory('{{ category.id }}', '{{ category.name }}', this)"
-                     {% if form.instance.pk and category in form.instance.categories.all %}checked{% endif %}
-                     class="w-5 h-5 accent-blue-500 cursor-pointer">
-              <span class="text-white font-medium text-sm">{{ category.name }}</span>
-            </div>
-            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ category.color }}20; color: {{ category.color }};">
-              {{ category.name|slice:":1" }}
-            </span>
-          </label>
-        {% empty %}
-          <div class="text-center text-gray-400 py-8">
-            <p>Henüz kategori bulunmuyor</p>
-          </div>
-        {% endfor %}
-      </div>
-      <div class="p-4 border-t border-gray-700 shrink-0">
-        <button type="button" onclick="closeCategoryModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-          Tamam
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Technology Modal -->
-  <div id="technologyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="relative w-full max-w-lg mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700 max-h-[80vh] flex flex-col">
-      <div class="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <h3 class="text-lg font-semibold text-white">Teknolojiler</h3>
-        </div>
-        <button onclick="closeTechnologyModal()" class="text-gray-400 hover:text-white transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div class="p-4 border-b border-gray-700 shrink-0">
-        <div class="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-          </svg>
-          <input type="text" id="technologySearchInput" onkeyup="searchTechnologies()" 
-                 class="w-full pl-10 pr-4 py-2.5 bg-[#181e29] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-                 placeholder="Teknoloji ara...">
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-        {% for tech in technologies %}
-          <label class="technology-item flex items-center justify-between gap-3 p-3 bg-[#181e29] border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all" data-name="{{ tech.name }}">
-            <div class="flex items-center gap-3 text-white">
-              <input type="checkbox" 
-                     data-id="{{ tech.id }}"
-                     data-name="{{ tech.name }}"
-                     data-color="{{ tech.color }}"
-                     onchange="toggleTechnology('{{ tech.id }}', '{{ tech.name }}', this)"
-                     {% if form.instance.pk and tech in form.instance.technologies.all %}checked{% endif %}
-                     class="w-5 h-5 accent-blue-500 cursor-pointer">
-              <span class="text-white font-medium text-sm">{{ tech.name }}</span>
-            </div>
-            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold" style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
-              {{ tech.name|slice:":1" }}
-            </span>
-          </label>
-        {% empty %}
-          <div class="text-center text-gray-400 py-8">
-            <p>Henüz teknoloji bulunmuyor</p>
-          </div>
-        {% endfor %}
-      </div>
-      <div class="p-4 border-t border-gray-700 shrink-0">
-        <button type="button" onclick="closeTechnologyModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-          Tamam
-        </button>
-      </div>
-    </div>
-  </div>
-  
+  });
+});
+</script>
 {% endblock %}

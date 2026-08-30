@@ -1,165 +1,72 @@
 {% extends 'dashboard/base.html' %}
 
+{% block title %}Proje İlanları | Yönetim{% endblock %}
+
 {% block dashboard_content %}
-<div class="mb-6 flex flex-row justify-between items-center gap-4">
+<div class="py-4">
+  <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
     <div>
-        <h1 class="text-2xl font-bold">Proje İstekleri</h1>
-        <p class="text-gray-400 hidden sm:block">Açtığınız proje isteklerini görüntüleyin.</p>
+      <p class="text-sm font-semibold uppercase tracking-widest text-blue-300">Proje eşleştirme</p>
+      <h1 class="mt-1 text-3xl font-black">Proje ilanları</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-400">Akademisyen proje ilanlarını, başvuru durumlarını ve son başvuru tarihlerini yönetin.</p>
     </div>
-    <div class="flex items-center gap-2">
-        <a href="{% url 'projects:request_create' %}" class="px-3 py-2 sm:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span class="hidden sm:inline">Yeni İstek</span>
-        </a>
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-300 hover:text-white bg-gray-800 p-2 rounded-lg border border-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-    </div>
+    {% if can_create_request %}<a href="{% url 'projects:request_create' %}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white hover:bg-blue-500"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>Yeni proje ilanı</a>{% endif %}
+  </header>
+
+  <form method="get" class="mt-6 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-[minmax(12rem,1fr)_minmax(12rem,16rem)_auto]">
+    <label class="sr-only" for="request-query">Proje ilanı ara</label>
+    <input id="request-query" type="search" name="q" value="{{ query }}" placeholder="Başlıkta ara…" class="min-h-11 rounded-xl border px-4">
+    <label class="sr-only" for="request-status">İlan durumu</label>
+    <select id="request-status" name="status" class="min-h-11 rounded-xl border px-4">
+      <option value="">Tüm ilan durumları</option>
+      {% for value, label in status_choices %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <div class="flex gap-2"><button type="submit" class="min-h-11 flex-1 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white hover:bg-blue-500">Filtrele</button>{% if query or status_filter %}<a href="{% url 'dashboard:requests' %}" class="inline-flex min-h-11 items-center rounded-xl border border-[var(--border-strong)] px-4 text-sm font-semibold text-gray-300 hover:bg-gray-800">Temizle</a>{% endif %}</div>
+  </form>
+
+  <div class="dashboard-table-scroll mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+    <table class="w-full min-w-[980px] text-left text-sm">
+      <thead class="bg-[var(--surface-elevated)] text-xs uppercase tracking-wider text-gray-400">
+        <tr><th class="whitespace-nowrap p-4">İlan</th><th class="whitespace-nowrap px-4 py-3">Akademisyen</th><th class="whitespace-nowrap px-4 py-3">Proje türü</th><th class="whitespace-nowrap px-4 py-3">Başvuru</th><th class="whitespace-nowrap px-4 py-3">Durum</th><th class="whitespace-nowrap px-4 py-3">Yayın tarihi</th><th class="whitespace-nowrap px-4 py-3 text-right">İşlemler</th></tr>
+      </thead>
+      <tbody>
+        {% for item in requests %}
+        <tr class="border-t border-[var(--border)] align-top hover:bg-[var(--surface-elevated)]">
+          <td class="p-4"><a href="{% url 'projects:request_detail' item.pk %}" class="font-bold text-blue-300 hover:text-blue-200">{{ item.title }}</a>{% if item.course %}<span class="mt-1 block text-xs text-gray-500">{{ item.course }}{% if item.semester %} · {{ item.get_semester_display }}{% endif %}</span>{% endif %}{% if item.projects.exists %}<span class="mt-2 inline-flex rounded-full bg-violet-950/60 px-2 py-1 text-xs text-violet-200">{{ item.projects.count }} bağlı proje</span>{% endif %}</td>
+          <td class="px-4 py-4 text-gray-300">{{ item.teacher.get_full_name|default:item.teacher.username|default:'Atanmamış' }}</td>
+          <td class="px-4 py-4 text-gray-300">{{ item.project_type.name }}</td>
+          <td class="px-4 py-4"><span class="block text-gray-300">{{ item.application_count }} başvuru</span><span class="mt-1 block text-xs {% if item.is_past_deadline %}text-red-300{% else %}text-gray-500{% endif %}">{% if item.deadline %}Son gün {{ item.deadline|date:'d.m.Y' }}{% else %}Tarih sınırı yok{% endif %}</span></td>
+          <td class="px-4 py-4"><span class="inline-flex rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-300">{{ item.get_status_display }}</span></td>
+          <td class="px-4 py-4 text-gray-400">{{ item.created_at|date:'d.m.Y' }}</td>
+          <td class="px-4 py-4"><div class="flex justify-end gap-2"><a href="{% url 'projects:request_detail' item.pk %}" class="inline-flex min-h-10 items-center rounded-lg border border-gray-700 px-3 py-2 font-semibold text-gray-300 hover:bg-gray-800">Görüntüle</a>{% if item.teacher == user or user.is_staff or user.is_superuser %}<a href="{% url 'projects:request_edit' item.pk %}" class="inline-flex min-h-10 items-center rounded-lg border border-blue-800 px-3 py-2 font-semibold text-blue-300 hover:bg-blue-950/40">Düzenle</a><button type="button" data-delete-request data-action="{% url 'projects:request_delete' item.pk %}" data-title="{{ item.title }}" class="inline-flex min-h-10 items-center rounded-lg border border-red-900 px-3 py-2 font-semibold text-red-300 hover:bg-red-950/40">İlanı sil</button>{% endif %}</div></td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="p-12 text-center"><h2 class="text-lg font-bold text-white">Proje ilanı bulunamadı</h2><p class="mt-2 text-gray-400">Arama veya durum filtresini değiştirerek tekrar deneyin.</p></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- Filters -->
-<div class="dashboard-card rounded-xl shadow p-4 mb-6">
-    <form method="get" class="flex flex-col sm:flex-row gap-4">
-        <input type="text" name="q" value="{{ query }}" placeholder="İstek ara..." 
-               class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-        <select name="status" class="px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-            <option value="">Tüm Durumlar</option>
-            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
-            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Kapandı</option>
-        </select>
-        <button type="submit" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Filtrele</button>
-    </form>
-</div>
+<dialog id="request-delete-dialog" class="m-auto w-[min(92vw,30rem)] rounded-2xl border border-red-900 bg-[#101827] p-0 text-white shadow-2xl backdrop:bg-black/75">
+  <form method="dialog" class="border-b border-gray-800 p-5"><div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-red-300">Kalıcı işlem</p><h2 class="mt-1 text-xl font-black">Proje ilanını sil</h2></div><button type="submit" class="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white" aria-label="Pencereyi kapat"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M6 6l12 12M18 6 6 18"/></svg></button></div></form>
+  <form id="request-delete-form" method="post" class="p-5">{% csrf_token %}<input type="hidden" name="confirm_delete" value="yes"><input type="hidden" name="return_to" value="dashboard"><p class="text-sm leading-6 text-gray-300"><strong id="request-delete-title" class="text-white"></strong> ilanı ve başvuruları silinecek. Bağlı projeler korunacak ancak ilan bağlantıları kaldırılacak.</p><label class="mt-5 flex items-start gap-3 rounded-xl border border-red-900/70 bg-red-950/20 p-3 text-sm"><input type="checkbox" required><span>Bu işlemin geri alınamayacağını anlıyorum.</span></label><div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" data-delete-cancel class="min-h-11 rounded-xl border border-gray-700 px-5 py-3 font-bold text-gray-300 hover:bg-gray-800">Vazgeç</button><button type="submit" class="min-h-11 rounded-xl bg-red-700 px-5 py-3 font-bold text-white hover:bg-red-600">İlanı kalıcı olarak sil</button></div></form>
+</dialog>
+{% endblock %}
 
-<!-- Requests Table -->
-<div class="dashboard-card rounded-xl shadow overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-700 dashboard-table">
-            <thead>
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">İstek Başlığı</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Ders</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Dönem</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Ekip</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Deadline</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Durum</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tarih</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">İşlem</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-700">
-                {% for request in requests %}
-                <tr class="hover:bg-gray-700/50 cursor-pointer" onclick="window.location='{% url 'dashboard:projects' %}?project_request={{ request.id }}'">
-                    <td class="px-6 py-4">
-                        <div class="font-medium text-blue-400 hover:text-blue-300 transition">{{ request.title }}</div>
-                        {% if request.projects.exists %}
-                        <div class="text-xs text-gray-500 mt-1">{{ request.projects.count }} proje</div>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-gray-400">{{ request.course|default:"-" }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-gray-400">{{ request.get_semester_display_full|default:"-" }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-gray-400">{{ request.team_size|default:"-" }} kişi</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        {% if request.deadline %}
-                            <span class="{% if request.is_past_deadline %}text-red-400{% else %}text-gray-400{% endif %}">
-                                {{ request.deadline|date:"d.m.Y" }}
-                            </span>
-                        {% else %}
-                            <span class="text-gray-400">-</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        {% if request.status == 'active' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300 items-center gap-1.5">
-                                Aktif
-                            </span>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-900 text-red-300">
-                                Kapandı
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {{ request.created_at|date:"d.m.Y" }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                            <a href="{% url 'projects:request_edit' request_id=request.id %}" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5 text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                Düzenle
-                            </a>
-                            <button onclick="openDeleteModal('{{ request.id }}', '{{ request.title|escapejs }}')" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1.5 text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                Sil
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="px-6 py-8 text-center text-gray-400">
-                        Henüz proje isteği bulunmuyor.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="relative w-full max-w-sm mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
-        <div class="p-6 text-center">
-            <div class="mx-auto w-14 h-14 bg-red-600/20 rounded-full flex items-center justify-center mb-4 border border-red-500/30">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-red-400">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-white mb-2">Emin misin?</h3>
-            <p class="text-gray-400 text-sm mb-6">
-                "<span id="deleteRequestTitle" class="font-medium text-white"></span>" isteği silinecek. Bu işlem geri alınamaz.
-            </p>
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition font-medium">
-                    İptal
-                </button>
-                <form id="deleteForm" method="post" class="flex-1">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
-                        Sil
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
+{% block extra_js %}
 <script>
-    function openDeleteModal(requestId, requestTitle) {
-        document.getElementById('deleteRequestTitle').textContent = requestTitle;
-        document.getElementById('deleteForm').action = `/projects/requests/${requestId}/delete/`;
-        const modal = document.getElementById('deleteModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeDeleteModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = 'auto';
-    }
-
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
-        if (e.target === this) closeDeleteModal();
+document.addEventListener('DOMContentLoaded', function () {
+  const dialog = document.getElementById('request-delete-dialog');
+  const form = document.getElementById('request-delete-form');
+  const title = document.getElementById('request-delete-title');
+  document.querySelectorAll('[data-delete-request]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      form.action = button.dataset.action;
+      title.textContent = button.dataset.title;
+      dialog.showModal();
     });
+  });
+  document.querySelector('[data-delete-cancel]')?.addEventListener('click', function () { dialog.close(); });
+  dialog?.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+});
 </script>
 {% endblock %}

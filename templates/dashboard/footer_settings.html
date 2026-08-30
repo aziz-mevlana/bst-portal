@@ -1,0 +1,15 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}Footer ve Katkıda Bulunanlar | Yönetim{% endblock %}
+{% block dashboard_content %}
+<div class="mb-7"><p class="text-sm font-semibold text-blue-400">Site ayarları</p><h1 class="mt-2 text-3xl font-bold text-white">Footer ve Katkıda Bulunanlar</h1><p class="mt-3 max-w-3xl text-gray-400">Alt bölümdeki bağlantıları buradan düzenleyin. Küçük sıra numaraları önce gösterilir. Kişi eklemek için “Katkıda Bulunanlar” bölümünü seçin.</p></div>
+<form method="post" class="footer-editor" id="footer-editor">
+  {% csrf_token %}{{ formset.management_form }}{{ formset.non_form_errors }}
+  <div class="grid gap-4" data-footer-rows>{% for form in formset %}{% include 'dashboard/footer_link_row.html' %}{% endfor %}</div>
+  <template id="footer-empty-form">{% include 'dashboard/footer_link_row.html' with form=formset.empty_form %}</template>
+  <p class="text-sm text-gray-400">Site içi adresler / ile başlamalıdır. Dış bağlantılar için https://, e-posta için mailto: kullanın. Tamamen boş yeni satırlar kaydedilmez.</p>
+  <div class="flex flex-wrap gap-3"><button type="button" data-footer-add class="rounded-xl border border-gray-600 bg-gray-800 px-5 py-3 font-semibold text-white">+ Bağlantı ekle</button><button type="submit" class="rounded-xl bg-blue-600 px-6 py-3 font-bold text-white">Değişiklikleri kaydet</button></div>
+  <p data-footer-status role="status" class="text-sm text-gray-400"></p>
+</form>
+<script src="{% static 'js/footer-editor.js' %}?v=20260827.1" defer></script>
+{% endblock %}

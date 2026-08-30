@@ -1,0 +1,14 @@
+<section class="mb-8">
+  <h2 class="mb-4 text-2xl font-semibold text-white">{{ title }}</h2>
+  <div class="grid gap-4 lg:grid-cols-2">
+    {% for candidate in candidates %}
+      <article class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-5">
+        <div class="flex items-start justify-between gap-4"><div><h3 class="text-lg font-semibold text-white"><a href="{{ candidate.url }}" class="hover:text-blue-300">{{ candidate.name }}</a></h3><p class="mt-1 text-xs text-gray-500">Profil verilerine göre açıklanabilir eşleşme</p></div><span class="rounded-full bg-violet-950 px-3 py-1 text-lg font-bold text-violet-200">{{ candidate.score }}/100</span></div>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4"><div class="rounded-lg bg-gray-800 p-2 text-gray-300">Teknoloji <strong class="block text-white">{{ candidate.breakdown.technology }}/40</strong></div><div class="rounded-lg bg-gray-800 p-2 text-gray-300">İlgi <strong class="block text-white">{{ candidate.breakdown.interest }}/20</strong></div><div class="rounded-lg bg-gray-800 p-2 text-gray-300">Uygunluk <strong class="block text-white">{{ candidate.breakdown.availability }}/20</strong></div><div class="rounded-lg bg-gray-800 p-2 text-gray-300">Deneyim <strong class="block text-white">{{ candidate.breakdown.experience }}/20</strong></div></div>
+        {% if candidate.matched_technologies %}<p class="mt-4 text-sm text-gray-300"><span class="text-gray-500">Eşleşen teknolojiler:</span> {{ candidate.matched_technologies|join:', ' }}</p>{% endif %}
+        {% if candidate.matched_categories %}<p class="mt-2 text-sm text-gray-300"><span class="text-gray-500">Eşleşen alanlar:</span> {{ candidate.matched_categories|join:', ' }}</p>{% endif %}
+        {% if candidate.missing %}<ul class="mt-4 space-y-1 text-xs text-amber-300">{% for item in candidate.missing %}<li>• {{ item }}</li>{% endfor %}</ul>{% endif %}
+      </article>
+    {% empty %}<div class="rounded-2xl border border-dashed border-gray-700 p-8 text-center text-gray-500 lg:col-span-2">{{ empty_text }}</div>{% endfor %}
+  </div>
+</section>
