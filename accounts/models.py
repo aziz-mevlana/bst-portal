@@ -234,6 +234,8 @@ class Profile(models.Model):
         return f"{self.user.get_full_name()} - {self.get_user_type_display()}"
 
     def get_absolute_url(self):
+        if self.user_type == 'teacher' and not self.user.is_staff and not self.user.is_superuser:
+            return reverse('portal:academic_detail', kwargs={'slug': self.public_slug})
         if (
             self.user_type in {'student', 'staff_student'}
             and not self.user.is_staff

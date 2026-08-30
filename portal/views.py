@@ -298,11 +298,42 @@ def academic_list(request):
     academics = Profile.objects.filter(
         user_type='teacher',
         user__is_active=True,
+        account_status='active',
+        is_portfolio_public=True,
         show_in_search=True,
     ).select_related('user').prefetch_related('categories', 'technologies').order_by(
         'user__first_name', 'user__last_name'
     )
     return render(request, 'portal/academic_list.html', {'academics': academics})
+
+
+def academic_detail(request, slug):
+    profile = get_object_or_404(
+        Profile.objects.select_related('user').prefetch_related('categories', 'technologies'),
+        public_slug=slug,
+        user_type='teacher',
+        user__is_active=True,
+        account_status='active',
+        user__is_staff=False,
+        user__is_superuser=False,
+    )
+    if not profile.is_portfolio_public and request.user != profile.user:
+        raise Http404
+
+    projects = profile.showcase_projects.filter(
+        visibility='public',
+        approval_status='approved',
+    ).select_related('project_type').prefetch_related('technologies', 'media').order_by('-updated_at')
+
+    record_analytics_event(request, event_type='profile_view', target=profile, succeeded=True)
+    return render(request, 'portal/academic_detail.html', {
+        'academic': profile,
+        'academic_projects': projects if profile.show_projects else Project.objects.none(),
+        'canonical_url': request.build_absolute_uri(profile.get_absolute_url()),
+        'meta_title': f'{profile.get_display_title()} {profile.user.get_full_name()} | BST Portal'.strip(),
+        'meta_description': (profile.headline or profile.bio or 'BST Akademisyen Profili')[:160],
+        'meta_robots': 'index,follow' if profile.is_portfolio_public else 'noindex,nofollow',
+    })
 
 
 def portfolio_detail(request, slug):

@@ -8,6 +8,7 @@ from alumni.models import Alumni
 from career.models import Opportunity
 from projects.models import (
     Project,
+    ProjectCategory,
     ProjectFeature,
     ProjectRequest,
     ProjectType,
@@ -15,6 +16,68 @@ from projects.models import (
     TeamOpenRole,
     Technology,
 )
+
+
+class AcademicProfileTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            'academic-profile',
+            'academic-profile@trakya.edu.tr',
+            'StrongPassword123!',
+            first_name='Ada',
+            last_name='Akademisyen',
+        )
+        profile = self.teacher.profile
+        profile.user_type = 'teacher'
+        profile.teacher_title = 'dr_ogr_uyesi'
+        profile.account_status = 'active'
+        profile.is_portfolio_public = True
+        profile.show_in_search = True
+        profile.headline = 'Yapay zekâ ve veri bilimi'
+        profile.bio = 'Araştırma ve öğrenci projeleri yürütüyorum.'
+        profile.save()
+        technology = Technology.objects.create(name='Academic Python', group='ai_ml')
+        category = ProjectCategory.objects.create(name='Academic AI')
+        profile.technologies.add(technology)
+        profile.categories.add(category)
+        self.project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Akademik vitrin projesi',
+            created_by=self.teacher,
+            visibility='public',
+            approval_status='approved',
+        )
+        profile.showcase_projects.add(self.project)
+
+    def test_academic_directory_links_to_custom_public_profile(self):
+        detail_url = reverse('portal:academic_detail', args=[self.teacher.profile.public_slug])
+
+        listing = self.client.get(reverse('portal:academic_list'))
+        detail = self.client.get(detail_url)
+
+        self.assertContains(listing, detail_url)
+        self.assertContains(detail, 'Yapay zekâ ve veri bilimi')
+        self.assertContains(detail, 'Araştırma ve öğrenci projeleri yürütüyorum.')
+        self.assertContains(detail, 'Academic Python')
+        self.assertContains(detail, self.project.title)
+        self.assertEqual(self.teacher.profile.get_absolute_url(), detail_url)
+
+    def test_private_academic_profile_is_hidden_but_owner_can_preview(self):
+        self.teacher.profile.is_portfolio_public = False
+        self.teacher.profile.save(update_fields=['is_portfolio_public'])
+        url = reverse('portal:academic_detail', args=[self.teacher.profile.public_slug])
+
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.client.force_login(self.teacher)
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_academic_can_reach_customization_and_public_preview(self):
+        self.client.force_login(self.teacher)
+        response = self.client.get(reverse('accounts:portfolio_settings'))
+
+        self.assertContains(response, 'Akademik profili görüntüle')
+        self.assertContains(response, reverse('portal:academic_detail', args=[self.teacher.profile.public_slug]))
+        self.assertContains(response, 'Kısa tanıtım')
 
 
 class GlobalSearchTests(TestCase):

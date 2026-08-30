@@ -53,6 +53,18 @@ def _safe_offset(request):
         return 0
 
 
+def _selected_filter_ids(request, name, limit=20):
+    """Return unique positive numeric GET values while keeping the user's order."""
+    selected = []
+    for value in request.GET.getlist(name):
+        value = value.strip()
+        if value.isdigit() and int(value) > 0 and value not in selected:
+            selected.append(value)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
 def _user_type(user):
     profile = getattr(user, 'profile', None) if user.is_authenticated else None
     return getattr(profile, 'user_type', None)
@@ -310,8 +322,8 @@ def team_disband(request, slug):
 
 def project_list(request):
     query = request.GET.get('q', '')
-    category_id = request.GET.get('category', '')
-    technology_id = request.GET.get('technology', '')
+    category_ids = _selected_filter_ids(request, 'category')
+    technology_ids = _selected_filter_ids(request, 'technology')
     status = request.GET.get('status', '')
     project_type_id = request.GET.get('type', '')
     source = request.GET.get('source', '')
@@ -342,9 +354,9 @@ def project_list(request):
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    if category_id:
+    for category_id in category_ids:
         projects = projects.filter(categories__id=category_id)
-    if technology_id:
+    for technology_id in technology_ids:
         projects = projects.filter(technologies__id=technology_id)
     if status:
         projects = projects.filter(development_status=status)
@@ -370,14 +382,10 @@ def project_list(request):
         label = ProjectType.objects.filter(pk=project_type_id).values_list('name', flat=True).first()
         if label:
             active_filter_labels.append(f'Tür: {label}')
-    if technology_id:
-        label = Technology.objects.filter(pk=technology_id).values_list('name', flat=True).first()
-        if label:
-            active_filter_labels.append(f'Teknoloji: {label}')
-    if category_id:
-        label = ProjectCategory.objects.filter(pk=category_id).values_list('name', flat=True).first()
-        if label:
-            active_filter_labels.append(f'Kategori: {label}')
+    for label in Technology.objects.filter(pk__in=technology_ids).values_list('name', flat=True):
+        active_filter_labels.append(f'Teknoloji: {label}')
+    for label in ProjectCategory.objects.filter(pk__in=category_ids).values_list('name', flat=True):
+        active_filter_labels.append(f'Kategori: {label}')
     for value, label in Project.DEVELOPMENT_STATUS_CHOICES:
         if status == value:
             active_filter_labels.append(f'Durum: {label}')
@@ -397,8 +405,8 @@ def project_list(request):
         'project_types': ProjectType.objects.filter(is_active=True),
         'creation_sources': [choice for choice in Project.CREATION_SOURCE_CHOICES if choice[0] != 'LEGACY'],
         'programs': ProjectProgram.objects.filter(is_active=True),
-        'selected_category': category_id,
-        'selected_technology': technology_id,
+        'selected_categories': category_ids,
+        'selected_technologies': technology_ids,
         'selected_status': status,
         'selected_type': project_type_id,
         'selected_source': source,
@@ -416,8 +424,8 @@ def project_list(request):
 
 def project_load_more(request):
     query = request.GET.get('q', '')
-    category_id = request.GET.get('category', '')
-    technology_id = request.GET.get('technology', '')
+    category_ids = _selected_filter_ids(request, 'category')
+    technology_ids = _selected_filter_ids(request, 'technology')
     status = request.GET.get('status', '')
     project_type_id = request.GET.get('type', '')
     source = request.GET.get('source', '')
@@ -447,9 +455,9 @@ def project_load_more(request):
     
     if query:
         projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    if category_id:
+    for category_id in category_ids:
         projects = projects.filter(categories__id=category_id)
-    if technology_id:
+    for technology_id in technology_ids:
         projects = projects.filter(technologies__id=technology_id)
     if status:
         projects = projects.filter(development_status=status)

@@ -343,6 +343,64 @@ class ProjectTaxonomyTests(TestCase):
         self.assertNotIn(inactive, ProjectForm().fields['technologies'].queryset)
 
 
+class ProjectMultiFilterTests(TestCase):
+    def setUp(self):
+        owner = make_user('filter-owner')
+        project_type = ProjectType.objects.get(code='INDEPENDENT')
+        self.python = Technology.objects.create(name='Filter Python', group='backend')
+        self.django = Technology.objects.create(name='Filter Django', group='backend')
+        self.web = ProjectCategory.objects.create(name='Filter Web')
+        self.data = ProjectCategory.objects.create(name='Filter Data')
+        self.both = Project.objects.create(
+            project_type=project_type,
+            title='İki teknolojili proje',
+            created_by=owner,
+            visibility='public',
+            approval_status='approved',
+        )
+        self.both.technologies.set([self.python, self.django])
+        self.both.categories.set([self.web, self.data])
+        self.single = Project.objects.create(
+            project_type=project_type,
+            title='Tek teknolojili proje',
+            created_by=owner,
+            visibility='public',
+            approval_status='approved',
+        )
+        self.single.technologies.add(self.python)
+        self.single.categories.add(self.web)
+
+    def test_multiple_technology_filters_require_all_selected_values(self):
+        response = self.client.get(reverse('projects:project_list'), {
+            'technology': [self.python.pk, self.django.pk],
+        })
+
+        self.assertContains(response, self.both.title)
+        self.assertNotContains(response, self.single.title)
+        self.assertEqual(
+            response.context['selected_technologies'],
+            [str(self.python.pk), str(self.django.pk)],
+        )
+
+    def test_multiple_category_filters_require_all_selected_values(self):
+        response = self.client.get(reverse('projects:project_list'), {
+            'category': [self.web.pk, self.data.pk],
+        })
+
+        self.assertContains(response, self.both.title)
+        self.assertNotContains(response, self.single.title)
+        self.assertContains(response, 'name="category" multiple')
+
+    def test_load_more_keeps_multiple_technology_filters(self):
+        response = self.client.get(reverse('projects:project_load_more'), {
+            'technology': [self.python.pk, self.django.pk],
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.both.title, response.json()['items'])
+        self.assertNotIn(self.single.title, response.json()['items'])
+
+
 class ProjectFormAndNavigationTests(TestCase):
     def setUp(self):
         self.owner = make_user('form-owner')
