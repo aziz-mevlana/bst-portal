@@ -855,6 +855,10 @@ def project_detail(request, project_id):
             and project.saves.filter(user=request.user).exists()
         ),
         'can_manage_project': _can_manage_project(request.user, project),
+        'can_delete_project': bool(
+            request.user.is_authenticated
+            and (request.user == project.created_by or _is_platform_staff(request.user))
+        ),
         'can_add_project_update': _can_add_project_update(request.user, project),
         'similar_projects': Project.objects.filter(
             project_type=project.project_type,
@@ -1133,6 +1137,35 @@ def project_update(request, project_id):
         'has_existing_cover': existing_image_media.filter(is_cover=True).exists(),
         'existing_documents': existing_documents,
     })
+
+
+@login_required
+@require_POST
+def project_delete(request, project_id):
+    project = get_object_or_404(Project.objects.select_related('created_by'), pk=project_id)
+    if request.user != project.created_by and not _is_platform_staff(request.user):
+        raise PermissionDenied
+
+    if request.POST.get('confirm_delete') != 'yes':
+        messages.error(request, 'Projeyi silmek için işlemi açıkça onaylamalısınız.')
+        return redirect('projects:project_detail', project_id=project.pk)
+
+    title = project.title
+    with transaction.atomic():
+        record_audit_event(
+            actor=request.user,
+            action='project.deleted',
+            target=project,
+            request=request,
+            metadata={
+                'title': title,
+                'created_by_id': project.created_by_id,
+            },
+        )
+        project.delete()
+
+    messages.success(request, f'“{title}” projesi kalıcı olarak silindi.')
+    return redirect('projects:project_list')
 
 
 @login_required

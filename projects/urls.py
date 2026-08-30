@@ -52,6 +52,7 @@ urlpatterns = [
     path('showcase/achievements/<int:achievement_id>/delete/', views.project_achievement_delete, name='project_achievement_delete'),
     path('<int:project_id>/', views.project_detail, name='project_detail'),
     path('<int:project_id>/update/', views.project_update, name='project_update'),
+    path('<int:project_id>/delete/', views.project_delete, name='project_delete'),
     path('<int:project_id>/add-update/', views.add_project_update, name='add_project_update'),
     path('<int:project_id>/add-comment/', views.add_comment, name='add_comment'),
     path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),

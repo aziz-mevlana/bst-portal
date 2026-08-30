@@ -259,6 +259,36 @@ class ProjectPermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('achievement_form', response.context)
 
+    def test_owner_can_delete_own_project_with_explicit_confirmation(self):
+        self.client.force_login(self.owner)
+        project_pk = self.project.pk
+        response = self.client.post(
+            reverse('projects:project_delete', args=[project_pk]),
+            {'confirm_delete': 'yes'},
+        )
+        self.assertRedirects(response, reverse('projects:project_list'))
+        self.assertFalse(Project.objects.filter(pk=project_pk).exists())
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action='project.deleted',
+                target_id=str(project_pk),
+            ).exists()
+        )
+
+    def test_project_delete_rejects_get_missing_confirmation_and_outsider(self):
+        url = reverse('projects:project_delete', args=[self.project.pk])
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(url)
+        self.assertTrue(Project.objects.filter(pk=self.project.pk).exists())
+
+        self.client.force_login(self.outsider)
+        self.assertEqual(
+            self.client.post(url, {'confirm_delete': 'yes'}).status_code,
+            403,
+        )
+        self.assertTrue(Project.objects.filter(pk=self.project.pk).exists())
+
 
 class ProjectTaxonomyTests(TestCase):
     def test_seed_data_exists(self):
