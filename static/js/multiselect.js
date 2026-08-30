@@ -32,6 +32,7 @@
         const listId = select.id + '-listbox';
         const asyncUrl = select.dataset.asyncUrl || '';
         const isAsync = select.dataset.asyncUsers === 'true' && asyncUrl;
+        const maxVisibleChips = Math.max(0, parseInt(select.dataset.maxVisibleChips || '0', 10) || 0);
         let remoteItems = [];
         let activeIndex = -1;
 
@@ -96,7 +97,8 @@
         function renderChips() {
             chips.replaceChildren();
             const selected = selectedOptions();
-            selected.forEach(function (option) {
+            const visible = maxVisibleChips ? selected.slice(0, maxVisibleChips) : selected;
+            visible.forEach(function (option) {
                 const chip = createElement('span', 'bst-multiselect-chip');
                 chip.append(createElement('span', '', option.text));
                 const remove = createElement('button', '', '×');
@@ -112,6 +114,11 @@
                 chip.append(remove);
                 chips.append(chip);
             });
+            if (selected.length > visible.length) {
+                const remaining = createElement('span', 'bst-multiselect-chip bst-multiselect-chip-summary', '+' + (selected.length - visible.length));
+                remaining.setAttribute('aria-label', (selected.length - visible.length) + ' ek seçim');
+                chips.append(remaining);
+            }
             count.textContent = selected.length + ' seçim';
             clear.hidden = selected.length === 0;
         }
