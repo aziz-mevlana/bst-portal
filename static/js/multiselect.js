@@ -33,12 +33,14 @@
         const asyncUrl = select.dataset.asyncUrl || '';
         const isAsync = select.dataset.asyncUsers === 'true' && asyncUrl;
         const maxVisibleChips = Math.max(0, parseInt(select.dataset.maxVisibleChips || '0', 10) || 0);
+        const defaultPlaceholder = select.dataset.placeholder || 'Seçim ara';
+        const selectedPlaceholder = select.dataset.selectedPlaceholder || defaultPlaceholder;
         let remoteItems = [];
         let activeIndex = -1;
 
         search.type = 'text';
         search.autocomplete = 'off';
-        search.placeholder = select.dataset.placeholder || 'Seçim ara';
+        search.placeholder = defaultPlaceholder;
         search.setAttribute('role', 'combobox');
         search.setAttribute('aria-expanded', 'false');
         search.setAttribute('aria-controls', listId);
@@ -120,6 +122,7 @@
                 chips.append(remaining);
             }
             count.textContent = selected.length + ' seçim';
+            search.placeholder = selected.length ? selectedPlaceholder : defaultPlaceholder;
             clear.hidden = selected.length === 0;
         }
 
