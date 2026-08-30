@@ -125,6 +125,8 @@ class DashboardStatisticsTests(TestCase):
         self.assertContains(response, 'Proje Analitiği')
         self.assertContains(response, 'Yönetim Paneli')
         self.assertNotContains(response, 'Öğrenci Paneli')
+        self.assertContains(response, 'static/js/dashboard.js?v=20260830.2')
+        self.assertNotContains(response, 'data-mobile-search')
         self.assertEqual(response.content.count(b'data-sidebar-open class='), 1)
         for heading in ('İçerik', 'Kullanıcılar', 'Moderasyon', 'Kurumsal', 'Araçlar'):
             self.assertContains(response, heading)
@@ -141,7 +143,7 @@ class DashboardFormLayoutTests(TestCase):
                 response = self.client.get(reverse(f'dashboard:{page}'))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'class="dashboard-filter-form"')
-                self.assertContains(response, 'css/bst-ui-v2.css?v=20260827.1')
+                self.assertContains(response, 'css/bst-ui-v2.css?v=20260830.2')
 
     def test_color_picker_and_hex_input_have_independent_layout_and_labels(self):
         response = self.client.get(reverse('dashboard:skills'))

@@ -94,28 +94,7 @@
   </main>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const sidebar = document.getElementById('dashboard-sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const openButton = document.querySelector('[data-sidebar-open]');
-  const closeButton = document.querySelector('[data-sidebar-close]');
-  function setSidebar(open) {
-    sidebar?.classList.toggle('open', open);
-    overlay?.classList.toggle('active', open);
-    overlay?.setAttribute('aria-hidden', String(!open));
-    openButton?.setAttribute('aria-expanded', String(open));
-    document.body.style.overflow = open ? 'hidden' : '';
-    if (open) closeButton?.focus();
-  }
-  window.toggleSidebar = function () { setSidebar(!sidebar?.classList.contains('open')); };
-  openButton?.addEventListener('click', function () { setSidebar(true); });
-  closeButton?.addEventListener('click', function () { setSidebar(false); openButton?.focus(); });
-  overlay?.addEventListener('click', function () { setSidebar(false); });
-  document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && sidebar?.classList.contains('open')) { setSidebar(false); openButton?.focus(); } });
-  window.addEventListener('resize', function () { if (window.innerWidth >= 768) setSidebar(false); });
-});
-</script>
+<script src="{% static 'js/dashboard.js' %}?v=20260830.2" defer></script>
 {% endblock %}
 
 {% block footer %}{% endblock %}
