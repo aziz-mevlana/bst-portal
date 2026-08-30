@@ -27,6 +27,19 @@ class AlumniListTests(TestCase):
         response = self.client.get(reverse('alumni:load_more_alumni'))
         self.assertEqual(response.status_code, 302)
 
+    def test_legacy_alumni_photo_uses_namespaced_static_url(self):
+        alumni = Alumni(profile_photo='legacy-person.jpg')
+
+        self.assertEqual(alumni.get_profile_photo_url(), '/static/alumni_photos/legacy-person.jpg')
+
+    def test_legacy_alumni_photo_rejects_unsafe_filename_or_extension(self):
+        self.assertIsNone(Alumni(profile_photo='photo.svg').get_profile_photo_url())
+        self.assertIsNone(Alumni(profile_photo='photo.jpg?redirect=bad').get_profile_photo_url())
+        self.assertEqual(
+            Alumni(profile_photo='../photo.jpg').get_profile_photo_url(),
+            '/static/alumni_photos/photo.jpg',
+        )
+
 
 class AlumniAuthorizationTests(TestCase):
     def setUp(self):

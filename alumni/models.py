@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.templatetags.static import static
 from datetime import datetime
+from pathlib import PurePath
 from projects.models import ProjectCategory, Technology
 
 
@@ -58,6 +60,16 @@ class Alumni(models.Model):
     def get_profile_photo_url(self):
         if self.user and hasattr(self.user, 'profile') and self.user.profile.profile_picture:
             return self.user.profile.profile_picture.url
+        if self.profile_photo:
+            normalized = self.profile_photo.replace('\\', '/')
+            filename = PurePath(normalized).name
+            if (
+                filename
+                and filename not in {'.', '..'}
+                and not any(ord(character) < 32 for character in filename)
+                and PurePath(filename).suffix.lower() in {'.jpg', '.jpeg', '.png', '.webp'}
+            ):
+                return static(f'alumni_photos/{filename}')
         return None
 
 

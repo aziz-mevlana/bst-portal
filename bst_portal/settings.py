@@ -158,6 +158,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+LEGACY_ALUMNI_PHOTO_DIR = BASE_DIR / 'linkedin_profile_photos'
+if LEGACY_ALUMNI_PHOTO_DIR.is_dir():
+    STATICFILES_DIRS.append(('alumni_photos', LEGACY_ALUMNI_PHOTO_DIR))
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STORAGES = {
     'default': {
