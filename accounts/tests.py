@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .email_service import EmailConfigurationError, validate_email_configuration
-from .models import CommunityRegistration, ConsentRecord, EmailVerification
+from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification
 from django.contrib.auth.models import User
 from projects.models import Project, ProjectType
 from core.models import Notification
@@ -494,6 +494,64 @@ class CommunityRegistrationFlowTests(TestCase):
         self.assertContains(response, 'Ne tür paylaşımlar yapmayı düşünüyorsunuz?')
         self.assertContains(response, 'Varsa GitHub/LinkedIn/portfolyo bağlantısı')
         self.assertContains(response, 'Ek açıklama')
+
+    def test_visitor_settings_offer_direct_deletion_not_deletion_request(self):
+        self.register_and_verify()
+        user = User.objects.get(email='ayse@example.com')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('accounts:portfolio_settings'))
+
+        self.assertContains(response, 'Hesabımı kalıcı olarak sil')
+        self.assertNotContains(response, '<option value="delete">')
+
+    def test_visitor_can_delete_account_with_current_password(self):
+        self.register_and_verify()
+        user = User.objects.get(email='ayse@example.com')
+        user_pk = user.pk
+        DataSubjectRequest.objects.create(user=user, request_type='delete')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('accounts:visitor_account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirm_delete': 'on'},
+        )
+
+        self.assertRedirects(response, reverse('portal:index'))
+        self.assertFalse(User.objects.filter(pk=user_pk).exists())
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_visitor_account_deletion_rejects_wrong_password(self):
+        self.register_and_verify()
+        user = User.objects.get(email='ayse@example.com')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('accounts:visitor_account_delete'),
+            {'current_password': 'WrongPassword!', 'confirm_delete': 'on'},
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:portfolio_settings')}#data",
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(User.objects.filter(pk=user.pk).exists())
+
+    def test_direct_visitor_deletion_endpoint_rejects_other_roles(self):
+        self.register_and_verify()
+        user = User.objects.get(email='ayse@example.com')
+        user.profile.user_type = 'approved_member'
+        user.profile.save(update_fields=['user_type'])
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('accounts:visitor_account_delete'),
+            {'current_password': 'StrongPassword123!', 'confirm_delete': 'on'},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=user.pk).exists())
 
     def test_visitor_can_submit_approved_member_application(self):
         self.register_and_verify()

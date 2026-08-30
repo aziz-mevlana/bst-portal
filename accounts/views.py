@@ -8,13 +8,14 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
+from django.db.models.deletion import ProtectedError
 from django.db.models import Q
 from django.utils import timezone
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from .forms import (
     AccountSettingsForm, ApprovedMemberApplicationForm, EmailChangeForm, PrivacySettingsForm, UserReportForm,
-    CommunicationPreferenceForm, DataSubjectRequestForm,
+    AccountDeletionForm, CommunicationPreferenceForm, DataSubjectRequestForm,
     PortfolioCertificateForm, PortfolioSettingsForm, SettingsPasswordChangeForm,
 )
 from .models import (
@@ -960,7 +961,8 @@ def portfolio_settings(request):
         'certificates': profile.certificates.all(),
         'profile': profile,
         'communication_form': CommunicationPreferenceForm(instance=communication_preferences),
-        'data_request_form': DataSubjectRequestForm(),
+        'data_request_form': DataSubjectRequestForm(user=request.user),
+        'account_deletion_form': AccountDeletionForm(user=request.user),
         'data_requests': request.user.data_subject_requests.all(),
         'account_form': AccountSettingsForm(user=request.user),
         'privacy_form': PrivacySettingsForm(instance=profile),
@@ -1257,7 +1259,7 @@ def communication_preferences_update(request):
 @login_required
 @require_POST
 def data_subject_request_create(request):
-    form = DataSubjectRequestForm(request.POST)
+    form = DataSubjectRequestForm(request.POST, user=request.user)
     if form.is_valid():
         data_request = form.save(commit=False)
         data_request.user = request.user
@@ -1271,3 +1273,40 @@ def data_subject_request_create(request):
     else:
         messages.error(request, 'Veri talebi oluşturulamadı.')
     return redirect('accounts:portfolio_settings')
+
+
+@login_required
+@require_POST
+def visitor_account_delete(request):
+    user = request.user
+    profile = getattr(user, 'profile', None)
+    if user.is_staff or user.is_superuser or not profile or profile.user_type != 'visitor':
+        raise PermissionDenied
+
+    form = AccountDeletionForm(request.POST, user=user)
+    if not form.is_valid():
+        messages.error(request, 'Hesap silinemedi. Mevcut parolanızı ve onay kutusunu kontrol edin.')
+        return redirect(f"{reverse('accounts:portfolio_settings')}#data")
+
+    try:
+        with transaction.atomic():
+            DataSubjectRequest.objects.filter(user=user).delete()
+            ConsentRecord.objects.filter(user=user).delete()
+            record_audit_event(
+                actor=user,
+                action='account.deleted_by_visitor',
+                target=user,
+                request=request,
+                metadata={'user_type': 'visitor'},
+            )
+            user.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            'Hesap güvenlik veya moderasyon kayıtlarıyla bağlantılı olduğu için otomatik silinemedi. Lütfen yönetimle iletişime geçin.',
+        )
+        return redirect(f"{reverse('accounts:portfolio_settings')}#data")
+
+    logout(request)
+    messages.success(request, 'Ziyaretçi hesabınız ve hesabınıza bağlı içerikler kalıcı olarak silindi.')
+    return redirect('portal:index')

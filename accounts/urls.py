@@ -30,4 +30,5 @@ urlpatterns = [
     path('portfolio/certificates/<int:certificate_id>/delete/', views.portfolio_certificate_delete, name='portfolio_certificate_delete'),
     path('portfolio/communication-preferences/', views.communication_preferences_update, name='communication_preferences_update'),
     path('privacy/requests/', views.data_subject_request_create, name='data_subject_request_create'),
+    path('privacy/delete-account/', views.visitor_account_delete, name='visitor_account_delete'),
 ]
