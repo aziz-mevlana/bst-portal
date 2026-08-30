@@ -14,7 +14,7 @@
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">Proje sergisi</p>
         <h1 class="mt-2 text-3xl font-black sm:text-4xl">{{ view_user.get_full_name|default:view_user.username }}</h1>
-        <p class="mt-2 text-[var(--text-secondary)]">{{ profile.headline|default:'BST topluluğu üyesi' }}</p>
+        <p class="mt-2 text-[var(--text-secondary)]">{{ profile.get_user_type_display }}{% if profile.headline %} · {{ profile.headline }}{% endif %}</p>
       </div>
       {% if is_own_profile %}
         <div class="flex flex-wrap gap-3">

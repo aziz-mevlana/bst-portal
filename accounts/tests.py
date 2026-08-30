@@ -415,6 +415,15 @@ class ProfileShowcaseTests(TestCase):
         self.assertContains(response, 'Profilimde hangi projeler görünsün?')
         self.assertNotContains(response, 'Profil Ayarları')
 
+    def test_profile_header_displays_account_role(self):
+        self.user.profile.user_type = 'teacher'
+        self.user.profile.save(update_fields=['user_type'])
+
+        response = self.client.get(reverse('accounts:profile'))
+
+        self.assertContains(response, 'Akademisyen')
+        self.assertNotContains(response, 'BST topluluğu üyesi')
+
     def test_user_can_select_only_own_eligible_projects(self):
         response = self.client.post(reverse('accounts:profile'), {
             'showcase_projects': [self.project.pk, self.foreign_project.pk],
