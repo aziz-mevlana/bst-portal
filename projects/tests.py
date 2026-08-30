@@ -253,6 +253,12 @@ class ProjectPermissionTests(TestCase):
         response = self.client.get(reverse('projects:project_showcase_manage', args=[self.project.pk]))
         self.assertEqual(response.status_code, 403)
 
+    def test_owner_can_open_showcase_management(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse('projects:project_showcase_manage', args=[self.project.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('achievement_form', response.context)
+
 
 class ProjectTaxonomyTests(TestCase):
     def test_seed_data_exists(self):

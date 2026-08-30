@@ -337,10 +337,6 @@ class ProjectAchievementForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['media_type'].choices = [
-            choice for choice in ProjectMedia.MEDIA_TYPE_CHOICES
-            if choice[0] in {'image', 'video', 'demo', 'document'}
-        ]
         configure_required_choice(self.fields['achievement_type'], 'Başarı türünü seçiniz')
         if not self.is_bound and not self.instance.pk:
             self.fields['achievement_type'].initial = ''
