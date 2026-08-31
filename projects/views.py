@@ -21,18 +21,19 @@ from .models import (
     ProjectAchievement, ProjectCaseStudy, ProjectComment, ProjectContribution,
     ProjectFeedback, ProjectMedia, ProjectProgram, ProjectRequestApplication,
     ProjectFeature, ProjectLike, ProjectRepository, ProjectSave, ProjectType, ProjectView,
-    ProjectWritingSuggestion, Team, TeamInvitation, TeamMembership, TeamOpenRole,
+    ProjectWritingSuggestion, Team, TeamInvitation, TeamMembership, TeamOpenRole, TeamRole,
 )
 from .forms import (
     ApplicationReviewForm, ProjectAchievementForm, ProjectCaseStudyForm,
     ProjectContributionForm, ProjectForm, ProjectMediaForm, ProjectUpdateForm,
     ProjectCommentForm, ProjectFeedbackForm, ProjectImageUploadForm, ProjectRepositoryForm,
-    ProjectRequestApplicationForm, RequestForm, TeamForm, TeamInviteForm, TeamOpenRoleForm,
+    ProjectRequestApplicationForm, RequestForm, TeamForm, TeamInviteForm,
+    TeamMembershipRoleForm, TeamOpenRoleForm,
 )
 from .services import accept_project_request_application
 from .team_services import (
     cancel_invitation, can_disband_team, create_team, disband_team, invite_user,
-    respond_to_invitation,
+    respond_to_invitation, update_membership_role,
 )
 from core.audit import record_audit_event
 from core.analytics import record_analytics_event
@@ -220,6 +221,7 @@ def team_detail(request, slug):
         'role_form': TeamOpenRoleForm() if request.user.is_authenticated and request.user == team.leader else None,
         'can_disband': can_disband_team(request.user, team),
         'is_team_leader': request.user.is_authenticated and request.user == team.leader,
+        'team_role_choices': TeamRole.choices,
     })
 
 
@@ -285,6 +287,28 @@ def team_invitation_cancel(request, invitation_id):
     except ValidationError as exc:
         messages.error(request, '; '.join(exc.messages))
     return redirect(team_url)
+
+
+@login_required
+@require_POST
+def team_membership_role_update(request, slug, membership_id):
+    team = get_object_or_404(Team, slug=slug)
+    if team.leader_id != request.user.pk:
+        raise PermissionDenied
+    membership = get_object_or_404(TeamMembership, pk=membership_id, team=team)
+    form = TeamMembershipRoleForm(request.POST, instance=membership)
+    if form.is_valid():
+        update_membership_role(
+            team=team,
+            membership_id=membership.pk,
+            actor=request.user,
+            role=form.cleaned_data['role'],
+            request=request,
+        )
+        messages.success(request, 'Ekip üyesinin rolü güncellendi.')
+    else:
+        messages.error(request, 'Geçerli bir ekip rolü seçin.')
+    return redirect(team.get_absolute_url())
 
 
 @login_required

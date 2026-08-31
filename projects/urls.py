@@ -13,6 +13,11 @@ urlpatterns = [
     path('teams/invitations/<int:invitation_id>/cancel/', views.team_invitation_cancel, name='team_invitation_cancel'),
     path('teams/<slug:slug>/', views.team_detail, name='team_detail'),
     path('teams/<slug:slug>/invite/', views.team_invite, name='team_invite'),
+    path(
+        'teams/<slug:slug>/members/<int:membership_id>/role/',
+        views.team_membership_role_update,
+        name='team_membership_role_update',
+    ),
     path('teams/<slug:slug>/roles/add/', views.team_open_role_add, name='team_open_role_add'),
     path('teams/<slug:slug>/disband/', views.team_disband, name='team_disband'),
     path('requests/', views.request_list, name='request_list'),

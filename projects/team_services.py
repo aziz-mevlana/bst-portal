@@ -8,7 +8,14 @@ from core.audit import record_audit_event
 from core.notifications import create_notification
 from accounts.policies import is_admin
 
-from .models import Team, TeamInvitation, TeamMembership
+from .models import Team, TeamInvitation, TeamMembership, TeamRole
+
+
+def _validate_team_role(role):
+    value = str(role or '').strip()
+    if value not in TeamRole.values:
+        raise ValidationError('Geçerli bir ekip rolü seçin.')
+    return value
 
 
 def can_disband_team(user, team):
@@ -21,22 +28,24 @@ def create_team(*, leader, form, request=None):
     team.leader = leader
     team.save()
     form.save_m2m()
-    TeamMembership.objects.create(team=team, user=leader, role='Ekip lideri')
+    leader_role = form.cleaned_data.get('leader_role') or TeamRole.TEAM_LEAD
+    TeamMembership.objects.create(team=team, user=leader, role=_validate_team_role(leader_role))
     record_audit_event(actor=leader, action='team.created', target=team, request=request)
     return team
 
 
 @transaction.atomic
-def invite_user(*, team, inviter, invited_user, proposed_role='', request=None):
+def invite_user(*, team, inviter, invited_user, proposed_role=TeamRole.GENERAL, request=None):
     locked_team = Team.objects.select_for_update().get(pk=team.pk)
     if locked_team.leader_id != inviter.pk:
         raise PermissionDenied
     if invited_user.pk == inviter.pk or TeamMembership.objects.filter(team=team, user=invited_user).exists():
         raise ValidationError('Bu kullanıcı zaten ekibin üyesi.')
+    proposed_role = _validate_team_role(proposed_role)
     try:
         invitation = TeamInvitation.objects.create(
             team=team, invited_user=invited_user, invited_by=inviter,
-            proposed_role=proposed_role.strip(),
+            proposed_role=proposed_role,
         )
     except IntegrityError as exc:
         raise ValidationError('Bu kullanıcı için zaten bekleyen bir davet var.') from exc
@@ -76,6 +85,29 @@ def respond_to_invitation(*, invitation_id, user, accept, request=None):
         dedupe_key=f'team-invite-result:{invitation.pk}',
     )
     record_audit_event(actor=user, action='team.invite_accepted' if accept else 'team.invite_rejected', target=invitation, request=request)
+    return membership
+
+
+@transaction.atomic
+def update_membership_role(*, team, membership_id, actor, role, request=None):
+    locked_team = Team.objects.select_for_update().get(pk=team.pk)
+    if locked_team.leader_id != actor.pk:
+        raise PermissionDenied('Ekip rollerini yalnızca ekip lideri düzenleyebilir.')
+
+    membership = TeamMembership.objects.select_for_update().get(
+        pk=membership_id,
+        team=locked_team,
+    )
+    old_role = membership.role
+    membership.role = _validate_team_role(role)
+    membership.save(update_fields=['role'])
+    record_audit_event(
+        actor=actor,
+        action='team.member_role_updated',
+        target=membership,
+        request=request,
+        metadata={'old_role': old_role, 'new_role': membership.role, 'team_id': locked_team.pk},
+    )
     return membership
 
 

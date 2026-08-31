@@ -123,10 +123,36 @@ class Team(models.Model):
         return reverse('projects:team_detail', kwargs={'slug': self.slug})
 
 
+class TeamRole(models.TextChoices):
+    TEAM_LEAD = 'team_lead', 'Ekip Lideri'
+    TECH_LEAD = 'tech_lead', 'Teknik Lider'
+    PRODUCT_MANAGER = 'product_manager', 'Ürün Yöneticisi'
+    PROJECT_MANAGER = 'project_manager', 'Proje Yöneticisi'
+    BUSINESS_ANALYST = 'business_analyst', 'İş / Sistem Analisti'
+    UI_UX = 'ui_ux', 'UI/UX Tasarımcısı'
+    FRONTEND = 'frontend', 'Frontend Geliştirici'
+    BACKEND = 'backend', 'Backend Geliştirici'
+    FULLSTACK = 'fullstack', 'Full-stack Geliştirici'
+    MOBILE = 'mobile', 'Mobil Uygulama Geliştiricisi'
+    AI_ML = 'ai_ml', 'Yapay Zekâ / Makine Öğrenmesi'
+    DATA_SCIENCE = 'data_science', 'Veri Bilimci / Analisti'
+    DATA_ENGINEERING = 'data_engineering', 'Veri Mühendisi'
+    DATABASE = 'database', 'Veritabanı Uzmanı'
+    DEVOPS_CLOUD = 'devops_cloud', 'DevOps / Bulut Uzmanı'
+    CYBERSECURITY = 'cybersecurity', 'Siber Güvenlik Uzmanı'
+    QA_TEST = 'qa_test', 'Test / Kalite Güvence'
+    EMBEDDED_IOT = 'embedded_iot', 'Gömülü Sistemler / IoT'
+    GAME = 'game', 'Oyun Geliştiricisi'
+    BLOCKCHAIN = 'blockchain', 'Blockchain / Web3 Geliştiricisi'
+    RESEARCH = 'research', 'Araştırma / Akademik Destek'
+    DOCUMENTATION = 'documentation', 'Teknik Dokümantasyon'
+    GENERAL = 'general', 'Genel Ekip Üyesi'
+
+
 class TeamMembership(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='membership_records')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_memberships')
-    role = models.CharField(max_length=120, blank=True)
+    role = models.CharField(max_length=120, choices=TeamRole.choices, default=TeamRole.GENERAL)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -142,7 +168,7 @@ class TeamInvitation(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='invitations')
     invited_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_invitations')
     invited_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='sent_team_invitations')
-    proposed_role = models.CharField(max_length=120, blank=True)
+    proposed_role = models.CharField(max_length=120, choices=TeamRole.choices, default=TeamRole.GENERAL)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
@@ -158,7 +184,7 @@ class TeamInvitation(models.Model):
 
 class TeamOpenRole(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='open_roles')
-    title = models.CharField(max_length=120)
+    title = models.CharField(max_length=120, choices=TeamRole.choices)
     description = models.TextField(blank=True)
     required_technologies = models.ManyToManyField(Technology, related_name='team_open_roles', blank=True)
     is_open = models.BooleanField(default=True)

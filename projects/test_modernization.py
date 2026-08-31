@@ -10,10 +10,13 @@ from django.urls import reverse
 
 from core.models import AuditLog, Notification
 
-from .forms import ProjectImageUploadForm, ProjectMediaForm, ProjectRepositoryForm, TeamForm, TeamOpenRoleForm
+from .forms import (
+    ProjectImageUploadForm, ProjectMediaForm, ProjectRepositoryForm, TeamForm,
+    TeamInviteForm, TeamOpenRoleForm,
+)
 from .models import (
     Project, ProjectFeature, ProjectLike, ProjectMedia, ProjectRepository, ProjectType, Team, TeamInvitation,
-    TeamMembership, validate_project_image,
+    TeamMembership, TeamRole, validate_project_image,
 )
 from .team_services import create_team, invite_user, respond_to_invitation
 
@@ -47,7 +50,7 @@ class TeamWorkflowTests(TestCase):
 
     def test_creator_is_added_as_leader_membership_atomically(self):
         membership = TeamMembership.objects.get(team=self.team, user=self.leader)
-        self.assertEqual(membership.role, 'Ekip lideri')
+        self.assertEqual(membership.role, TeamRole.TEAM_LEAD)
 
     def test_recent_team_forms_use_turkish_labels_and_placeholders(self):
         form = TeamForm()
@@ -56,20 +59,22 @@ class TeamWorkflowTests(TestCase):
         self.assertEqual(form.fields['technologies'].label, 'Teknolojiler')
         self.assertEqual(form.fields['work_areas'].label, 'Çalışma Alanları')
         self.assertEqual(form.fields['recruitment_open'].label, 'Üye Alımı Açık')
+        self.assertEqual(form.fields['leader_role'].label, 'Ekipteki Rolünüz')
+        self.assertIn((TeamRole.BACKEND, 'Backend Geliştirici'), form.fields['leader_role'].choices)
         role_form = TeamOpenRoleForm()
         self.assertEqual(role_form.fields['required_technologies'].label, 'Gerekli Teknolojiler')
-        self.assertIn('tasarımcısı', role_form.fields['title'].widget.attrs['placeholder'])
+        self.assertIn((TeamRole.AI_ML, 'Yapay Zekâ / Makine Öğrenmesi'), role_form.fields['title'].choices)
 
     def test_invitation_creates_no_membership_before_acceptance_and_accept_is_idempotent(self):
         invitation = invite_user(
             team=self.team, inviter=self.leader, invited_user=self.invitee,
-            proposed_role='Backend Developer',
+            proposed_role=TeamRole.BACKEND,
         )
         self.assertFalse(TeamMembership.objects.filter(team=self.team, user=self.invitee).exists())
         first = respond_to_invitation(invitation_id=invitation.pk, user=self.invitee, accept=True)
         second = respond_to_invitation(invitation_id=invitation.pk, user=self.invitee, accept=True)
         self.assertEqual(first.pk, second.pk)
-        self.assertEqual(first.role, 'Backend Developer')
+        self.assertEqual(first.role, TeamRole.BACKEND)
         self.assertEqual(TeamMembership.objects.filter(team=self.team, user=self.invitee).count(), 1)
 
     def test_only_leader_can_invite_and_duplicate_pending_invite_is_rejected(self):
@@ -80,6 +85,52 @@ class TeamWorkflowTests(TestCase):
         with self.assertRaises(ValidationError):
             invite_user(team=self.team, inviter=self.leader, invited_user=self.invitee)
         self.assertEqual(TeamInvitation.objects.filter(team=self.team, invited_user=self.invitee).count(), 1)
+
+    def test_role_fields_reject_arbitrary_values(self):
+        invite_form = TeamInviteForm(
+            data={'invited_user': self.invitee.pk, 'proposed_role': 'site-admin'},
+            team=self.team,
+        )
+        self.assertFalse(invite_form.is_valid())
+        with self.assertRaises(ValidationError):
+            invite_user(
+                team=self.team,
+                inviter=self.leader,
+                invited_user=self.invitee,
+                proposed_role='site-admin',
+            )
+
+    def test_only_real_team_leader_can_update_member_role(self):
+        membership = TeamMembership.objects.create(
+            team=self.team,
+            user=self.invitee,
+            role=TeamRole.GENERAL,
+        )
+        url = reverse('projects:team_membership_role_update', args=[self.team.slug, membership.pk])
+
+        self.client.force_login(self.leader)
+        self.assertEqual(self.client.get(url).status_code, 405)
+        response = self.client.post(url, {'role': TeamRole.BACKEND})
+        self.assertRedirects(response, self.team.get_absolute_url())
+        membership.refresh_from_db()
+        self.assertEqual(membership.role, TeamRole.BACKEND)
+        self.assertTrue(AuditLog.objects.filter(action='team.member_role_updated').exists())
+
+        self.client.force_login(self.invitee)
+        self.assertEqual(self.client.post(url, {'role': TeamRole.TEAM_LEAD}).status_code, 403)
+        membership.refresh_from_db()
+        self.assertEqual(membership.role, TeamRole.BACKEND)
+
+    def test_team_lead_role_label_does_not_grant_management_permission(self):
+        TeamMembership.objects.create(team=self.team, user=self.invitee, role=TeamRole.TEAM_LEAD)
+        another_user = user_with_role('another-team-invitee')
+        self.client.force_login(self.invitee)
+        response = self.client.post(
+            reverse('projects:team_invite', args=[self.team.slug]),
+            {'invited_user': another_user.pk, 'proposed_role': TeamRole.FRONTEND},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(TeamInvitation.objects.filter(invited_user=another_user).exists())
 
     def test_team_entity_membership_does_not_grant_project_edit_permission(self):
         TeamMembership.objects.create(team=self.team, user=self.invitee, role='Üye')

@@ -24,7 +24,9 @@ from .models import (
     ProjectRequestApplication,
     ProjectRepository,
     Team,
+    TeamMembership,
     TeamOpenRole,
+    TeamRole,
     ProjectType,
     ProjectUpdate,
     Technology,
@@ -513,9 +515,18 @@ class ProjectRepositoryForm(forms.ModelForm):
 
 
 class TeamForm(forms.ModelForm):
+    leader_role = forms.ChoiceField(
+        choices=[('', 'Rol seçiniz'), *TeamRole.choices],
+        required=False,
+        initial=TeamRole.TEAM_LEAD,
+        label='Ekipteki Rolünüz',
+        help_text='Bu seçim profilinizde görünen ekip içi rolünüzdür.',
+        widget=forms.Select(attrs={'class': INPUT_CLASS}),
+    )
+
     class Meta:
         model = Team
-        fields = ['name', 'description', 'technologies', 'work_areas', 'recruitment_open']
+        fields = ['name', 'description', 'leader_role', 'technologies', 'work_areas', 'recruitment_open']
         labels = {
             'name': 'Ekip Adı',
             'description': 'Açıklama',
@@ -550,9 +561,11 @@ class TeamForm(forms.ModelForm):
 
 class TeamInviteForm(forms.Form):
     invited_user = forms.ModelChoiceField(queryset=User.objects.none(), label='Davet edilecek kullanıcı')
-    proposed_role = forms.CharField(
-        max_length=120, required=False, label='Önerilen rol',
-        widget=forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: Arka uç geliştiricisi'}),
+    proposed_role = forms.ChoiceField(
+        choices=[('', 'Rol seçiniz'), *TeamRole.choices],
+        required=True,
+        label='Ekip içi rol',
+        widget=forms.Select(attrs={'class': INPUT_CLASS}),
     )
 
     def __init__(self, *args, team=None, **kwargs):
@@ -564,7 +577,15 @@ class TeamInviteForm(forms.Form):
         self.fields['invited_user'].widget.attrs['class'] = INPUT_CLASS
         self.fields['invited_user'].empty_label = 'Kullanıcı seçiniz'
         self.fields['invited_user'].help_text = 'Yalnızca aktif öğrenci, BST Yetkilisi ve mezun hesapları listelenir.'
-        self.fields['proposed_role'].help_text = 'Örn: Arka uç geliştiricisi, UI/UX tasarımcısı veya veri analisti.'
+        self.fields['proposed_role'].help_text = 'Davet kabul edildiğinde üyeye bu rol atanır.'
+
+
+class TeamMembershipRoleForm(forms.ModelForm):
+    class Meta:
+        model = TeamMembership
+        fields = ['role']
+        labels = {'role': 'Ekip içi rol'}
+        widgets = {'role': forms.Select(attrs={'class': INPUT_CLASS})}
 
 
 class TeamOpenRoleForm(forms.ModelForm):
@@ -578,12 +599,12 @@ class TeamOpenRoleForm(forms.ModelForm):
             'is_open': 'Başvurulara Açık',
         }
         help_texts = {
-            'title': 'Ekipte ihtiyaç duyduğunuz sorumluluğu kısa biçimde yazın.',
+            'title': 'Ekipte ihtiyaç duyduğunuz rolü listeden seçin.',
             'description': 'Beklentileri ve ekip üyesinin üstleneceği görevleri açıklayın.',
             'required_technologies': 'Rol için gerekli veya tercih edilen teknolojileri seçin.',
         }
         widgets = {
-            'title': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: UI/UX tasarımcısı'}),
+            'title': forms.Select(attrs={'class': INPUT_CLASS}),
             'description': forms.Textarea(attrs={'class': INPUT_CLASS, 'rows': 3, 'placeholder': 'Rolün sorumluluklarını açıklayın'}),
             'required_technologies': forms.SelectMultiple(attrs={'data-enhance-multiselect': 'true'}),
         }

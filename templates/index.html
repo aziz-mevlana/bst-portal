@@ -44,7 +44,7 @@
         {% if hero_team_role %}
         <a href="{{ hero_team_role.home_url }}" class="home-mosaic-signal home-mosaic-signal--role">
           <span class="home-mosaic-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM9 8V5h6v3M4 12h16"/></svg></span>
-          <p><small>Açık ekip rolü</small><strong>{{ hero_team_role.title }}</strong><span>{{ hero_team_role.team.name }} · Ekibi incele</span></p>
+          <p><small>Açık ekip rolü</small><strong>{{ hero_team_role.get_title_display }}</strong><span>{{ hero_team_role.team.name }} · Ekibi incele</span></p>
         </a>
         {% elif hero_opportunity %}
         <a href="{{ hero_opportunity.home_url }}" class="home-mosaic-signal home-mosaic-signal--role">
@@ -127,7 +127,7 @@
 
           {% if open_team_roles or open_project_requests %}
           <div class="home-tab-panel" id="project-opportunities" {% if open_opportunities %}role="tabpanel" aria-labelledby="project-opportunities-tab"{% endif %}>
-            {% for team_role in open_team_roles|slice:':2' %}<a href="{{ team_role.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--team"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.4-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></svg></span><span class="home-opportunity-copy"><small>Açık ekip rolü</small><strong>{{ team_role.title }}</strong><span>{{ team_role.team.name }}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
+            {% for team_role in open_team_roles|slice:':2' %}<a href="{{ team_role.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--team"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.4-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M17 14c2.5.4 4 2.2 4 5"/></svg></span><span class="home-opportunity-copy"><small>Açık ekip rolü</small><strong>{{ team_role.get_title_display }}</strong><span>{{ team_role.team.name }}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
             {% for request_item in open_project_requests|slice:':3' %}<a href="{{ request_item.home_url }}" class="home-opportunity-row"><span class="home-opportunity-icon home-opportunity-icon--project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6l2 2h8v10H4zM8 13h8M8 16h5"/></svg></span><span class="home-opportunity-copy"><small>{{ request_item.project_type.name }}</small><strong>{{ request_item.title }}</strong><span>{% if request_item.deadline %}Son tarih {{ request_item.deadline|date:'d M' }}{% else %}Başvuruya açık{% endif %}</span></span><svg class="home-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>{% endfor %}
             <a href="{% url 'projects:request_list' %}" class="home-list-footer">Tüm ekip ve proje ilanları →</a>
           </div>
