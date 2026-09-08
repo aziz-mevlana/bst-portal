@@ -317,7 +317,7 @@
               <div>
                 <label for="id_profile_picture" class="block text-sm font-medium mb-2">Profil Fotoğrafı</label>
                 <div class="space-y-4">
-                  <input type="file" name="profile_picture_file" id="id_profile_picture" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm" accept="image/*">
+                  <input type="file" name="profile_picture_file" id="id_profile_picture" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm" accept=".jpg,.jpeg,.png,.webp">
                   <input type="hidden" name="profile_picture" id="croppedImageData">
                   
                   <!-- Hidden inputs containers (will be populated by JavaScript) -->
@@ -461,8 +461,16 @@ const croppedImage = document.getElementById('croppedImage');
 fileInput.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
+        croppedImageData.value = '';
         const reader = new FileReader();
         reader.onload = function(e) {
+            // CDN'deki kırpma aracı yüklenemezse normal dosya yüklemesini kullan.
+            if (typeof window.Cropper !== 'function') {
+                croppedImage.src = e.target.result;
+                croppedPreview.style.display = 'block';
+                return;
+            }
+
             // Modal'ı göster
             cropperModal.style.display = 'flex';
             document.body.style.overflow = 'hidden'; // Sayfa kaydırmasını engelle
@@ -478,7 +486,7 @@ fileInput.addEventListener('change', function(e) {
                 }
                 
                 // Yeni cropper oluştur
-                cropper = new Cropper(cropperImage, {
+                cropper = new window.Cropper(cropperImage, {
                     aspectRatio: 1,
                     viewMode: 1,
                     dragMode: 'move',

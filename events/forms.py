@@ -1,6 +1,5 @@
 from django import forms
-from PIL import Image, UnidentifiedImageError
-
+from core.image_uploads import sanitize_image_upload
 from .models import Event
 
 
@@ -15,6 +14,9 @@ class EventForm(forms.ModelForm):
             'allow_registration', 'capacity', 'registration_deadline', 'waitlist_enabled',
             'certificate_enabled',
         ]
+        widgets = {
+            'image': forms.ClearableFileInput(attrs={'accept': '.jpg,.jpeg,.png,.webp'}),
+        }
 
     def clean(self):
         cleaned = super().clean()
@@ -31,18 +33,11 @@ class EventForm(forms.ModelForm):
         image = self.cleaned_data.get('image')
         if not image:
             return image
-        if image.size > MAX_IMAGE_SIZE:
-            raise forms.ValidationError('Görsel en fazla 5 MB olabilir.')
-        content_type = getattr(image, 'content_type', '')
-        if content_type and not content_type.startswith('image/'):
-            raise forms.ValidationError('Yalnızca görsel dosyası yükleyebilirsiniz.')
-        try:
-            Image.open(image).verify()
-        except (UnidentifiedImageError, OSError, ValueError):
-            raise forms.ValidationError('Dosya içeriği geçerli bir görsel değil.')
-        finally:
-            image.seek(0)
-        return image
+        return sanitize_image_upload(
+            image,
+            filename_prefix='event',
+            max_size=MAX_IMAGE_SIZE,
+        )
 
 
 class EventFeedbackForm(forms.Form):

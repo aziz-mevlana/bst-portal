@@ -224,7 +224,11 @@ class AccountSettingsForm(forms.Form):
     last_name = forms.CharField(label='Soyad', max_length=150, widget=forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Soyadınız'}))
     username = forms.CharField(label='Kullanıcı adı', max_length=150, widget=forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Kullanıcı adınız'}))
     phone_number = forms.CharField(label='Telefon', max_length=30, required=False, widget=forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: 0555 000 00 00'}))
-    profile_picture = forms.ImageField(label='Profil fotoğrafı', required=False)
+    profile_picture = forms.ImageField(
+        label='Profil fotoğrafı',
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'accept': '.jpg,.jpeg,.png,.webp'}),
+    )
 
     def __init__(self, *args, user, **kwargs):
         self.user = user

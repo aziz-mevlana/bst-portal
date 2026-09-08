@@ -879,8 +879,10 @@ def profile_view(request, user_id=None):
                 # Yeni resmi kaydet
                 profile.profile_picture.save(data.name, data, save=True)
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
-            except (ValueError, binascii.Error, ValidationError):
-                messages.error(request, 'Profil fotoğrafı güncellenirken bir hata oluştu.')
+            except ValidationError as exc:
+                messages.error(request, ' '.join(exc.messages))
+            except (ValueError, binascii.Error):
+                messages.error(request, 'Profil fotoğrafı verisi okunamadı. Lütfen dosyayı yeniden seçin.')
         
         # Normal dosya yükleme (fallback)
         elif 'profile_picture_file' in request.FILES:
@@ -888,8 +890,8 @@ def profile_view(request, user_id=None):
                 profile.profile_picture = sanitize_profile_image(request.FILES['profile_picture_file'])
                 profile.save()
                 messages.success(request, 'Profil fotoğrafı başarıyla güncellendi.')
-            except ValidationError:
-                messages.error(request, 'Dosya yüklenirken bir hata oluştu.')
+            except ValidationError as exc:
+                messages.error(request, ' '.join(exc.messages))
         
         profile.save()
         

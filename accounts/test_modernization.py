@@ -68,6 +68,17 @@ class ProfileModernizationTests(TestCase):
 
         self.assertTrue(sanitized.name.endswith('.jpg'))
         self.assertTrue(sanitized.read().startswith(b'\xff\xd8\xff'))
+
+    def test_profile_image_accepts_advertised_webp_format(self):
+        source = BytesIO()
+        Image.new('RGB', (8, 8), color='blue').save(source, format='WEBP')
+        upload = SimpleUploadedFile('avatar.webp', source.getvalue(), content_type='image/webp')
+
+        sanitized = sanitize_profile_image(upload)
+
+        self.assertTrue(sanitized.name.endswith('.jpg'))
+        self.assertTrue(sanitized.read().startswith(b'\xff\xd8\xff'))
+
     def test_public_website_rejects_local_private_credentials_and_ports(self):
         validate_public_website('https://portfolio.example.com/about')
         for invalid in (

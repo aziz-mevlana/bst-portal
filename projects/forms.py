@@ -5,6 +5,7 @@ from django.urls import reverse
 from pathlib import Path
 
 from core.form_utils import configure_optional_choice, configure_required_choice
+from core.image_uploads import sanitize_image_upload
 from accounts.validators import validate_public_website
 
 from .models import (
@@ -17,7 +18,6 @@ from .models import (
     ProjectFeedback,
     ProjectMedia,
     detect_project_upload_type,
-    validate_project_image,
     validate_project_upload_content,
     validate_project_upload_size,
     ProjectRequest,
@@ -38,6 +38,7 @@ INPUT_CLASS = (
     'rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 '
     'focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'
 )
+MAX_PROJECT_ASSET_BATCH_SIZE = 60 * 1024 * 1024
 
 
 class RequestForm(forms.ModelForm):
@@ -241,13 +242,13 @@ class ProjectImageUploadForm(forms.Form):
     def clean_cover_image(self):
         image = self.cleaned_data.get('cover_image')
         if image:
-            validate_project_image(image)
+            image = sanitize_image_upload(image, filename_prefix='project_cover')
         return image
 
     def clean_project_logo(self):
         image = self.cleaned_data.get('project_logo')
         if image:
-            validate_project_image(image)
+            image = sanitize_image_upload(image, filename_prefix='project_logo')
         return image
 
     def _clean_pdf(self, field_name):
@@ -273,12 +274,30 @@ class ProjectImageUploadForm(forms.Form):
         images = self.cleaned_data.get('images', [])
         if len(images) > 12:
             raise forms.ValidationError('Tek seferde en fazla 12 görsel yükleyebilirsiniz.')
-        for image in images:
-            validate_project_image(image)
-        return images
+        return [
+            sanitize_image_upload(image, filename_prefix='project_image')
+            for image in images
+        ]
 
     def clean(self):
         cleaned = super().clean()
+        upload_groups = (
+            self.files.lists()
+            if hasattr(self.files, 'lists')
+            else (
+                (field_name, uploads if isinstance(uploads, (list, tuple)) else [uploads])
+                for field_name, uploads in self.files.items()
+            )
+        )
+        total_upload_size = sum(
+            upload.size
+            for _field_name, uploads in upload_groups
+            for upload in uploads
+        )
+        if total_upload_size > MAX_PROJECT_ASSET_BATCH_SIZE:
+            raise forms.ValidationError(
+                'Tek seferde yüklenen proje dosyalarının toplamı en fazla 60 MB olabilir.'
+            )
         images = cleaned.get('images') or []
         cover_index = cleaned.get('cover_index')
         if cover_index is not None and cover_index >= len(images):

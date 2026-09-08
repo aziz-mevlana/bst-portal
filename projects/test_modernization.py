@@ -259,6 +259,18 @@ class ProjectImageRulesTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('cover_index', form.errors)
 
+    def test_combined_asset_upload_has_clear_sixty_megabyte_limit(self):
+        images = [self.image(f'image-{index}.png') for index in range(12)]
+        for image in images:
+            image.size = 5 * 1024 * 1024
+        cover = self.image('cover.png')
+        cover.size = 1024 * 1024
+
+        form = ProjectImageUploadForm(files={'images': images, 'cover_image': cover})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('60 MB', str(form.non_field_errors()))
+
     def test_saving_new_cover_unsets_previous_cover(self):
         first = ProjectMedia.objects.create(
             project=self.project, media_type='image', file=self.image('first.png'), is_cover=True,

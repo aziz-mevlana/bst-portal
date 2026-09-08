@@ -1,9 +1,12 @@
 from datetime import timedelta
+from io import BytesIO
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from PIL import Image
 
 from .forms import EventForm
 from .models import Event, EventRegistration
@@ -22,6 +25,26 @@ class EventValidationTests(TestCase):
         })
         self.assertFalse(form.is_valid())
         self.assertIn('end_date', form.errors)
+
+    def test_event_image_is_safely_reencoded(self):
+        source = BytesIO()
+        Image.new('RGB', (8, 8), color='green').save(source, format='WEBP')
+        upload = SimpleUploadedFile('event.webp', source.getvalue(), content_type='image/webp')
+        start = timezone.now() + timedelta(days=1)
+        form = EventForm(
+            data={
+                'title': 'Görselli etkinlik',
+                'description': 'Açıklama',
+                'event_type': 'seminar',
+                'location': 'Kampüs',
+                'start_date': start,
+                'end_date': start + timedelta(hours=1),
+            },
+            files={'image': upload},
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertTrue(form.cleaned_data['image'].name.endswith('.jpg'))
 
 
 class EventRegistrationTests(TestCase):

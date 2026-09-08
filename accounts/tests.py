@@ -419,7 +419,7 @@ class ProfileShowcaseTests(TestCase):
         self.user.profile.user_type = 'teacher'
         self.user.profile.save(update_fields=['user_type'])
 
-        response = self.client.get(reverse('accounts:profile'))
+        response = self.client.get(f"{reverse('accounts:profile')}?manage=showcase")
 
         self.assertContains(response, 'Akademisyen')
         self.assertNotContains(response, 'BST topluluğu üyesi')

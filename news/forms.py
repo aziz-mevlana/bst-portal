@@ -1,5 +1,6 @@
 from django import forms
 
+from core.image_uploads import sanitize_image_upload
 from .models import Article
 
 
@@ -21,14 +22,16 @@ class ArticleForm(forms.ModelForm):
             'category': 'Genel kategori', 'is_homepage': 'Ana sayfada göster',
             'is_featured': 'Öne çıkan haber',
         }
+        widgets = {
+            'image': forms.ClearableFileInput(attrs={'accept': '.jpg,.jpeg,.png,.webp'}),
+        }
 
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if not image:
             return image
-        if image.size > MAX_IMAGE_SIZE:
-            raise forms.ValidationError('Görsel en fazla 5 MB olabilir.')
-        content_type = getattr(image, 'content_type', '')
-        if content_type and not content_type.startswith('image/'):
-            raise forms.ValidationError('Yalnızca görsel dosyası yükleyebilirsiniz.')
-        return image
+        return sanitize_image_upload(
+            image,
+            filename_prefix='article',
+            max_size=MAX_IMAGE_SIZE,
+        )

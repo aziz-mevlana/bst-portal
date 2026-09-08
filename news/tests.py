@@ -1,11 +1,30 @@
+from io import BytesIO
+
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import Mock, patch
 import requests
+from PIL import Image
 
+from .forms import ArticleForm
 from .models import Article
 from .source_reader import SourceReadError, read_source
+
+
+class NewsImageUploadTests(TestCase):
+    def test_article_image_is_safely_reencoded(self):
+        source = BytesIO()
+        Image.new('RGBA', (8, 8), color=(255, 0, 0, 128)).save(source, format='WEBP')
+        upload = SimpleUploadedFile('article.webp', source.getvalue(), content_type='image/webp')
+        form = ArticleForm(
+            data={'title': 'Görselli haber', 'summary': 'Özet', 'content': 'İçerik'},
+            files={'image': upload},
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertTrue(form.cleaned_data['image'].name.endswith('.png'))
 
 
 class NewsVisibilityTests(TestCase):

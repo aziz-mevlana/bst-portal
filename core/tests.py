@@ -1,12 +1,44 @@
+from io import BytesIO
+
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
+from PIL import Image
 
 from .audit import record_audit_event
 from .rate_limit import is_rate_limited
 from .models import Notification
+
+
+class SafeImageUploadTests(SimpleTestCase):
+    def image_upload(self, image_format='WEBP', mode='RGB'):
+        source = BytesIO()
+        Image.new(mode, (8, 8), color='red').save(source, format=image_format)
+        return SimpleUploadedFile(
+            f'upload.{image_format.casefold()}',
+            source.getvalue(),
+            content_type=f'image/{image_format.casefold()}',
+        )
+
+    def test_webp_is_decoded_and_reencoded_as_safe_image(self):
+        from .image_uploads import sanitize_image_upload
+
+        sanitized = sanitize_image_upload(self.image_upload(), filename_prefix='safe')
+
+        self.assertTrue(sanitized.name.endswith('.jpg'))
+        self.assertTrue(sanitized.read().startswith(b'\xff\xd8\xff'))
+
+    def test_active_content_disguised_as_image_is_rejected(self):
+        from .image_uploads import sanitize_image_upload
+
+        upload = SimpleUploadedFile(
+            'payload.jpg', b'<script>alert(1)</script>', content_type='image/jpeg'
+        )
+        with self.assertRaisesRegex(ValidationError, 'Geçerli bir görsel'):
+            sanitize_image_upload(upload)
 
 
 class FooterManagementTests(TestCase):

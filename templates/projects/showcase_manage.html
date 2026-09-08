@@ -64,7 +64,7 @@
 
       <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
         <h2 class="mb-2 text-xl font-semibold text-white">Medya ve kapak</h2>
-        <p class="mb-6 text-sm text-gray-400">Proje görselleri JPG/PNG/WEBP ve en fazla 5 MB; diğer medyalar en fazla 20 MB olabilir.</p>
+        <p class="mb-6 text-sm text-gray-400">Proje görselleri JPG/PNG/WEBP ve en fazla 5 MB; diğer medyalar en fazla 20 MB, tek yüklemenin toplamı en fazla 60 MB olabilir.</p>
         <form method="post" enctype="multipart/form-data" action="{% url 'projects:project_images_add' project_id=project.pk %}" class="mb-6 rounded-xl border border-gray-700 p-4">
           {% csrf_token %}
           <label for="showcase-images" class="mb-2 block text-sm font-semibold">Birden çok proje görseli ekle</label>
