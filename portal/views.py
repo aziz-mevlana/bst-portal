@@ -1,4 +1,5 @@
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
@@ -40,6 +41,40 @@ def _clean_company_statistics():
             continue
         cleaned.append({'company': company, 'total': item['total']})
     return cleaned
+
+
+def _with_completed_project_count(profiles):
+    """Count each public completed project once across ownership and participation."""
+    user_id = OuterRef('user_id')
+    verified_contribution = Q(
+        contributions__user_id=user_id,
+        contributions__verified_by_owner=True,
+    ) & (
+        Q(advisor__isnull=True) | Q(contributions__verified_by_advisor=True)
+    )
+    participation = (
+        Q(created_by_id=user_id)
+        | Q(team__id=user_id)
+        | verified_contribution
+    )
+    completed_projects = (
+        Project.objects.filter(
+            participation,
+            visibility='public',
+            approval_status='approved',
+            development_status='completed',
+        )
+        .order_by()
+        .values(dummy=Value(1))
+        .annotate(total=Count('pk', distinct=True))
+        .values('total')
+    )
+    return profiles.annotate(
+        completed_project_count=Coalesce(
+            Subquery(completed_projects, output_field=IntegerField()),
+            Value(0),
+        )
+    )
 
 
 class IndexView(TemplateView):
@@ -119,43 +154,27 @@ class IndexView(TemplateView):
                     project.home_cover_theme = theme
                     break
 
-        featured_students = Profile.objects.filter(
-            user_type__in={'student', 'staff_student'},
-            user__is_active=True,
-            user__is_staff=False,
-            user__is_superuser=False,
-            is_portfolio_public=True,
-            show_in_search=True,
-        ).filter(
-            Q(is_featured=True, featured_from__isnull=True) | Q(is_featured=True, featured_from__lte=now)
-        ).filter(
-            Q(featured_until__isnull=True) | Q(featured_until__gte=now)
-        ).select_related('user').prefetch_related('technologies', 'categories').annotate(
-            completed_project_count=Count(
-                'user__projects',
-                filter=Q(
-                    user__projects__visibility='public',
-                    user__projects__approval_status='approved',
-                    user__projects__development_status='completed',
-                ),
-                distinct=True,
-            )
+        featured_students = _with_completed_project_count(
+            Profile.objects.filter(
+                user_type__in={'student', 'staff_student'},
+                user__is_active=True,
+                user__is_staff=False,
+                user__is_superuser=False,
+                is_portfolio_public=True,
+                show_in_search=True,
+            ).filter(
+                Q(is_featured=True, featured_from__isnull=True) | Q(is_featured=True, featured_from__lte=now)
+            ).filter(
+                Q(featured_until__isnull=True) | Q(featured_until__gte=now)
+            ).select_related('user').prefetch_related('technologies', 'categories')
         ).order_by('featured_order', '-completed_project_count')[:6]
         if not featured_students:
-            featured_students = Profile.objects.filter(
-                user_type__in={'student', 'staff_student'}, user__is_active=True,
-                user__is_staff=False, user__is_superuser=False,
-                is_portfolio_public=True, show_in_search=True
-            ).select_related('user').prefetch_related('technologies', 'categories').annotate(
-                completed_project_count=Count(
-                    'user__projects',
-                    filter=Q(
-                        user__projects__visibility='public',
-                        user__projects__approval_status='approved',
-                        user__projects__development_status='completed',
-                    ),
-                    distinct=True,
-                )
+            featured_students = _with_completed_project_count(
+                Profile.objects.filter(
+                    user_type__in={'student', 'staff_student'}, user__is_active=True,
+                    user__is_staff=False, user__is_superuser=False,
+                    is_portfolio_public=True, show_in_search=True,
+                ).select_related('user').prefetch_related('technologies', 'categories')
             ).order_by('-completed_project_count', 'user__first_name')[:6]
 
         featured_students = list(featured_students)
@@ -239,23 +258,15 @@ class IndexView(TemplateView):
 
 
 def talent_list(request):
-    profiles = Profile.objects.filter(
-        user_type__in={'student', 'staff_student'},
-        user__is_active=True,
-        user__is_staff=False,
-        user__is_superuser=False,
-        is_portfolio_public=True,
-        show_in_search=True,
-    ).select_related('user').prefetch_related('technologies', 'categories').annotate(
-        completed_project_count=Count(
-            'user__projects',
-            filter=Q(
-                user__projects__visibility='public',
-                user__projects__approval_status='approved',
-                user__projects__development_status='completed',
-            ),
-            distinct=True,
-        )
+    profiles = _with_completed_project_count(
+        Profile.objects.filter(
+            user_type__in={'student', 'staff_student'},
+            user__is_active=True,
+            user__is_staff=False,
+            user__is_superuser=False,
+            is_portfolio_public=True,
+            show_in_search=True,
+        ).select_related('user').prefetch_related('technologies', 'categories')
     )
     query = request.GET.get('q', '').strip()
     technology = request.GET.get('technology', '')

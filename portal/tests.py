@@ -9,6 +9,7 @@ from career.models import Opportunity
 from projects.models import (
     Project,
     ProjectCategory,
+    ProjectContribution,
     ProjectFeature,
     ProjectRequest,
     ProjectType,
@@ -378,3 +379,49 @@ class HomePageCompositionTests(TestCase):
         self.assertContains(response, 'Açık ekip rolü')
         self.assertContains(response, 'Mobil geliştirici')
         self.assertContains(response, team.get_absolute_url())
+
+    def test_completed_project_count_includes_owned_team_and_verified_work_once(self):
+        owned = Project.objects.create(
+            project_type=self.project_type,
+            title='Tamamlanan sahip projesi',
+            created_by=self.user,
+            visibility='public',
+            approval_status='approved',
+            development_status='completed',
+        )
+        owned.team.add(self.user)
+        other = User.objects.create_user('contribution-owner', password='StrongPassword123!')
+        contributed = Project.objects.create(
+            project_type=self.project_type,
+            title='Tamamlanan katkı projesi',
+            created_by=other,
+            visibility='public',
+            approval_status='approved',
+            development_status='completed',
+        )
+        ProjectContribution.objects.create(
+            project=contributed,
+            user=self.user,
+            role='Backend geliştirici',
+            contribution_description='API geliştirme',
+            verified_by_owner=True,
+        )
+        Project.objects.create(
+            project_type=self.project_type,
+            title='Gizli tamamlanan proje',
+            created_by=self.user,
+            visibility='private',
+            approval_status='approved',
+            development_status='completed',
+        )
+
+        homepage = self.client.get(reverse('portal:index'))
+        talent_page = self.client.get(reverse('portal:talent_list'))
+        homepage_profile = next(
+            profile for profile in homepage.context['featured_students']
+            if profile.user_id == self.user.pk
+        )
+        talent_profile = talent_page.context['profiles'].get(user=self.user)
+
+        self.assertEqual(homepage_profile.completed_project_count, 2)
+        self.assertEqual(talent_profile.completed_project_count, 2)
