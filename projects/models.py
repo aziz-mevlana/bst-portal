@@ -448,6 +448,10 @@ class Project(models.Model):
     def cover_media(self):
         return next((item for item in self.media.all() if item.is_cover), None)
 
+    @property
+    def logo_media(self):
+        return next((item for item in self.media.all() if item.media_type == 'project_logo'), None)
+
 
 class ProjectProgramParticipation(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='program_participations')

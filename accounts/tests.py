@@ -11,7 +11,7 @@ from django.utils import timezone
 from .email_service import EmailConfigurationError, validate_email_configuration
 from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification
 from django.contrib.auth.models import User
-from projects.models import Project, ProjectContribution, ProjectType, Team
+from projects.models import Project, ProjectContribution, ProjectMedia, ProjectType, Team
 from core.models import Notification
 from events.models import Event
 
@@ -454,6 +454,25 @@ class ProfileShowcaseTests(TestCase):
 
         self.assertContains(response, self.project.title)
         self.assertContains(response, self.project.get_development_status_display())
+
+    def test_public_portfolio_project_card_displays_project_logo(self):
+        ProjectMedia.objects.bulk_create([
+            ProjectMedia(
+                project=self.project,
+                media_type='project_logo',
+                file='projects/media/project-logo.png',
+                alt_text='Sergilenecek proje logosu',
+            )
+        ])
+        self.user.profile.showcase_projects.add(self.project)
+        self.client.logout()
+
+        response = self.client.get(
+            reverse('portal:portfolio_detail', args=[self.user.profile.public_slug])
+        )
+
+        self.assertContains(response, '/media/projects/media/project-logo.png')
+        self.assertContains(response, 'Sergilenecek proje logosu')
 
     def test_verified_contribution_selected_from_ui_appears_in_public_portfolio(self):
         ProjectContribution.objects.create(
