@@ -76,8 +76,8 @@ Son doğrulama sonucu:
 - GitHub API çağrıları, sync endpoint/button/task/cache/metrik alanları ve kalan Celery beat girdisi kaldırıldı.
 - `project_link` genel demo/proje bağlantısı olarak korundu.
 - Proje oluştururken ve düzenlerken çoklu JPG/JPEG/PNG/WEBP yükleme eklendi.
-- Görseller gerçek Pillow içeriğiyle doğrulanıyor, dosya başına 5 MB sınırı ve UUID tabanlı ad kullanıyor.
-- Video/doküman medya davranışı korundu; 5 MB yalnız proje görselleri için uygulanıyor.
+- Görseller gerçek Pillow içeriğiyle doğrulanıyor, dosya başına 15 MB sınırı ve UUID tabanlı ad kullanıyor.
+- Video/doküman medya davranışı korundu; 15 MB yalnız proje görselleri için uygulanıyor.
 - Proje + ilk görseller tek transaction; DB tek kapak constraint'i ve güvenli kapak değişimi var.
 - Oluşturma ve düzenleme ekranlarında yükleme önizlemesi/kapak seçici; mevcut görsellerde kapak yapma ve confirmation ile silme var.
 - Detay sayfasına klavye/Escape destekli erişilebilir büyütme diyaloğu eklendi.
@@ -229,7 +229,7 @@ manage.py collectstatic --noinput --dry-run       -> 2 copied, 547 unmodified
 python -m pip check                              -> No broken requirements found
 ```
 
-Testlerde profil/sınıf/link doğrulama, website geçmişi, BST Yetkilisi sınırları, mezun bağlama/yeni/ret/unlink, repository path ve sync kaldırılması, görsel içerik/5 MB/tek kapak, like/feature, ekip daveti/idempotency, bildirim dedupe/tercih/IDOR, haber silme komutu, dashboard KPI'ları, e-posta hash/enumeration ve POST/permission kontrolleri kapsanıyor.
+Testlerde profil/sınıf/link doğrulama, website geçmişi, BST Yetkilisi sınırları, mezun bağlama/yeni/ret/unlink, repository path ve sync kaldırılması, görsel içerik/15 MB/tek kapak, like/feature, ekip daveti/idempotency, bildirim dedupe/tercih/IDOR, haber silme komutu, dashboard KPI'ları, e-posta hash/enumeration ve POST/permission kontrolleri kapsanıyor.
 
 ## 7. Görsel ve responsive QA
 

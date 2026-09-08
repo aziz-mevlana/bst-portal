@@ -31,6 +31,16 @@ class SafeImageUploadTests(SimpleTestCase):
         self.assertTrue(sanitized.name.endswith('.jpg'))
         self.assertTrue(sanitized.read().startswith(b'\xff\xd8\xff'))
 
+    def test_image_larger_than_old_five_megabyte_limit_is_accepted(self):
+        from .image_uploads import sanitize_image_upload
+
+        upload = self.image_upload(image_format='PNG')
+        upload.size = 6 * 1024 * 1024
+
+        sanitized = sanitize_image_upload(upload)
+
+        self.assertTrue(sanitized.name.endswith('.jpg'))
+
     def test_active_content_disguised_as_image_is_rejected(self):
         from .image_uploads import sanitize_image_upload
 

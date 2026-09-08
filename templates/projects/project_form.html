@@ -61,7 +61,7 @@
       </section>
 
       <section class="rounded-2xl border border-gray-700 bg-[#111827]/70 p-5 md:p-6" aria-labelledby="project-assets-title">
-        <div class="mb-6"><h2 id="project-assets-title" class="text-xl font-bold text-white">Proje görselleri ve dosyaları</h2><p class="mt-2 text-sm text-gray-400">Tüm alanlar isteğe bağlıdır. Görseller JPG, PNG veya WEBP ve en fazla 5 MB; PDF dosyaları en fazla 20 MB, tek yüklemenin toplamı en fazla 60 MB olabilir.</p></div>
+        <div class="mb-6"><h2 id="project-assets-title" class="text-xl font-bold text-white">Proje görselleri ve dosyaları</h2><p class="mt-2 text-sm text-gray-400">Tüm alanlar isteğe bağlıdır. Görseller JPG, PNG veya WEBP ve en fazla 15 MB; PDF dosyaları en fazla 20 MB, tek yüklemenin toplamı en fazla 100 MB olabilir.</p></div>
         {% if image_form.non_field_errors %}<div class="mb-5 rounded-xl border border-red-700/60 bg-red-950/30 p-4 text-sm text-red-300">{{ image_form.non_field_errors }}</div>{% endif %}
         <div class="grid gap-5 md:grid-cols-2">
           <div class="rounded-xl border border-gray-700 bg-[#0c1422] p-4"><label for="{{ image_form.cover_image.id_for_label }}" class="font-semibold text-gray-100">Kapak Görseli</label><p class="mb-3 mt-1 text-xs text-gray-500">Proje kartlarında ve detay sayfasının üst bölümünde kullanılır.</p>{{ image_form.cover_image }}{% if image_form.cover_image.errors %}<div class="mt-2 text-sm text-red-300">{{ image_form.cover_image.errors }}</div>{% endif %}</div>

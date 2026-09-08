@@ -9,7 +9,7 @@ from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 
 
-DEFAULT_MAX_IMAGE_SIZE = 5 * 1024 * 1024
+DEFAULT_MAX_IMAGE_SIZE = 15 * 1024 * 1024
 DEFAULT_MAX_IMAGE_PIXELS = 25_000_000
 DEFAULT_ALLOWED_IMAGE_FORMATS = frozenset({'JPEG', 'PNG', 'WEBP'})
 

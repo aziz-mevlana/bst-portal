@@ -245,11 +245,11 @@ class ProjectImageRulesTests(TestCase):
             content_type=content_type,
         )
 
-    def test_image_limit_is_five_megabytes(self):
+    def test_image_limit_is_fifteen_megabytes(self):
         oversized = SimpleUploadedFile(
-            'large.png', b'x' * (5 * 1024 * 1024 + 1), content_type='image/png'
+            'large.png', b'x' * (15 * 1024 * 1024 + 1), content_type='image/png'
         )
-        with self.assertRaisesRegex(ValidationError, '5 MB'):
+        with self.assertRaisesRegex(ValidationError, '15 MB'):
             validate_project_image(oversized)
 
     def test_cover_index_must_reference_an_uploaded_image(self):
@@ -259,17 +259,17 @@ class ProjectImageRulesTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('cover_index', form.errors)
 
-    def test_combined_asset_upload_has_clear_sixty_megabyte_limit(self):
+    def test_combined_asset_upload_has_clear_hundred_megabyte_limit(self):
         images = [self.image(f'image-{index}.png') for index in range(12)]
         for image in images:
-            image.size = 5 * 1024 * 1024
+            image.size = 9 * 1024 * 1024
         cover = self.image('cover.png')
         cover.size = 1024 * 1024
 
         form = ProjectImageUploadForm(files={'images': images, 'cover_image': cover})
 
         self.assertFalse(form.is_valid())
-        self.assertIn('60 MB', str(form.non_field_errors()))
+        self.assertIn('100 MB', str(form.non_field_errors()))
 
     def test_saving_new_cover_unsets_previous_cover(self):
         first = ProjectMedia.objects.create(

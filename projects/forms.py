@@ -38,7 +38,7 @@ INPUT_CLASS = (
     'rounded-lg sm:rounded-xl text-white placeholder-gray-500 focus:ring-2 '
     'focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'
 )
-MAX_PROJECT_ASSET_BATCH_SIZE = 60 * 1024 * 1024
+MAX_PROJECT_ASSET_BATCH_SIZE = 100 * 1024 * 1024
 
 
 class RequestForm(forms.ModelForm):
@@ -296,7 +296,7 @@ class ProjectImageUploadForm(forms.Form):
         )
         if total_upload_size > MAX_PROJECT_ASSET_BATCH_SIZE:
             raise forms.ValidationError(
-                'Tek seferde yüklenen proje dosyalarının toplamı en fazla 60 MB olabilir.'
+                'Tek seferde yüklenen proje dosyalarının toplamı en fazla 100 MB olabilir.'
             )
         images = cleaned.get('images') or []
         cover_index = cleaned.get('cover_index')

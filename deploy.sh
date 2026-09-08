@@ -82,7 +82,7 @@ sudo cat > /etc/nginx/sites-available/bstportal << 'NGINX'
 server {
     listen 80;
     server_name bstakademi.com www.bstakademi.com;
-    client_max_body_size 64m;
+    client_max_body_size 128m;
     add_header X-Content-Type-Options nosniff always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
     

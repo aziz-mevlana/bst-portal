@@ -29,7 +29,7 @@ from alumni.models import AlumniRegistrationRequest
 from .email_service import EmailConfigurationError, send_transactional_email
 from .validators import institutional_email_domain
 from .permissions import ensure_interactive_account
-from .image_utils import sanitize_profile_image
+from .image_utils import MAX_PROFILE_IMAGE_SIZE, sanitize_profile_image
 from django.contrib.auth.models import User
 import base64
 import binascii
@@ -867,8 +867,9 @@ def profile_view(request, user_id=None):
                 header, imgstr = cropped_image_data.split(';base64,', 1)
                 if header not in {'data:image/jpeg', 'data:image/png', 'data:image/gif'}:
                     raise ValidationError('Desteklenmeyen görsel biçimi.')
-                if len(imgstr) > 8 * 1024 * 1024:
-                    raise ValidationError('Profil fotoğrafı en fazla 5 MB olabilir.')
+                max_base64_size = ((MAX_PROFILE_IMAGE_SIZE + 2) // 3) * 4
+                if len(imgstr) > max_base64_size:
+                    raise ValidationError('Profil fotoğrafı en fazla 15 MB olabilir.')
                 raw_upload = ContentFile(base64.b64decode(imgstr, validate=True), name='profile-upload')
                 data = sanitize_profile_image(raw_upload)
                 

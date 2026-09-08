@@ -4,7 +4,7 @@ from core.image_uploads import sanitize_image_upload
 from .models import Article
 
 
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
+MAX_IMAGE_SIZE = 15 * 1024 * 1024
 
 
 class ArticleForm(forms.ModelForm):

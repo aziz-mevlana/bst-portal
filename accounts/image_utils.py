@@ -3,7 +3,7 @@
 from core.image_uploads import sanitize_image_upload
 
 
-MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024
+MAX_PROFILE_IMAGE_SIZE = 15 * 1024 * 1024
 MAX_PROFILE_IMAGE_PIXELS = 25_000_000
 ALLOWED_PROFILE_IMAGE_FORMATS = {'JPEG', 'PNG', 'GIF', 'WEBP'}
 

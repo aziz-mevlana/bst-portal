@@ -481,8 +481,8 @@ def project_media_upload_to(instance, filename):
 
 
 def validate_project_image(upload):
-    if upload.size > 5 * 1024 * 1024:
-        raise ValidationError('Proje görselleri en fazla 5 MB olabilir.')
+    if upload.size > 15 * 1024 * 1024:
+        raise ValidationError('Proje görselleri en fazla 15 MB olabilir.')
     try:
         with Image.open(upload) as image:
             image.verify()
