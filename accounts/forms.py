@@ -66,8 +66,18 @@ class PortfolioSettingsForm(forms.ModelForm):
             'github_username': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'kullanici-adi'}),
             'linkedin_slug': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'profil-adi'}),
             'website_url': forms.URLInput(attrs={'class': INPUT_CLASS, 'placeholder': 'https://siteniz.com'}),
-            'categories': forms.SelectMultiple(attrs={'data-enhance-multiselect': 'true', 'data-placeholder': 'İlgi alanı ara…'}),
-            'technologies': forms.SelectMultiple(attrs={'data-enhance-multiselect': 'true', 'data-placeholder': 'Teknoloji ara…'}),
+            'categories': forms.SelectMultiple(attrs={
+                'data-enhance-multiselect': 'true',
+                'data-max-visible-chips': '5',
+                'data-placeholder': 'İlgi alanı ara…',
+                'data-selected-placeholder': 'Başka ilgi alanı ekle…',
+            }),
+            'technologies': forms.SelectMultiple(attrs={
+                'data-enhance-multiselect': 'true',
+                'data-max-visible-chips': '5',
+                'data-placeholder': 'Teknoloji ara…',
+                'data-selected-placeholder': 'Başka teknoloji ekle…',
+            }),
         }
         labels = {
             'teacher_title': 'Akademik ünvan', 'department': 'Bölüm / Anabilim dalı',

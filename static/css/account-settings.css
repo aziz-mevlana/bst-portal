@@ -356,7 +356,7 @@
     list-style: none;
 }
 
-.settings-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.settings-card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(.bst-multiselect-search),
 .settings-card select:not(.bst-multiselect-native),
 .settings-card textarea {
     min-height: 2.85rem;

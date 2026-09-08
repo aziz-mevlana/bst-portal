@@ -53,7 +53,9 @@ select.bst-field {
     width: 100%;
     min-height: 3.25rem;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    align-content: center;
     gap: 0.5rem;
     padding: 0.55rem 2.6rem 0.55rem 0.7rem;
     border: 1px solid var(--border-strong);
@@ -61,6 +63,7 @@ select.bst-field {
     background: var(--input-bg);
     color: var(--text-primary);
     cursor: text;
+    overflow: hidden;
 }
 
 .bst-multiselect-control::after {
@@ -89,7 +92,9 @@ select.bst-field {
 .bst-multiselect-chip {
     display: inline-flex;
     align-items: center;
+    flex: 0 1 auto;
     gap: 0.35rem;
+    min-width: 0;
     max-width: 13rem;
     padding: 0.34rem 0.55rem;
     border-radius: 999px;
@@ -117,6 +122,8 @@ select.bst-field {
 .bst-multiselect-search {
     flex: 1 1 10rem;
     min-width: 7rem;
+    width: auto;
+    max-width: 100%;
     padding: 0.3rem;
     border: 0;
     outline: 0;
@@ -218,4 +225,21 @@ select.bst-field {
     color: var(--text-muted);
     text-align: center;
     font-size: 0.88rem;
+}
+
+@media (max-width: 520px) {
+    .bst-multiselect-control {
+        gap: 0.4rem;
+        padding-left: 0.55rem;
+    }
+
+    .bst-multiselect-chip {
+        max-width: min(10rem, 100%);
+        font-size: 0.76rem;
+    }
+
+    .bst-multiselect-search {
+        flex-basis: 100%;
+        min-width: 0;
+    }
 }
