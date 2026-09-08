@@ -348,12 +348,9 @@ def portfolio_detail(request, slug):
     if not profile.is_portfolio_public and request.user != profile.user:
         raise Http404
 
-    public_projects = Project.objects.filter(
-        Q(created_by=profile.user) | Q(team=profile.user),
-        showcased_by_profiles=profile,
+    public_projects = profile.showcase_projects.filter(
         visibility='public',
         approval_status='approved',
-        development_status='completed',
     ).select_related('project_type').prefetch_related('technologies', 'media').distinct()
     contributions = ProjectContribution.objects.filter(
         user=profile.user,

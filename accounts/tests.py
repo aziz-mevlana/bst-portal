@@ -11,7 +11,7 @@ from django.utils import timezone
 from .email_service import EmailConfigurationError, validate_email_configuration
 from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification
 from django.contrib.auth.models import User
-from projects.models import Project, ProjectType, Team
+from projects.models import Project, ProjectContribution, ProjectType, Team
 from core.models import Notification
 from events.models import Event
 
@@ -441,6 +441,38 @@ class ProfileShowcaseTests(TestCase):
 
         self.assertContains(response, self.project.title)
         self.assertNotContains(response, self.unselected.title)
+
+    def test_public_portfolio_lists_selected_project_before_completion(self):
+        self.project.development_status = 'in_progress'
+        self.project.save(update_fields=['development_status'])
+        self.user.profile.showcase_projects.add(self.project)
+        self.client.logout()
+
+        response = self.client.get(
+            reverse('portal:portfolio_detail', args=[self.user.profile.public_slug])
+        )
+
+        self.assertContains(response, self.project.title)
+        self.assertContains(response, self.project.get_development_status_display())
+
+    def test_verified_contribution_selected_from_ui_appears_in_public_portfolio(self):
+        ProjectContribution.objects.create(
+            project=self.foreign_project,
+            user=self.user,
+            role='Backend geliştirici',
+            verified_by_owner=True,
+        )
+
+        response = self.client.post(reverse('accounts:profile'), {
+            'showcase_projects': [self.foreign_project.pk],
+        })
+
+        self.assertRedirects(response, reverse('accounts:profile'))
+        self.client.logout()
+        portfolio = self.client.get(
+            reverse('portal:portfolio_detail', args=[self.user.profile.public_slug])
+        )
+        self.assertContains(portfolio, self.foreign_project.title)
 
     def test_other_user_cannot_see_selected_private_project(self):
         self.project.visibility = 'private'
