@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -111,11 +112,13 @@ def edit_event(request, event_id):
         return redirect('events:event_detail', event_id=event.id)
 
     if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES, instance=event)
-        if form.is_valid():
-            event = form.save()
-            messages.success(request, 'Etkinlik başarıyla güncellendi.')
-            return redirect('dashboard:events')
+        with transaction.atomic():
+            event = get_object_or_404(Event.objects.select_for_update(), id=event_id)
+            form = EventForm(request.POST, request.FILES, instance=event)
+            if form.is_valid():
+                event = form.save()
+                messages.success(request, 'Etkinlik başarıyla güncellendi.')
+                return redirect('dashboard:events')
         messages.error(request, 'Etkinlik güncellenemedi. Tarihleri ve zorunlu alanları kontrol edin.')
     else:
         form = EventForm(instance=event)

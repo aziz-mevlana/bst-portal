@@ -21,7 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from core.sitemaps import ArticleSitemap, OpportunitySitemap, PortfolioSitemap, ProjectSitemap, StaticSitemap
 from core.views import health_check, robots_txt
-from projects.views import project_uploaded_media
+from projects.views import project_uploaded_achievement, project_uploaded_media
 
 sitemaps = {
     'projects': ProjectSitemap,
@@ -41,6 +41,11 @@ urlpatterns = [
         r'^media/projects/media/(?P<path>.+)$',
         project_uploaded_media,
         name='protected_project_media',
+    ),
+    re_path(
+        r'^media/projects/achievements/(?P<path>.+)$',
+        project_uploaded_achievement,
+        name='protected_project_achievement',
     ),
     path('health/', health_check, name='health_check'),
     path('robots.txt', robots_txt, name='robots_txt'),

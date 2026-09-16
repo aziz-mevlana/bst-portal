@@ -27,6 +27,16 @@ class EventForm(forms.ModelForm):
         registration_deadline = cleaned.get('registration_deadline')
         if registration_deadline and start_date and registration_deadline > start_date:
             self.add_error('registration_deadline', 'Kayıt son tarihi etkinlik başlangıcından sonra olamaz.')
+        capacity = cleaned.get('capacity')
+        if self.instance.pk and capacity is not None:
+            active_registration_count = self.instance.registrations.filter(
+                status__in=['registered', 'attended'],
+            ).count()
+            if capacity < active_registration_count:
+                self.add_error(
+                    'capacity',
+                    f'Kontenjan aktif kayıt sayısından ({active_registration_count}) düşük olamaz.',
+                )
         return cleaned
 
     def clean_image(self):

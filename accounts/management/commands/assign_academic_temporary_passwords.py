@@ -1,9 +1,12 @@
 import csv
+import os
 import secrets
 import string
 from pathlib import Path
 
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -51,15 +54,30 @@ class Command(BaseCommand):
                 }
                 for user in academics
             ]
-            self._write_rows(output_path, rows)
-
-        updated = 0
+        validated_rows = []
         for row in rows:
             user = User.objects.select_related('profile').filter(
                 email__iexact=row['email'], profile__user_type='teacher'
             ).first()
             if user is None:
                 raise CommandError(f"Akademisyen hesabı bulunamadı: {row['email']}")
+
+            try:
+                validate_password(row['temporary_password'], user=user)
+            except ValidationError as exc:
+                raise CommandError(
+                    f"Geçici şifre doğrulamayı geçemedi ({row['email']}): "
+                    + '; '.join(exc.messages)
+                ) from exc
+
+            validated_rows.append((row, user))
+
+        if not options['input']:
+            self._write_rows(output_path, rows)
+
+        updated = 0
+        for row, user in validated_rows:
+            validate_password(row['temporary_password'], user=user)
             user.set_password(row['temporary_password'])
             user.save(update_fields=['password'])
             user.profile.must_change_password = True
@@ -84,7 +102,15 @@ class Command(BaseCommand):
     @staticmethod
     def _write_rows(path, rows):
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open('w', encoding='utf-8-sig', newline='') as handle:
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        if hasattr(os, 'O_NOFOLLOW'):
+            flags |= os.O_NOFOLLOW
+
+        fd = os.open(path, flags, 0o600)
+        os.fchmod(fd, 0o600)
+
+        with os.fdopen(fd, 'w', encoding='utf-8-sig', newline='') as handle:
             writer = csv.DictWriter(handle, fieldnames=['email', 'full_name', 'temporary_password'])
             writer.writeheader()
             writer.writerows(rows)

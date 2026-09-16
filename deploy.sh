@@ -103,6 +103,11 @@ server {
         proxy_pass http://unix:/var/www/bst-portal/bstportal.sock;
     }
 
+    location /media/projects/achievements/ {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/bst-portal/bstportal.sock;
+    }
+
     location /media/knowledge/ {
         deny all;
     }

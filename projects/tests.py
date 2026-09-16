@@ -1,4 +1,5 @@
 from datetime import timedelta
+import tempfile
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -14,6 +15,7 @@ from core.models import AuditLog
 from .forms import ProjectCommentForm, ProjectForm
 from .models import (
     Project,
+    ProjectAchievement,
     ProjectCaseStudy,
     ProjectCategory,
     ProjectComment,
@@ -874,3 +876,53 @@ class PrivateProjectAuthorizationTests(TestCase):
             self.client.get(reverse('projects:project_detail', args=[self.project.pk])).status_code,
             200,
         )
+
+
+class PrivateProjectAchievementEvidenceAuthorizationTests(TestCase):
+    def setUp(self):
+        self.media_directory = tempfile.TemporaryDirectory()
+        self.media_override = self.settings(MEDIA_ROOT=self.media_directory.name)
+        self.media_override.enable()
+        self.owner = make_user('achievement-evidence-owner')
+        self.outsider = make_user('achievement-evidence-outsider')
+        self.project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Gizli Başarı Kanıtı Projesi',
+            created_by=self.owner,
+            visibility='private',
+            approval_status='approved',
+        )
+        self.achievement = ProjectAchievement.objects.create(
+            project=self.project,
+            title='Gizli başarı',
+            achievement_type='award',
+            evidence_file=SimpleUploadedFile(
+                'private-proof.pdf',
+                b'%PDF-1.4\nCONFIDENTIAL-EVIDENCE-9472\n%%EOF\n',
+                content_type='application/pdf',
+            ),
+        )
+        self.evidence_url = f'/media/{self.achievement.evidence_file.name}'
+
+    def tearDown(self):
+        self.media_override.disable()
+        self.media_directory.cleanup()
+
+    def test_private_evidence_requires_project_view_permission(self):
+        self.assertEqual(self.client.get(self.evidence_url).status_code, 403)
+
+        self.client.force_login(self.outsider)
+        self.assertEqual(self.client.get(self.evidence_url).status_code, 403)
+
+        self.client.force_login(self.owner)
+        response = self.client.get(self.evidence_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'CONFIDENTIAL-EVIDENCE-9472', b''.join(response.streaming_content))
+
+    def test_public_approved_evidence_remains_available(self):
+        self.project.visibility = 'public'
+        self.project.save(update_fields=['visibility', 'updated_at'])
+
+        response = self.client.get(self.evidence_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'CONFIDENTIAL-EVIDENCE-9472', b''.join(response.streaming_content))

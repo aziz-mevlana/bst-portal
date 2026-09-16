@@ -68,6 +68,65 @@ class EventRegistrationTests(TestCase):
             certificate_enabled=True,
         )
 
+    def _edit_payload(self, capacity):
+        return {
+            'title': self.event.title,
+            'description': self.event.description,
+            'event_type': self.event.event_type,
+            'location': self.event.location,
+            'start_date': self.event.start_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'end_date': self.event.end_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'allow_registration': 'on',
+            'capacity': capacity,
+            'waitlist_enabled': 'on',
+            'certificate_enabled': 'on',
+        }
+
+    def test_capacity_cannot_be_reduced_below_active_registrations(self):
+        EventRegistration.objects.create(event=self.event, user=self.first, status='registered')
+        EventRegistration.objects.create(event=self.event, user=self.second, status='attended')
+        self.event.capacity = 2
+        self.event.save(update_fields=['capacity'])
+        self.client.force_login(self.organizer)
+
+        response = self.client.post(
+            reverse('events:edit_event', args=[self.event.pk]),
+            self._edit_payload('1'),
+        )
+
+        self.event.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.event.capacity, 2)
+        self.assertContains(response, 'Kontenjan aktif kayıt sayısından (2) düşük olamaz.')
+
+    def test_capacity_can_equal_active_registrations(self):
+        EventRegistration.objects.create(event=self.event, user=self.first, status='registered')
+        EventRegistration.objects.create(event=self.event, user=self.second, status='attended')
+        self.client.force_login(self.organizer)
+
+        response = self.client.post(
+            reverse('events:edit_event', args=[self.event.pk]),
+            self._edit_payload('2'),
+        )
+
+        self.event.refresh_from_db()
+        self.assertRedirects(response, reverse('dashboard:events'))
+        self.assertEqual(self.event.capacity, 2)
+
+    def test_capacity_can_be_changed_to_unlimited_with_active_registrations(self):
+        EventRegistration.objects.create(event=self.event, user=self.first, status='registered')
+        EventRegistration.objects.create(event=self.event, user=self.second, status='attended')
+        self.client.force_login(self.organizer)
+
+        response = self.client.post(
+            reverse('events:edit_event', args=[self.event.pk]),
+            self._edit_payload(''),
+        )
+
+        self.event.refresh_from_db()
+        self.assertRedirects(response, reverse('dashboard:events'))
+        self.assertIsNone(self.event.capacity)
+
     def test_capacity_waitlist_and_automatic_promotion(self):
         first, created = register_for_event(event_id=self.event.pk, user=self.first)
         second, _ = register_for_event(event_id=self.event.pk, user=self.second)

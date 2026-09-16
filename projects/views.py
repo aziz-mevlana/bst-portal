@@ -1001,6 +1001,32 @@ def project_uploaded_media(request, path):
     return response
 
 
+@require_safe
+def project_uploaded_achievement(request, path):
+    """Protect direct achievement evidence URLs with the owning project's visibility rules."""
+    achievement = get_object_or_404(
+        ProjectAchievement.objects.select_related(
+            'project', 'project__created_by', 'project__advisor',
+        ),
+        evidence_file=f'projects/achievements/{path}',
+    )
+    if not _can_view_project(request.user, achievement.project):
+        raise PermissionDenied
+    if not achievement.evidence_file:
+        raise Http404
+    content_type = mimetypes.guess_type(achievement.evidence_file.name)[0] or 'application/octet-stream'
+    response = FileResponse(achievement.evidence_file.open('rb'), content_type=content_type)
+    response['Content-Security-Policy'] = "sandbox; default-src 'none'"
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = (
+        'private, max-age=300'
+        if achievement.project.visibility in {'public', 'unlisted'}
+        and achievement.project.approval_status == 'approved'
+        else 'private, no-store'
+    )
+    return response
+
+
 def _save_project_assets(project, image_form):
     """Persist form uploads in ProjectMedia while keeping one slot per named asset."""
     data = image_form.cleaned_data

@@ -3,7 +3,7 @@
 {% block title %}BST Akademi - Profil{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<link rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}">
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -447,7 +447,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="{% static 'vendor/cropperjs/cropper.min.js' %}"></script>
 <script>
 let cropper;
 const cropperModal = document.getElementById('cropperModal');
