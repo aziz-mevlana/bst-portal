@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse, unquote
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -108,16 +109,49 @@ WSGI_APPLICATION = 'bst_portal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-sqlite_path = Path(os.getenv('SQLITE_DATABASE_PATH', 'db.sqlite3')).expanduser()
-if not sqlite_path.is_absolute():
-    sqlite_path = BASE_DIR / sqlite_path
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': sqlite_path,
-        'OPTIONS': {'timeout': int(os.getenv('SQLITE_TIMEOUT_SECONDS', '20'))},
+DATABASE_BACKEND = os.getenv('DATABASE_BACKEND', 'sqlite').strip().lower()
+
+if DATABASE_BACKEND in {'postgres', 'postgresql'}:
+    database_url = os.getenv('DATABASE_URL', '').strip()
+    if not database_url:
+        raise ImproperlyConfigured(
+            'DATABASE_URL PostgreSQL kullanılırken zorunludur.'
+        )
+
+    parsed_database_url = urlparse(database_url)
+    if parsed_database_url.scheme not in {'postgres', 'postgresql'}:
+        raise ImproperlyConfigured(
+            'DATABASE_URL postgresql:// ile başlamalıdır.'
+        )
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed_database_url.path.lstrip('/')),
+            'USER': unquote(parsed_database_url.username or ''),
+            'PASSWORD': unquote(parsed_database_url.password or ''),
+            'HOST': parsed_database_url.hostname or '127.0.0.1',
+            'PORT': parsed_database_url.port or 5432,
+            'CONN_MAX_AGE': 60,
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
-}
+else:
+    sqlite_path = Path(
+        os.getenv('SQLITE_DATABASE_PATH', 'db.sqlite3')
+    ).expanduser()
+    if not sqlite_path.is_absolute():
+        sqlite_path = BASE_DIR / sqlite_path
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': sqlite_path,
+            'OPTIONS': {
+                'timeout': int(os.getenv('SQLITE_TIMEOUT_SECONDS', '20'))
+            },
+        }
+    }
 
 
 # Password validation
