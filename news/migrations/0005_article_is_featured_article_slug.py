@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='slug',
-            field=models.SlugField(blank=True, max_length=230, null=True),
+            field=models.SlugField(blank=True, db_index=False, max_length=230, null=True),
         ),
         migrations.RunPython(populate_article_slugs, migrations.RunPython.noop),
         migrations.AlterField(
