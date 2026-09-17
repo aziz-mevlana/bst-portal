@@ -76,8 +76,8 @@ class Alumni(models.Model):
 class WorkExperience(models.Model):
     """Work experience for alumni (can be reused for other purposes)"""
     person = models.ForeignKey(Alumni, on_delete=models.CASCADE, related_name='work_experiences')
-    company = models.CharField(max_length=200)
-    position = models.CharField(max_length=200)
+    company = models.CharField(max_length=500)
+    position = models.CharField(max_length=1000)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     is_current = models.BooleanField(default=False)
