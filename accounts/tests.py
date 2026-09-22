@@ -9,10 +9,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .email_service import EmailConfigurationError, validate_email_configuration
-from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification
+from .models import CommunityRegistration, ConsentRecord, DataSubjectRequest, EmailVerification, PasswordReset
+from .security_notifications import queue_password_changed_security_notice
 from django.contrib.auth.models import User
 from projects.models import Project, ProjectContribution, ProjectMedia, ProjectType, Team
-from core.models import Notification
+from core.models import AuditLog, Notification
 from events.models import Event
 
 
@@ -352,6 +353,87 @@ class AccountSettingsTests(TestCase):
         self.assertTrue(self.user.check_password('NewStrongPassword456!'))
         self.assertEqual(self.client.get(reverse('accounts:portfolio_settings')).status_code, 200)
 
+    def test_successful_password_change_creates_security_notification(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('accounts:password_change'), {
+                'old_password': 'StrongPassword123!',
+                'new_password1': 'NotificationPassword456!',
+                'new_password2': 'NotificationPassword456!',
+            })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        notification = Notification.objects.get(recipient=self.user, notification_type='system')
+        self.assertEqual(notification.title, 'Parolanız değiştirildi')
+        self.assertIn('yeniden parola sıfırlayın', notification.message)
+        self.assertTrue(AuditLog.objects.filter(
+            actor=self.user,
+            action='account.password_changed',
+            target_id=str(self.user.pk),
+        ).exists())
+
+    def test_successful_password_change_sends_security_email(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse('accounts:password_change'), {
+                'old_password': 'StrongPassword123!',
+                'new_password1': 'EmailNoticePassword456!',
+                'new_password2': 'EmailNoticePassword456!',
+            })
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertIn('parolası başarıyla değiştirildi', mail.outbox[0].body)
+        self.assertIn('yeniden parola sıfırlayın', mail.outbox[0].body)
+
+    def test_invalid_current_password_creates_no_security_notice(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('accounts:password_change'), {
+                'old_password': 'WrongPassword123!',
+                'new_password1': 'RejectedPassword456!',
+                'new_password2': 'RejectedPassword456!',
+            })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.assertFalse(Notification.objects.filter(recipient=self.user).exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    @patch(
+        'accounts.security_notifications.send_transactional_email',
+        side_effect=RuntimeError('temporary smtp failure'),
+    )
+    def test_email_failure_does_not_rollback_password_change(self, mocked_send):
+        with self.assertLogs('accounts.security_notifications', level='ERROR'):
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(reverse('accounts:password_change'), {
+                    'old_password': 'StrongPassword123!',
+                    'new_password1': 'SurvivesEmailFailure456!',
+                    'new_password2': 'SurvivesEmailFailure456!',
+                })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('SurvivesEmailFailure456!'))
+        self.assertTrue(Notification.objects.filter(recipient=self.user).exists())
+        mocked_send.assert_called_once()
+
+    @patch(
+        'accounts.security_notifications.create_notification',
+        side_effect=RuntimeError('temporary notification failure'),
+    )
+    def test_notification_failure_does_not_rollback_or_block_email(self, mocked_create):
+        with self.assertLogs('accounts.security_notifications', level='ERROR'):
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(reverse('accounts:password_change'), {
+                    'old_password': 'StrongPassword123!',
+                    'new_password1': 'SurvivesNotificationFailure456!',
+                    'new_password2': 'SurvivesNotificationFailure456!',
+                })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('SurvivesNotificationFailure456!'))
+        self.assertEqual(len(mail.outbox), 1)
+        mocked_create.assert_called_once()
+
     def test_student_can_delete_account_with_owned_project_and_team(self):
         team = Team.objects.create(name='Silinecek ekip', leader=self.user)
         project = Project.objects.create(
@@ -436,6 +518,78 @@ class AccountSettingsTests(TestCase):
         self.assertNotContains(response, 'linkedin.com/in/private-user')
         self.assertNotContains(response, 'old@trakya.edu.tr')
         self.assertNotContains(response, '05551112233')
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='noreply@bstakademi.test',
+    EMAIL_USE_TLS=False,
+    EMAIL_USE_SSL=False,
+)
+class PasswordResetSecurityNoticeTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(
+            'reset-notice-user',
+            'reset-notice@example.com',
+            'OriginalPassword123!',
+            first_name='Reset',
+        )
+        self.reset = PasswordReset(user=self.user)
+        self.reset.set_code('123456')
+        self.reset.save()
+        session = self.client.session
+        session['reset_email'] = self.user.email
+        session['reset_authorized_id'] = self.reset.pk
+        session.save()
+
+    def test_successful_reset_uses_security_notification_and_email(self):
+        new_password = 'ResetCompletedPassword456!'
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('accounts:reset_password'), {
+                'password_1': new_password,
+                'password_2': new_password,
+            })
+
+        self.assertRedirects(response, reverse('accounts:login'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_password))
+        notification = Notification.objects.get(recipient=self.user, notification_type='system')
+        self.assertEqual(notification.title, 'Parolanız değiştirildi')
+        self.assertIn('yeniden parola sıfırlayın', notification.message)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertNotIn(new_password, mail.outbox[0].body)
+        self.assertNotIn('123456', mail.outbox[0].body)
+        self.assertIn('yeniden parola sıfırlayın', mail.outbox[0].body)
+
+    def test_expired_reset_creates_no_security_notice(self):
+        PasswordReset.objects.filter(pk=self.reset.pk).update(
+            created_at=timezone.now() - timedelta(hours=1)
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('accounts:reset_password'), {
+                'password_1': 'ExpiredResetPassword456!',
+                'password_2': 'ExpiredResetPassword456!',
+            })
+
+        self.assertRedirects(response, reverse('accounts:forgot_password'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('OriginalPassword123!'))
+        self.assertFalse(Notification.objects.filter(recipient=self.user).exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_same_password_change_event_is_not_notified_twice(self):
+        self.user.set_password('SingleNoticePassword456!')
+        self.user.save(update_fields=['password'])
+
+        with self.captureOnCommitCallbacks(execute=True):
+            queue_password_changed_security_notice(self.user, event_key='test-event:1')
+            queue_password_changed_security_notice(self.user, event_key='test-event:1')
+
+        self.assertEqual(Notification.objects.filter(recipient=self.user).count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class ProfileShowcaseTests(TestCase):

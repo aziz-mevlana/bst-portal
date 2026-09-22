@@ -29,6 +29,7 @@ from alumni.models import AlumniRegistrationRequest
 from .email_service import EmailConfigurationError, send_transactional_email
 from .validators import institutional_email_domain, validate_portal_username
 from .permissions import ensure_interactive_account
+from .security_notifications import queue_password_changed_security_notice
 from .image_utils import MAX_PROFILE_IMAGE_SIZE, sanitize_profile_image
 from django.contrib.auth.models import User
 import base64
@@ -769,6 +770,7 @@ def reset_password_view(request):
                 user.profile.must_change_password = False
                 user.profile.save(update_fields=['must_change_password', 'updated_at'])
             PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+            queue_password_changed_security_notice(user, event_key=f'reset:{reset.pk}')
 
         _clear_password_reset_session(request)
 
@@ -1084,7 +1086,13 @@ def password_change(request):
             user.profile.must_change_password = False
             user.profile.save(update_fields=['must_change_password', 'updated_at'])
         update_session_auth_hash(request, user)
-        record_audit_event(actor=user, action='account.password_changed', target=user, request=request)
+        audit_event = record_audit_event(
+            actor=user,
+            action='account.password_changed',
+            target=user,
+            request=request,
+        )
+        queue_password_changed_security_notice(user, event_key=f'settings:{audit_event.pk}')
         messages.success(request, 'Şifreniz güvenli biçimde değiştirildi.')
     else:
         for errors in form.errors.values():
