@@ -41,6 +41,30 @@ INPUT_CLASS = (
 MAX_PROJECT_ASSET_BATCH_SIZE = 100 * 1024 * 1024
 
 
+def validate_generic_project_type(project_type, *, original_code=None):
+    """Keep CAPSTONE projects behind their dedicated domain service."""
+
+    new_code = getattr(project_type, 'code', None)
+    if original_code is None and new_code == 'CAPSTONE':
+        raise forms.ValidationError(
+            'Bitirme projeleri yalnızca özel CAPSTONE oluşturma akışıyla başlatılabilir.'
+        )
+    if original_code is not None and (original_code == 'CAPSTONE') != (new_code == 'CAPSTONE'):
+        raise forms.ValidationError('Proje türü normal düzenleme akışında CAPSTONE olarak değiştirilemez.')
+
+
+def validate_generic_request_project_type(project_type, *, original_code=None):
+    """Keep CAPSTONE outside the generic project-request workflow."""
+
+    new_code = getattr(project_type, 'code', None)
+    if original_code is None and new_code == 'CAPSTONE':
+        raise forms.ValidationError(
+            'Bitirme projeleri generic proje ilanı akışından oluşturulamaz.'
+        )
+    if original_code is not None and (original_code == 'CAPSTONE') != (new_code == 'CAPSTONE'):
+        raise forms.ValidationError('Proje ilanı türü CAPSTONE sınırını geçecek şekilde değiştirilemez.')
+
+
 class RequestForm(forms.ModelForm):
     class Meta:
         model = ProjectRequest
@@ -91,9 +115,16 @@ class RequestForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        active_types = ProjectType.objects.filter(is_active=True)
-        if self.instance and self.instance.pk:
-            active_types = ProjectType.objects.filter(Q(is_active=True) | Q(pk=self.instance.project_type_id))
+        self._original_project_type_code = (
+            self.instance.project_type.code if self.instance and self.instance.pk else None
+        )
+        active_types = ProjectType.objects.filter(is_active=True).exclude(code='CAPSTONE')
+        if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
+            active_types = ProjectType.objects.filter(pk=self.instance.project_type_id)
+        elif self.instance and self.instance.pk:
+            active_types = ProjectType.objects.filter(
+                Q(is_active=True) | Q(pk=self.instance.project_type_id)
+            ).exclude(code='CAPSTONE')
         self.fields['project_type'].queryset = active_types
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')
         configure_optional_choice(self.fields['semester'], 'Dönem seçiniz (isteğe bağlı)')
@@ -108,8 +139,28 @@ class RequestForm(forms.ModelForm):
         self.fields['categories'].queryset = ProjectCategory.objects.filter(Q(is_active=True) | Q(pk__in=category_ids)).distinct()
         self.fields['technologies'].queryset = Technology.objects.filter(Q(is_active=True) | Q(pk__in=technology_ids)).distinct()
 
+    def clean_project_type(self):
+        project_type = self.cleaned_data['project_type']
+        validate_generic_request_project_type(
+            project_type,
+            original_code=self._original_project_type_code,
+        )
+        return project_type
+
     def clean(self):
         cleaned = super().clean()
+        if 'project_type' not in cleaned and self.is_bound:
+            submitted_id = self.data.get(self.add_prefix('project_type'))
+            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id else None
+            if submitted_type is not None:
+                try:
+                    validate_generic_request_project_type(
+                        submitted_type,
+                        original_code=self._original_project_type_code,
+                    )
+                except forms.ValidationError as exc:
+                    self._errors.pop('project_type', None)
+                    self.add_error('project_type', exc)
         project_type = cleaned.get('project_type')
         course = cleaned.get('course')
         if project_type and project_type.requires_course and not course:
@@ -418,6 +469,9 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_user = current_user
+        self._original_project_type_code = (
+            self.instance.project_type.code if self.instance and self.instance.pk else None
+        )
         self.fields['team'].widget.attrs['data-async-url'] = reverse('projects:team_member_search')
         team_queryset = User.objects.filter(profile__user_type='student', is_active=True).select_related('profile').distinct()
         if current_user and current_user.is_authenticated:
@@ -436,10 +490,16 @@ class ProjectForm(forms.ModelForm):
         technology_ids = list(self.instance.technologies.values_list('pk', flat=True)) if self.instance.pk else []
         self.fields['categories'].queryset = ProjectCategory.objects.filter(Q(is_active=True) | Q(pk__in=category_ids)).distinct()
         self.fields['technologies'].queryset = Technology.objects.filter(Q(is_active=True) | Q(pk__in=technology_ids)).distinct()
-        project_types = ProjectType.objects.filter(is_active=True)
-        if self.instance and self.instance.pk:
-            project_types = ProjectType.objects.filter(Q(is_active=True) | Q(pk=self.instance.project_type_id))
+        project_types = ProjectType.objects.filter(is_active=True).exclude(code='CAPSTONE')
+        if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
+            project_types = ProjectType.objects.filter(pk=self.instance.project_type_id)
+        elif self.instance and self.instance.pk:
+            project_types = ProjectType.objects.filter(
+                Q(is_active=True) | Q(pk=self.instance.project_type_id)
+            ).exclude(code='CAPSTONE')
         self.fields['project_type'].queryset = project_types
+        if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
+            self.fields['project_type'].disabled = True
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')
         self.fields['creation_source'].choices = [
             choice for choice in Project.CREATION_SOURCE_CHOICES
@@ -457,6 +517,16 @@ class ProjectForm(forms.ModelForm):
             self.fields['creation_source'].choices = [('ACADEMIC_REQUEST', 'Akademisyen İlanı')]
             self.fields['creation_source'].disabled = True
             self.fields['project_type'].disabled = True
+        if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
+            for protected_field in (
+                'creation_source',
+                'advisor',
+                'team_entity',
+                'team',
+                'development_status',
+                'visibility',
+            ):
+                self.fields.pop(protected_field, None)
 
     def clean_team(self):
         team = self.cleaned_data['team']
@@ -469,12 +539,48 @@ class ProjectForm(forms.ModelForm):
         validate_public_website(value)
         return value
 
+    def clean_project_type(self):
+        project_type = self.cleaned_data['project_type']
+        validate_generic_project_type(
+            project_type,
+            original_code=self._original_project_type_code,
+        )
+        return project_type
+
     def clean_creation_source(self):
         source = self.cleaned_data['creation_source']
         if source in {'ACADEMIC_REQUEST', 'LEGACY'}:
             if not self.instance.pk or source != self.instance.creation_source:
                 raise forms.ValidationError('Bu proje kaynağı normal proje formundan seçilemez.')
         return source
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.is_bound and self._original_project_type_code == 'CAPSTONE':
+            submitted_id = self.data.get(self.add_prefix('project_type'))
+            if submitted_id and str(submitted_id) != str(self.instance.project_type_id):
+                submitted_type = ProjectType.objects.filter(pk=submitted_id).first()
+                if submitted_type is not None:
+                    try:
+                        validate_generic_project_type(
+                            submitted_type,
+                            original_code=self._original_project_type_code,
+                        )
+                    except forms.ValidationError as exc:
+                        self.add_error('project_type', exc)
+        if 'project_type' not in cleaned and self.is_bound:
+            submitted_id = self.data.get(self.add_prefix('project_type'))
+            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id else None
+            if submitted_type is not None:
+                try:
+                    validate_generic_project_type(
+                        submitted_type,
+                        original_code=self._original_project_type_code,
+                    )
+                except forms.ValidationError as exc:
+                    self._errors.pop('project_type', None)
+                    self.add_error('project_type', exc)
+        return cleaned
 
 
 class ProjectUpdateForm(forms.ModelForm):

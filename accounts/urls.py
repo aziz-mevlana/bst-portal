@@ -14,7 +14,6 @@ urlpatterns = [
     path('reset-password-verify/', views.reset_password_verify_view, name='reset_password_verify'),
     path('reset-password/', views.reset_password_view, name='reset_password'),
     path('profile/', views.profile_showcase_view, name='profile'),
-    path('profile/<int:user_id>/', views.profile_showcase_view, name='user_profile'),
     path('profile/edit/', views.profile_edit_view, name='profile_edit'),
     path('portfolio/settings/', views.portfolio_settings, name='portfolio_settings'),
     path('portfolio/approved-member-application/', views.approved_member_application_submit, name='approved_member_application_submit'),

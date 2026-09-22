@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'portal',
     'events',
     'projects',
+    'capstone',
     'alumni',
     'accounts',
     'news',
@@ -196,9 +197,16 @@ LEGACY_ALUMNI_PHOTO_DIR = BASE_DIR / 'linkedin_profile_photos'
 if LEGACY_ALUMNI_PHOTO_DIR.is_dir():
     STATICFILES_DIRS.append(('alumni_photos', LEGACY_ALUMNI_PHOTO_DIR))
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+PRIVATE_MEDIA_ROOT = Path(os.getenv('PRIVATE_MEDIA_ROOT', 'private_media'))
+if not PRIVATE_MEDIA_ROOT.is_absolute():
+    PRIVATE_MEDIA_ROOT = BASE_DIR / PRIVATE_MEDIA_ROOT
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'capstone_private': {
+        'BACKEND': 'capstone.storage.PrivateFileSystemStorage',
+        'OPTIONS': {'location': PRIVATE_MEDIA_ROOT},
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
@@ -232,6 +240,16 @@ if USE_S3:
     STORAGES['default'] = {
         'BACKEND': 'storages.backends.s3.S3Storage',
         'OPTIONS': {'location': 'media'},
+    }
+    STORAGES['capstone_private'] = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': {
+            'location': 'private/capstone',
+            'default_acl': 'private',
+            'querystring_auth': True,
+            'file_overwrite': False,
+            'custom_domain': None,
+        },
     }
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'

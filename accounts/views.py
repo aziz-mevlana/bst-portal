@@ -781,15 +781,11 @@ def reset_password_view(request):
 
 
 @login_required
-def profile_showcase_view(request, user_id=None):
+def profile_showcase_view(request):
     """Display and manage the projects a user deliberately puts on their profile."""
 
-    if user_id is not None:
-        view_user = get_object_or_404(User, id=user_id)
-        is_own_profile = request.user == view_user
-    else:
-        view_user = request.user
-        is_own_profile = True
+    view_user = request.user
+    is_own_profile = True
 
     profile, _ = Profile.objects.get_or_create(user=view_user)
     if (
@@ -810,8 +806,6 @@ def profile_showcase_view(request, user_id=None):
     ).distinct().order_by('-updated_at')
 
     if request.method == 'POST':
-        if not is_own_profile:
-            return redirect('accounts:user_profile', user_id=view_user.id)
         requested_ids = set(request.POST.getlist('showcase_projects'))
         allowed_projects = eligible_projects.filter(pk__in=requested_ids)
         profile.showcase_projects.set(allowed_projects)
@@ -821,17 +815,11 @@ def profile_showcase_view(request, user_id=None):
     selected_projects = profile.showcase_projects.select_related(
         'project_type', 'created_by'
     ).prefetch_related('media', 'technologies', 'team').order_by('-updated_at')
-    if not is_own_profile:
-        selected_projects = selected_projects.filter(
-            visibility='public',
-            approval_status='approved',
-        )
-
     return render(request, 'accounts/profile_showcase.html', {
         'view_user': view_user,
         'profile': profile,
         'is_own_profile': is_own_profile,
-        'eligible_projects': eligible_projects if is_own_profile else Project.objects.none(),
+        'eligible_projects': eligible_projects,
         'selected_showcase_ids': set(profile.showcase_projects.values_list('pk', flat=True)),
         'selected_showcase_projects': selected_projects,
         'approved_member_application': CommunityRegistration.objects.filter(user=view_user).first(),
@@ -851,7 +839,7 @@ def profile_view(request, user_id=None):
     if request.method == 'POST':
         # Only allow editing if it's the user's own profile
         if not is_own_profile:
-            return redirect('accounts:user_profile', user_id=view_user.id)
+            return redirect(view_user.profile.get_absolute_url())
         
         # Update user information
         user = request.user
@@ -861,13 +849,6 @@ def profile_view(request, user_id=None):
 
         # Ensure profile exists
         profile, _ = Profile.objects.get_or_create(user=user)
-        
-        # Update class_level if provided
-        class_level = request.POST.get('class_level')
-        if profile.user_type in {'student', 'staff_student'} and class_level in {'1', '2', '3', '4'}:
-            profile.class_level = class_level
-        elif profile.user_type not in {'student', 'staff_student'}:
-            profile.class_level = None
         
         # Update teacher_title if provided (for teachers)
         teacher_title = request.POST.get('teacher_title')
@@ -946,13 +927,6 @@ def profile_edit_view(request):
         
         if profile.user_type in {'student', 'staff_student'}:
             profile.student_number = request.POST.get('student_number', profile.student_number)
-            class_level = request.POST.get('class_level', '')
-            if class_level not in {'1', '2', '3', '4'}:
-                messages.error(request, 'Geçerli bir sınıf seçmelisiniz.')
-                return redirect('accounts:profile')
-            profile.class_level = class_level
-        else:
-            profile.class_level = None
         profile.department = request.POST.get('department', profile.department)
         profile.phone_number = request.POST.get('phone_number', profile.phone_number)
         
@@ -1216,9 +1190,21 @@ def user_report_create(request, user_id):
     reported_user = get_object_or_404(User, pk=user_id)
     if reported_user == request.user:
         raise PermissionDenied
+    reported_profile = getattr(reported_user, 'profile', None)
+    return_url = reverse('portal:index')
+    if (
+        reported_profile
+        and reported_user.is_active
+        and not reported_user.is_staff
+        and not reported_user.is_superuser
+        and reported_profile.account_status == 'active'
+        and reported_profile.user_type in {'student', 'staff_student', 'teacher'}
+        and reported_profile.is_portfolio_public
+    ):
+        return_url = reported_profile.get_absolute_url()
     if is_rate_limited(request, scope='user-report', limit=5, window_seconds=86400):
         messages.error(request, 'Günlük şikâyet sınırına ulaştınız.')
-        return redirect('accounts:user_profile', user_id=user_id)
+        return redirect(return_url)
     form = UserReportForm(request.POST)
     if form.is_valid():
         report = form.save(commit=False)
@@ -1228,7 +1214,7 @@ def user_report_create(request, user_id):
         messages.success(request, 'Şikâyetiniz yöneticilere iletildi.')
     else:
         messages.error(request, 'Şikâyet gönderilemedi.')
-    return redirect('accounts:user_profile', user_id=user_id)
+    return redirect(return_url)
 
 
 @login_required

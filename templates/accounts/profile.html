@@ -287,18 +287,7 @@
                 </div>
               </div>
 
-              {% if view_user.profile.user_type == 'student' %}
-              <div>
-                <label for="id_class_level" class="block text-sm font-medium mb-2">Sınıf</label>
-                <select name="class_level" id="id_class_level" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">
-                  <option value="1" {% if view_user.profile.class_level == '1' %}selected{% endif %}>1. Sınıf</option>
-                  <option value="2" {% if view_user.profile.class_level == '2' %}selected{% endif %}>2. Sınıf</option>
-                  <option value="3" {% if view_user.profile.class_level == '3' %}selected{% endif %}>3. Sınıf</option>
-                  <option value="4" {% if view_user.profile.class_level == '4' %}selected{% endif %}>4. Sınıf</option>
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Öğrenci numaranıza göre otomatik hesaplanır, manuel değiştirebilirsiniz.</p>
-              </div>
-              {% elif view_user.profile.user_type == 'teacher' %}
+              {% if view_user.profile.user_type == 'teacher' %}
               <div>
                 <label for="id_teacher_title" class="block text-sm font-medium mb-2">Ünvan</label>
                 <select name="teacher_title" id="id_teacher_title" class="project-form-input block w-full px-4 py-3 rounded-lg shadow-sm">

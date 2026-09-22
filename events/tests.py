@@ -82,6 +82,21 @@ class EventRegistrationTests(TestCase):
             'certificate_enabled': 'on',
         }
 
+    def test_event_organizer_uses_canonical_profile_url(self):
+        response = self.client.get(reverse('events:event_detail', args=[self.event.pk]))
+
+        self.assertContains(response, self.organizer.profile.get_absolute_url())
+        self.assertNotContains(response, f'/accounts/profile/{self.organizer.pk}/')
+
+    def test_private_event_organizer_profile_is_not_linked_for_other_users(self):
+        self.organizer.profile.is_portfolio_public = False
+        self.organizer.profile.save(update_fields=['is_portfolio_public'])
+
+        response = self.client.get(reverse('events:event_detail', args=[self.event.pk]))
+
+        self.assertNotContains(response, self.organizer.profile.get_absolute_url())
+        self.assertContains(response, self.organizer.username)
+
     def test_capacity_cannot_be_reduced_below_active_registrations(self):
         EventRegistration.objects.create(event=self.event, user=self.first, status='registered')
         EventRegistration.objects.create(event=self.event, user=self.second, status='attended')

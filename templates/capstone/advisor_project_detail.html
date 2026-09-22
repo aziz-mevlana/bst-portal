@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ capstone_project.project.title }} | Danışman CAPSTONE{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-slate-50 py-8 sm:py-12">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <a class="text-sm font-semibold text-cyan-700 hover:text-cyan-900" href="{% url 'capstone:advisor_home' %}">← Bitirme projelerine dön</a>
+        <header class="mt-5 rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-9">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="max-w-3xl">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">{{ capstone_project.term }}</p>
+                    <h1 class="mt-2 text-3xl font-bold sm:text-4xl">{{ capstone_project.project.title }}</h1>
+                    {% if capstone_project.project.description %}
+                        <p class="mt-4 whitespace-pre-line text-sm leading-6 text-slate-300">{{ capstone_project.project.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="rounded-2xl bg-white/10 p-5 text-sm">
+                    <p class="text-slate-400">Öğrenci</p>
+                    <p class="mt-1 font-semibold">{{ capstone_project.project.created_by.get_full_name|default:capstone_project.project.created_by.username }}</p>
+                    {% if capstone_project.project.created_by.email %}<p class="mt-1 text-slate-300">{{ capstone_project.project.created_by.email }}</p>{% endif %}
+                </div>
+            </div>
+        </header>
+
+        <div class="mt-8 space-y-7">
+            {% for checkpoint in checkpoints %}
+                <section id="checkpoint-{{ checkpoint.pk }}" class="scroll-mt-24 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                    <div class="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-cyan-700">Kontrol noktası</p>
+                            <h2 class="mt-1 text-xl font-bold text-slate-900">{{ checkpoint.get_kind_display }}</h2>
+                            <p class="mt-2 text-sm text-slate-600">Son tarih: {{ checkpoint.due_at|date:'d.m.Y H:i' }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ checkpoint.dashboard_progress_label }}</span>
+                            {% if checkpoint.dashboard_is_overdue %}<span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">Süresi geçti</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-6 space-y-5">
+                        {% for task in checkpoint.dashboard_tasks %}
+                            <article id="task-{{ task.pk }}" class="scroll-mt-24 rounded-2xl border border-slate-200 p-4 sm:p-6">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-slate-900">{{ task.title }}</h3>
+                                        <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{{ task.instructions }}</p>
+                                    </div>
+                                    <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold {{ task.dashboard_state_style }}">{{ task.dashboard_state_label }}</span>
+                                </div>
+                                <div class="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                                    <p><span class="font-semibold">Son tarih:</span> {{ task.due_at|date:'d.m.Y H:i' }}</p>
+                                    <p><span class="font-semibold">Gerekli dosya:</span> {{ task.required_file_count }}</p>
+                                    {% if task.dashboard_is_overdue %}<p class="font-semibold text-red-700 sm:col-span-2">Bu görevin son teslim tarihi geçti.</p>{% endif %}
+                                </div>
+
+                                {% if task.dashboard_attempts %}
+                                    <div class="mt-5 space-y-4">
+                                        <h4 class="text-sm font-bold text-slate-900">Teslim geçmişi</h4>
+                                        {% for attempt in task.dashboard_attempts %}
+                                            <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <p class="font-semibold text-slate-900">{{ attempt.attempt_number }}. teslim</p>
+                                                    <p class="text-xs {% if attempt.is_late %}font-semibold text-red-700{% else %}text-emerald-700{% endif %}">{% if attempt.is_late %}Geç teslim{% else %}Zamanında teslim{% endif %} · {{ attempt.submitted_at|date:'d.m.Y H:i' }}</p>
+                                                </div>
+                                                <ul class="mt-3 space-y-2">
+                                                    {% for submission_file in attempt.files.all %}
+                                                        <li><a class="text-sm font-semibold text-cyan-700 hover:text-cyan-900" href="{% url 'capstone:submission_file_download' submission_file.pk %}">{{ submission_file.original_name }} ↓</a></li>
+                                                    {% endfor %}
+                                                </ul>
+
+                                                {% if attempt.advisor_review_error_form %}
+                                                    <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                                                        {{ attempt.advisor_review_error_form.errors }}
+                                                    </div>
+                                                {% endif %}
+
+                                                {% if attempt.review %}
+                                                    <div class="mt-4 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                                                        <p class="font-semibold text-slate-900">{{ attempt.review.get_decision_display }}</p>
+                                                        <p class="mt-2 whitespace-pre-line text-slate-700">{{ attempt.review.feedback }}</p>
+                                                        <p class="mt-2 text-xs text-slate-500">{{ attempt.review.reviewed_by.get_full_name|default:attempt.review.reviewed_by.username }} · {{ attempt.review.reviewed_at|date:'d.m.Y H:i' }}</p>
+                                                    </div>
+                                                {% elif attempt.advisor_review_form %}
+                                                    <form class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4" method="post" action="{% url 'capstone:advisor_submission_review' attempt.pk %}">
+                                                        {% csrf_token %}
+                                                        <p class="mb-3 text-sm font-bold text-amber-900">Değerlendirme bekliyor</p>
+                                                        {% if attempt.advisor_review_form.non_field_errors %}<div class="mb-3 text-sm text-red-700">{{ attempt.advisor_review_form.non_field_errors }}</div>{% endif %}
+                                                        <div class="grid gap-4">
+                                                            {% for field in attempt.advisor_review_form %}
+                                                                <div>
+                                                                    <label class="mb-1 block text-sm font-semibold text-slate-800" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                                    {{ field }}
+                                                                    {% if field.errors %}<div class="mt-1 text-sm text-red-700">{{ field.errors }}</div>{% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        <button class="mt-4 rounded-lg bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-800" type="submit">Değerlendirmeyi kaydet</button>
+                                                    </form>
+                                                {% else %}
+                                                    <p class="mt-4 text-sm text-slate-500">Bu geçmiş teslim için değerlendirme işlemi açık değil.</p>
+                                                {% endif %}
+                                            </section>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="mt-5 text-sm text-slate-500">Henüz teslim yapılmadı.</p>
+                                {% endif %}
+                            </article>
+                        {% empty %}
+                            <p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Bu kontrol noktası için henüz görev tanımlanmadı.</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if checkpoint.advisor_task_error_form %}
+                        <div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ checkpoint.advisor_task_error_form.errors }}</div>
+                    {% endif %}
+                    {% if checkpoint.advisor_task_form %}
+                        <details class="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50" {% if checkpoint.advisor_task_form.errors %}open{% endif %}>
+                            <summary class="cursor-pointer px-5 py-4 text-sm font-bold text-cyan-900">Yeni görev oluştur</summary>
+                            <form class="grid gap-4 border-t border-cyan-200 p-5 sm:grid-cols-2" method="post" action="{% url 'capstone:advisor_task_create' checkpoint.pk %}">
+                                {% csrf_token %}
+                                {% if checkpoint.advisor_task_form.non_field_errors %}<div class="text-sm text-red-700 sm:col-span-2">{{ checkpoint.advisor_task_form.non_field_errors }}</div>{% endif %}
+                                {% for field in checkpoint.advisor_task_form %}
+                                    <div class="{% if field.name == 'instructions' %}sm:col-span-2{% endif %}">
+                                        <label class="mb-1 block text-sm font-semibold text-slate-800" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.errors %}<div class="mt-1 text-sm text-red-700">{{ field.errors }}</div>{% endif %}
+                                    </div>
+                                {% endfor %}
+                                <div class="sm:col-span-2"><button class="rounded-lg bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800" type="submit">Görevi oluştur</button></div>
+                            </form>
+                        </details>
+                    {% else %}
+                        <p class="mt-6 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Bu kontrol noktası tamamlandığı için yeni görev eklenemez.</p>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endblock %}

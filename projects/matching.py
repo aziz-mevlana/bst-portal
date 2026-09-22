@@ -91,6 +91,11 @@ def rank_advisor_matches(project, limit=10):
     candidates = User.objects.filter(
         is_active=True,
         profile__user_type='teacher',
+        profile__account_status='active',
+        profile__is_portfolio_public=True,
+        profile__show_in_search=True,
+        is_staff=False,
+        is_superuser=False,
     ).exclude(pk=project.advisor_id).select_related('profile').prefetch_related(
         'profile__technologies', 'profile__categories'
     ).annotate(
@@ -117,7 +122,7 @@ def rank_advisor_matches(project, limit=10):
             missing.append('Doğrudan teknoloji eşleşmesi bulunamadı.')
         results.append(_candidate_result(
             'advisor', user.pk, user.get_full_name() or user.username,
-            reverse('accounts:user_profile', kwargs={'user_id': user.pk}), tech_score, interest_score,
+            user.profile.get_absolute_url(), tech_score, interest_score,
             availability_score, experience_score,
             [candidate_tech[pk] for pk in tech_ids],
             [candidate_categories[pk] for pk in category_ids], missing,

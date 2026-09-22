@@ -1,9 +1,14 @@
+from django.core.cache import cache
+from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
+import json
+from unittest.mock import patch
 from accounts.models import UserModerationAction
+from accounts.roles import bootstrap_bst_authority_group
 from core.models import AuditLog, Notification
 
 
@@ -163,6 +168,266 @@ class NavigationPermissionTests(TestCase):
         self.assertContains(response, f'method="post" action="{logout_url}"')
         self.assertNotContains(response, f'href="{logout_url}"')
         self.assertEqual(self.client.get(logout_url).status_code, 405)
+
+
+class DashboardUserSearchSecurityTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.url = reverse('dashboard:search_users')
+        self.target = User.objects.create_user(
+            'search-target',
+            'search-target@example.com',
+            'StrongPassword123!',
+            first_name='Aranan',
+            last_name='Kullanıcı',
+        )
+        self.student = self.make_user('search-student', 'student')
+        self.teacher = self.make_user('search-teacher', 'teacher')
+        self.authority = self.make_user('search-authority', 'staff_student')
+        bootstrap_bst_authority_group()
+        self.staff = self.make_user('search-staff', 'student', is_staff=True)
+        self.superuser = self.make_user('search-superuser', 'student', is_superuser=True)
+
+    def make_user(self, username, role, **kwargs):
+        user = User.objects.create_user(
+            username,
+            f'{username}@example.com',
+            'StrongPassword123!',
+            **kwargs,
+        )
+        user.profile.user_type = role
+        user.profile.save(update_fields=['user_type'])
+        return user
+
+    def test_anonymous_request_gets_json_forbidden_without_user_data(self):
+        response = self.client.get(self.url, {'q': 'search-target'})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {'error': 'Yetkiniz yok.'})
+        self.assertNotContains(response, self.target.email, status_code=403)
+
+    def test_non_admin_roles_get_json_forbidden_without_user_data(self):
+        for user in (self.student, self.teacher, self.authority):
+            with self.subTest(role=user.profile.user_type):
+                self.client.force_login(user)
+                response = self.client.get(self.url, {'q': 'search-target'})
+                self.assertEqual(response.status_code, 403)
+                self.assertEqual(response.json(), {'error': 'Yetkiniz yok.'})
+                self.assertNotContains(response, self.target.email, status_code=403)
+
+    def test_django_staff_can_search(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(self.url, {'q': 'Aranan'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['results'][0]['id'], self.target.pk)
+
+    def test_superuser_can_search_even_without_staff_flag(self):
+        self.assertFalse(self.superuser.is_staff)
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(self.url, {'q': 'Aranan'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['results'][0]['id'], self.target.pk)
+
+    def test_post_is_rejected(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.post(self.url, {'q': 'Aranan'})
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_short_or_whitespace_query_returns_no_results(self):
+        self.client.force_login(self.staff)
+        for query in ('', 'a', '  a  ', '   '):
+            with self.subTest(query=query):
+                response = self.client.get(self.url, {'q': query})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json(), {'results': []})
+
+    def test_admin_search_is_bounded_and_returns_only_frontend_contract(self):
+        for index in range(25):
+            User.objects.create_user(
+                f'bounded-{index}',
+                f'bounded-{index}@example.com',
+                'StrongPassword123!',
+                first_name='BoundedSearch',
+            )
+        self.client.force_login(self.staff)
+
+        response = self.client.get(self.url, {'q': 'BoundedSearch'})
+
+        self.assertEqual(response.status_code, 200)
+        results = response.json()['results']
+        self.assertEqual(len(results), 20)
+        self.assertEqual(
+            set(results[0]),
+            {'id', 'name', 'email', 'user_type', 'already_matched'},
+        )
+
+    def test_rate_limit_returns_429_json(self):
+        self.client.force_login(self.staff)
+
+        for _ in range(30):
+            self.assertEqual(self.client.get(self.url, {'q': 'Aranan'}).status_code, 200)
+        response = self.client.get(self.url, {'q': 'Aranan'})
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(
+            response.json(),
+            {'error': 'Çok fazla arama isteği gönderildi. Lütfen kısa süre sonra tekrar deneyin.'},
+        )
+
+    def test_alumni_search_frontend_handles_json_errors_safely(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse('dashboard:alumni'))
+
+        self.assertContains(response, 'if (!response.ok)')
+        self.assertContains(response, "textContent = error.message")
+
+
+class StudentClassLevelAdminTests(TestCase):
+    def setUp(self):
+        self.url = reverse('dashboard:update_student_class')
+        self.student = self.make_user('class-target', 'student')
+        self.staff_student = self.make_user('class-authority', 'staff_student')
+        self.teacher = self.make_user('class-teacher', 'teacher')
+        self.staff = self.make_user('class-staff', 'student', is_staff=True)
+        self.superuser = self.make_user('class-superuser', 'student', is_superuser=True)
+
+    def make_user(self, username, role, **kwargs):
+        user = User.objects.create_user(
+            username,
+            f'{username}@example.com',
+            'StrongPassword123!',
+            **kwargs,
+        )
+        user.profile.user_type = role
+        user.profile.save(update_fields=['user_type'])
+        return user
+
+    def post_update(self, actor, target=None, class_level='4', **payload_overrides):
+        self.client.force_login(actor)
+        payload = {
+            'student_id': (target or self.student).pk,
+            'class_level': class_level,
+        }
+        payload.update(payload_overrides)
+        return self.client.post(
+            self.url,
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+
+    def test_student_teacher_and_staff_student_are_forbidden(self):
+        for actor in (self.student, self.teacher, self.staff_student):
+            with self.subTest(role=actor.profile.user_type):
+                response = self.post_update(actor)
+                self.assertEqual(response.status_code, 403)
+                self.assertFalse(response.json()['success'])
+        self.student.profile.refresh_from_db()
+        self.assertEqual(self.student.profile.class_level, '1')
+        self.assertFalse(AuditLog.objects.filter(action='student.class_level_changed').exists())
+
+    def test_only_post_is_accepted(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_django_staff_can_change_student_class_and_creates_audit_log(self):
+        response = self.post_update(self.staff, class_level='3')
+
+        self.assertEqual(response.status_code, 200)
+        self.student.profile.refresh_from_db()
+        self.assertEqual(self.student.profile.class_level, '3')
+        audit = AuditLog.objects.get(action='student.class_level_changed')
+        self.assertEqual(audit.actor, self.staff)
+        self.assertEqual(audit.target_type, 'auth.user')
+        self.assertEqual(audit.target_id, str(self.student.pk))
+        self.assertEqual(audit.metadata, {
+            'old_class_level': '1',
+            'new_class_level': '3',
+        })
+
+    def test_superuser_can_change_staff_student_class(self):
+        response = self.post_update(
+            self.superuser,
+            target=self.staff_student,
+            class_level='2',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.staff_student.profile.refresh_from_db()
+        self.assertEqual(self.staff_student.profile.class_level, '2')
+
+    def test_non_student_targets_are_rejected_without_audit(self):
+        targets = [
+            self.teacher,
+            self.make_user('class-alumni', 'alumni'),
+            self.make_user('class-visitor', 'visitor'),
+        ]
+
+        for target in targets:
+            with self.subTest(role=target.profile.user_type):
+                response = self.post_update(self.staff, target=target, class_level='2')
+                self.assertEqual(response.status_code, 400)
+        self.assertFalse(AuditLog.objects.filter(action='student.class_level_changed').exists())
+
+    def test_invalid_class_levels_are_rejected_without_mutation_or_audit(self):
+        for value in (0, 5, '', None, 'keyfi'):
+            with self.subTest(class_level=value):
+                response = self.post_update(self.staff, class_level=value)
+                self.assertEqual(response.status_code, 400)
+
+        self.student.profile.refresh_from_db()
+        self.assertEqual(self.student.profile.class_level, '1')
+        self.assertFalse(AuditLog.objects.filter(action='student.class_level_changed').exists())
+
+    def test_missing_or_invalid_student_id_returns_400(self):
+        for student_id in (None, '', 0, 999999):
+            with self.subTest(student_id=student_id):
+                response = self.post_update(
+                    self.staff,
+                    student_id=student_id,
+                )
+                self.assertEqual(response.status_code, 400)
+        self.assertFalse(AuditLog.objects.filter(action='student.class_level_changed').exists())
+
+    def test_integrity_error_returns_400_without_mutation_or_audit(self):
+        self.client.force_login(self.staff)
+        with patch('dashboard.views.Profile.save', side_effect=IntegrityError('test')):
+            response = self.client.post(
+                self.url,
+                data=json.dumps({'student_id': self.student.pk, 'class_level': '3'}),
+                content_type='application/json',
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.student.profile.refresh_from_db()
+        self.assertEqual(self.student.profile.class_level, '1')
+        self.assertFalse(AuditLog.objects.filter(action='student.class_level_changed').exists())
+
+    def test_teacher_student_list_does_not_render_class_edit_controls(self):
+        self.client.force_login(self.teacher)
+
+        response = self.client.get(reverse('dashboard:students'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Sınıfını Düzenle')
+        self.assertNotContains(response, self.url)
+
+    def test_student_rows_link_to_canonical_slug_profile(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse('dashboard:students'))
+
+        self.assertContains(response, self.student.profile.get_absolute_url())
+        self.assertNotContains(response, f'/accounts/profile/{self.student.pk}/')
 
 
 class UserModerationPermissionTests(TestCase):

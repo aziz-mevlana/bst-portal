@@ -5,7 +5,7 @@ from django.db import IntegrityError, models, transaction
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -13,7 +13,7 @@ from django.urls import reverse
 from projects.models import Project, ProjectRequest, ProjectCategory, ProjectSave, Technology
 from accounts.models import CommunityRegistration, MODERATION_REASON_CHOICES, Profile
 from accounts.models import UserModerationAction, UserReport, WebsiteModerationHistory
-from accounts.policies import can_moderate_target, can_review_website
+from accounts.policies import can_moderate_target, can_review_website, is_admin as policy_is_admin
 from accounts.policies import can_manage_events, can_manage_news
 from accounts.role_services import ASSIGNABLE_STUDENT_ROLES, change_student_authority_role
 from django.contrib.sessions.models import Session
@@ -24,6 +24,7 @@ from alumni.services import (
     unlink_alumni_account,
 )
 from core.notifications import create_notification
+from core.rate_limit import is_rate_limited
 from django.contrib.auth.models import User
 import json
 import io
@@ -772,7 +773,11 @@ def dashboard_students_load_more(request):
     students_page = students[offset:offset + DASHBOARD_PAGE_SIZE]
     has_more = offset + DASHBOARD_PAGE_SIZE < total_count
     
-    html = render_to_string('dashboard/partials/student_row.html', {'students': students_page})
+    html = render_to_string(
+        'dashboard/partials/student_row.html',
+        {'students': students_page, 'is_admin_account': policy_is_admin(request.user)},
+        request=request,
+    )
     
     return JsonResponse({
         'items': html,
@@ -1223,13 +1228,24 @@ def website_review(request, profile_id):
     return redirect('dashboard:website_moderation')
 
 
-@login_required
+@require_GET
 def search_users(request):
     """Eşleştirme için kullanıcı arama"""
-    if not is_admin(request.user):
-        return JsonResponse({'results': []})
+    if not policy_is_admin(request.user):
+        return JsonResponse({'error': 'Yetkiniz yok.'}, status=403)
 
-    query = request.GET.get('q', '')
+    if is_rate_limited(
+        request,
+        scope='dashboard-user-search',
+        limit=30,
+        window_seconds=60,
+    ):
+        return JsonResponse(
+            {'error': 'Çok fazla arama isteği gönderildi. Lütfen kısa süre sonra tekrar deneyin.'},
+            status=429,
+        )
+
+    query = request.GET.get('q', '').strip()
     if len(query) < 2:
         return JsonResponse({'results': []})
 
@@ -1259,31 +1275,59 @@ def search_users(request):
 
 
 @login_required
+@require_POST
 def update_student_class(request):
-    """Öğrenci sınıfını güncelle"""
-    import json
-    if not (is_admin(request.user) or getattr(getattr(request.user, 'profile', None), 'user_type', '') == 'teacher'):
-        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'})
+    """Öğrenci sınıfını yalnızca Django yöneticisi olarak güncelle."""
+    if not policy_is_admin(request.user):
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok.'}, status=403)
 
-    if request.method == 'POST':
+    try:
         data = json.loads(request.body)
-        student_id = data.get('student_id')
-        class_level = data.get('class_level')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'success': False, 'error': 'Geçersiz istek verisi.'}, status=400)
 
-        try:
-            user = User.objects.get(id=student_id)
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Kullanıcı bulunamadı.'})
+    if not isinstance(data, dict):
+        return JsonResponse({'success': False, 'error': 'Geçersiz istek verisi.'}, status=400)
 
-        if not hasattr(user, 'profile'):
-            return JsonResponse({'success': False, 'error': 'Profil bulunamadı.'})
+    student_id = data.get('student_id')
+    class_level = data.get('class_level')
+    if isinstance(student_id, bool) or not isinstance(student_id, int) or student_id < 1:
+        return JsonResponse({'success': False, 'error': 'Geçerli bir öğrenci seçmelisiniz.'}, status=400)
+    if not isinstance(class_level, str) or class_level not in {'1', '2', '3', '4'}:
+        return JsonResponse({'success': False, 'error': 'Geçerli bir sınıf seçmelisiniz.'}, status=400)
 
-        user.profile.class_level = class_level
-        user.profile.save()
+    try:
+        with transaction.atomic():
+            profile = (
+                Profile.objects.select_for_update()
+                .select_related('user')
+                .filter(user_id=student_id)
+                .first()
+            )
+            if profile is None:
+                return JsonResponse({'success': False, 'error': 'Öğrenci bulunamadı.'}, status=400)
+            if profile.user_type not in {'student', 'staff_student'}:
+                return JsonResponse({'success': False, 'error': 'Yalnızca öğrenci hesapları güncellenebilir.'}, status=400)
 
-        return JsonResponse({'success': True})
+            old_class_level = profile.class_level
+            if old_class_level != class_level:
+                profile.class_level = class_level
+                profile.save(update_fields=['class_level', 'updated_at'])
+                record_audit_event(
+                    actor=request.user,
+                    action='student.class_level_changed',
+                    target=profile.user,
+                    request=request,
+                    metadata={
+                        'old_class_level': old_class_level,
+                        'new_class_level': class_level,
+                    },
+                )
+    except IntegrityError:
+        logger.warning('Student class level update failed.', extra={'student_id': student_id})
+        return JsonResponse({'success': False, 'error': 'Sınıf bilgisi güncellenemedi.'}, status=400)
 
-    return JsonResponse({'success': False, 'error': 'Sadece POST istekleri kabul edilir.'})
+    return JsonResponse({'success': True, 'class_level': class_level})
 
 
 @login_required
@@ -1462,13 +1506,14 @@ def contributor_application_review(request, application_id):
 
     with transaction.atomic():
         application = get_object_or_404(
-            CommunityRegistration.objects.select_for_update().select_related('user', 'user__profile'),
+            CommunityRegistration.objects.select_for_update(of=('self',)).select_related('user'),
             pk=application_id, wants_to_share=True,
         )
         if application.status != 'pending':
             messages.info(request, 'Bu katkıcı başvurusu daha önce sonuçlandırılmış.')
             return redirect('dashboard:approved_member_applications')
-        if application.user.profile.user_type != 'visitor':
+        profile = Profile.objects.get(user_id=application.user_id)
+        if profile.user_type != 'visitor':
             messages.error(request, 'Kullanıcının mevcut rolü bu başvuruyu sonuçlandırmaya uygun değil.')
             return redirect('dashboard:approved_member_applications')
 
@@ -1479,8 +1524,8 @@ def contributor_application_review(request, application_id):
         application.reviewed_at = timezone.now()
         application.save(update_fields=['status', 'reviewer_note', 'reviewed_by', 'reviewed_at', 'updated_at'])
 
-        application.user.profile.user_type = 'approved_member' if approved else 'visitor'
-        application.user.profile.save(update_fields=['user_type', 'updated_at'])
+        profile.user_type = 'approved_member' if approved else 'visitor'
+        profile.save(update_fields=['user_type', 'updated_at'])
         record_audit_event(
             actor=request.user,
             action=f'approved_member_application.{application.status}',

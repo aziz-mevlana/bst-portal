@@ -28,7 +28,8 @@ from .forms import (
     ProjectContributionForm, ProjectForm, ProjectMediaForm, ProjectUpdateForm,
     ProjectCommentForm, ProjectFeedbackForm, ProjectImageUploadForm, ProjectRepositoryForm,
     ProjectRequestApplicationForm, RequestForm, TeamForm, TeamInviteForm,
-    TeamMembershipRoleForm, TeamOpenRoleForm,
+    TeamMembershipRoleForm, TeamOpenRoleForm, validate_generic_project_type,
+    validate_generic_request_project_type,
 )
 from .services import accept_project_request_application
 from .team_services import (
@@ -38,7 +39,7 @@ from .team_services import (
 from core.audit import record_audit_event
 from core.analytics import record_analytics_event
 from core.notifications import create_notification
-from core.rate_limit import is_rate_limited
+from core.rate_limit import _client_ip, is_rate_limited
 from accounts.permissions import ensure_full_participation_account, ensure_interactive_account
 from accounts.validators import validate_public_website
 from django.template.loader import render_to_string
@@ -81,6 +82,20 @@ def _is_django_admin(user):
     return bool(user.is_authenticated and (user.is_staff or user.is_superuser))
 
 
+def _is_capstone_project(project):
+    return getattr(getattr(project, 'project_type', None), 'code', None) == 'CAPSTONE'
+
+
+def _reject_generic_capstone_workflow(request, project):
+    if not _is_capstone_project(project):
+        return False
+    messages.error(
+        request,
+        'CAPSTONE akademik işlemleri yalnızca özel bitirme projesi akışından yönetilebilir.',
+    )
+    return True
+
+
 def _can_view_project(user, project):
     if project.visibility in {'public', 'unlisted'} and project.approval_status == 'approved':
         return True
@@ -117,12 +132,18 @@ def _record_project_view(request, project):
     """Count at most one view per project and privacy-safe identity each day."""
 
     if request.user.is_authenticated:
+        if (
+            request.user.is_staff
+            or request.user.is_superuser
+            or request.user.pk in {project.created_by_id, project.advisor_id}
+            or project.team.filter(pk=request.user.pk).exists()
+        ):
+            return
         identity = f'user:{request.user.pk}'
         viewer = request.user
     else:
-        if not request.session.session_key:
-            request.session.create()
-        identity = f'session:{request.session.session_key}'
+        user_agent = ' '.join(request.META.get('HTTP_USER_AGENT', '').split()).casefold()
+        identity = f'anonymous:{_client_ip(request)}:{user_agent}'
         viewer = None
     date_bucket = timezone.localdate()
     digest = hmac.new(
@@ -687,17 +708,22 @@ def request_create(request):
         form = RequestForm(request.POST)
         if form.is_valid():
             req = form.save(commit=False)
-            req.teacher = request.user
-            req.save()
-            form.save_m2m()
-            record_audit_event(
-                actor=request.user,
-                action='project_request.created',
-                target=req,
-                request=request,
-            )
-            messages.success(request, 'Proje isteği başarıyla oluşturuldu.')
-            return redirect('projects:request_list')
+            try:
+                validate_generic_request_project_type(req.project_type)
+            except ValidationError as exc:
+                form.add_error('project_type', exc)
+            else:
+                req.teacher = request.user
+                req.save()
+                form.save_m2m()
+                record_audit_event(
+                    actor=request.user,
+                    action='project_request.created',
+                    target=req,
+                    request=request,
+                )
+                messages.success(request, 'Proje isteği başarıyla oluşturuldu.')
+                return redirect('projects:request_list')
     else:
         form = RequestForm()
     return render(request, 'projects/request_form.html', {
@@ -710,6 +736,7 @@ def request_create(request):
 @login_required
 def request_edit(request, request_id):
     req = get_object_or_404(ProjectRequest, id=request_id)
+    original_project_type_code = req.project_type.code
     if req.teacher != request.user and not _is_django_admin(request.user):
         messages.error(request, 'Bu isteği düzenleme yetkiniz yok.')
         return redirect('projects:request_list')
@@ -717,9 +744,19 @@ def request_edit(request, request_id):
     if request.method == 'POST':
         form = RequestForm(request.POST, instance=req)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Proje isteği başarıyla güncellendi.')
-            return redirect('projects:request_list')
+            updated_request = form.save(commit=False)
+            try:
+                validate_generic_request_project_type(
+                    updated_request.project_type,
+                    original_code=original_project_type_code,
+                )
+            except ValidationError as exc:
+                form.add_error('project_type', exc)
+            else:
+                updated_request.save()
+                form.save_m2m()
+                messages.success(request, 'Proje isteği başarıyla güncellendi.')
+                return redirect('projects:request_list')
     else:
         form = RequestForm(instance=req)
     return render(request, 'projects/request_form.html', {
@@ -783,14 +820,13 @@ def _comment_profile_url(author, viewer):
     if profile.user_type in {'student', 'staff_student'}:
         if profile.is_portfolio_public or viewer == author:
             return profile.get_absolute_url()
-    elif profile.user_type == 'teacher' and profile.show_in_search:
-        return f"{reverse('portal:academic_list')}#academic-{profile.pk}"
+    elif profile.user_type == 'teacher':
+        if viewer == author or (profile.is_portfolio_public and profile.show_in_search):
+            return profile.get_absolute_url()
     elif profile.user_type == 'alumni' and viewer.is_authenticated:
         alumnus = getattr(author, 'alumni', None)
         if alumnus and alumnus.is_show_in_alumni_list:
             return reverse('alumni:alumni_detail', args=[author.username])
-    elif profile.user_type in {'visitor', 'approved_member'} and viewer.is_authenticated:
-        return reverse('accounts:user_profile', args=[author.pk])
     return ''
 
 
@@ -1079,38 +1115,43 @@ def project_create(request):
         repository_form = ProjectRepositoryForm(request.POST)
         image_form = ProjectImageUploadForm(request.POST, request.FILES)
         if form.is_valid() and repository_form.is_valid() and image_form.is_valid():
-            with transaction.atomic():
-                project = form.save(commit=False)
-                project.created_by = request.user
-                if project.project_type.requires_approval:
-                    project.approval_status = 'pending'
-                    project.status = 'in_review'
-                else:
-                    project.approval_status = 'approved'
-                    project.status = 'approved'
-                if project.development_status == 'in_progress':
-                    project.status = 'in_progress'
-                elif project.development_status == 'completed':
-                    project.status = 'completed'
-                project.is_private = project.visibility != 'public'
-                project.save()
-                form.save_m2m()
-                project.team.add(request.user)
-                repository_path = repository_form.cleaned_data.get('repository_path', '').strip()
-                if repository_path:
-                    repository = repository_form.save(commit=False)
-                    repository.project = project
-                    repository.save()
-                _save_project_assets(project, image_form)
-                record_audit_event(
-                    actor=request.user,
-                    action='project.created',
-                    target=project,
-                    request=request,
-                )
+            project = form.save(commit=False)
+            try:
+                validate_generic_project_type(project.project_type)
+            except ValidationError as exc:
+                form.add_error('project_type', exc)
+            else:
+                with transaction.atomic():
+                    project.created_by = request.user
+                    if project.project_type.requires_approval:
+                        project.approval_status = 'pending'
+                        project.status = 'in_review'
+                    else:
+                        project.approval_status = 'approved'
+                        project.status = 'approved'
+                    if project.development_status == 'in_progress':
+                        project.status = 'in_progress'
+                    elif project.development_status == 'completed':
+                        project.status = 'completed'
+                    project.is_private = project.visibility != 'public'
+                    project.save()
+                    form.save_m2m()
+                    project.team.add(request.user)
+                    repository_path = repository_form.cleaned_data.get('repository_path', '').strip()
+                    if repository_path:
+                        repository = repository_form.save(commit=False)
+                        repository.project = project
+                        repository.save()
+                    _save_project_assets(project, image_form)
+                    record_audit_event(
+                        actor=request.user,
+                        action='project.created',
+                        target=project,
+                        request=request,
+                    )
 
-            messages.success(request, 'Proje başarıyla oluşturuldu.')
-            return redirect('projects:project_detail', project_id=project.id)
+                messages.success(request, 'Proje başarıyla oluşturuldu.')
+                return redirect('projects:project_detail', project_id=project.id)
     else:
         form = ProjectForm(current_user=request.user)
         repository_form = ProjectRepositoryForm()
@@ -1133,6 +1174,7 @@ def project_create(request):
 @login_required
 def project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    original_project_type_code = project.project_type.code
     if request.user != project.created_by and request.user != project.advisor and not _is_platform_staff(request.user):
         messages.error(request, 'Bu projeyi düzenleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
@@ -1143,34 +1185,43 @@ def project_update(request, project_id):
         repository_form = ProjectRepositoryForm(request.POST, instance=repository)
         image_form = ProjectImageUploadForm(request.POST, request.FILES)
         if form.is_valid() and repository_form.is_valid() and image_form.is_valid():
-            with transaction.atomic():
-                updated_project = form.save(commit=False)
-                updated_project.is_private = updated_project.visibility != 'public'
-                if updated_project.development_status == 'in_progress':
-                    updated_project.status = 'in_progress'
-                elif updated_project.development_status == 'completed':
-                    updated_project.status = 'completed'
-                updated_project.save()
-                form.save_m2m()
-
-                repository_path = repository_form.cleaned_data.get('repository_path', '').strip()
-                if repository_path:
-                    updated_repository = repository_form.save(commit=False)
-                    updated_repository.project = updated_project
-                    updated_repository.save()
-                elif repository:
-                    repository.delete()
-
-                _save_project_assets(updated_project, image_form)
-
-                record_audit_event(
-                    actor=request.user,
-                    action='project.updated',
-                    target=updated_project,
-                    request=request,
+            updated_project = form.save(commit=False)
+            try:
+                validate_generic_project_type(
+                    updated_project.project_type,
+                    original_code=original_project_type_code,
                 )
-            messages.success(request, 'Proje başarıyla güncellendi.')
-            return redirect('projects:project_detail', project_id=project.id)
+            except ValidationError as exc:
+                form.add_error('project_type', exc)
+            else:
+                with transaction.atomic():
+                    if original_project_type_code != 'CAPSTONE':
+                        updated_project.is_private = updated_project.visibility != 'public'
+                        if updated_project.development_status == 'in_progress':
+                            updated_project.status = 'in_progress'
+                        elif updated_project.development_status == 'completed':
+                            updated_project.status = 'completed'
+                    updated_project.save()
+                    form.save_m2m()
+
+                    repository_path = repository_form.cleaned_data.get('repository_path', '').strip()
+                    if repository_path:
+                        updated_repository = repository_form.save(commit=False)
+                        updated_repository.project = updated_project
+                        updated_repository.save()
+                    elif repository:
+                        repository.delete()
+
+                    _save_project_assets(updated_project, image_form)
+
+                    record_audit_event(
+                        actor=request.user,
+                        action='project.updated',
+                        target=updated_project,
+                        request=request,
+                    )
+                messages.success(request, 'Proje başarıyla güncellendi.')
+                return redirect('projects:project_detail', project_id=project.id)
     else:
         form = ProjectForm(instance=project, current_user=request.user)
         repository_form = ProjectRepositoryForm(instance=repository)
@@ -1200,9 +1251,14 @@ def project_update(request, project_id):
 @login_required
 @require_POST
 def project_delete(request, project_id):
-    project = get_object_or_404(Project.objects.select_related('created_by'), pk=project_id)
+    project = get_object_or_404(
+        Project.objects.select_related('created_by', 'project_type'),
+        pk=project_id,
+    )
     if request.user != project.created_by and not _is_platform_staff(request.user):
         raise PermissionDenied
+    if _reject_generic_capstone_workflow(request, project):
+        return redirect('projects:project_detail', project_id=project.pk)
 
     if request.POST.get('confirm_delete') != 'yes':
         messages.error(request, 'Projeyi silmek için işlemi açıkça onaylamalısınız.')
@@ -1815,10 +1871,12 @@ def delete_comment(request, comment_id):
 @login_required
 @require_POST
 def approve_project(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
     
     if request.user != project.advisor and not request.user.is_staff:
         messages.error(request, 'Bu projeyi onaylama yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    if _reject_generic_capstone_workflow(request, project):
         return redirect('projects:project_detail', project_id=project.id)
     
     if project.approval_status not in {'pending', 'revision_requested'}:
@@ -1843,12 +1901,19 @@ def approve_project(request, project_id):
 @login_required
 @require_POST
 def send_feedback(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
     
     if request.user != project.advisor and not request.user.is_staff:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Geri bildirim gönderme yetkiniz yok.'})
         messages.error(request, 'Geri bildirim gönderme yetkiniz yok.')
+        return redirect('projects:project_detail', project_id=project.id)
+    if _reject_generic_capstone_workflow(request, project):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'CAPSTONE akademik değerlendirmesi özel bitirme projesi akışından yapılmalıdır.',
+            }, status=409)
         return redirect('projects:project_detail', project_id=project.id)
     
     if project.approval_status != 'pending':
@@ -1887,7 +1952,10 @@ def send_feedback(request, project_id):
 @login_required
 @require_POST
 def start_project(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
+
+    if _reject_generic_capstone_workflow(request, project):
+        return redirect('projects:project_detail', project_id=project.id)
 
     # Prevent alumni from changing project status
     if hasattr(request.user, 'profile') and request.user.profile.user_type == 'alumni':
@@ -1914,7 +1982,10 @@ def start_project(request, project_id):
 @login_required
 @require_POST
 def complete_project(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
+
+    if _reject_generic_capstone_workflow(request, project):
+        return redirect('projects:project_detail', project_id=project.id)
 
     # Prevent alumni from changing project status
     if hasattr(request.user, 'profile') and request.user.profile.user_type == 'alumni':
@@ -1967,7 +2038,13 @@ def get_feedback(request, project_id):
 @require_POST
 def change_project_status(request, project_id):
     import json
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
+
+    if _is_capstone_project(project):
+        return JsonResponse({
+            'success': False,
+            'error': 'CAPSTONE durumu yalnızca özel bitirme projesi akışından yönetilebilir.',
+        }, status=409)
 
     user = request.user
 

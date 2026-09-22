@@ -56,6 +56,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('events/', include('events.urls')),
     path('projects/', include('projects.urls')),
+    path('capstone/', include('capstone.urls')),
     path('alumni/', include('alumni.urls')),
     path('news/', include('news.urls')),
     path('dashboard/', include('dashboard.urls')),

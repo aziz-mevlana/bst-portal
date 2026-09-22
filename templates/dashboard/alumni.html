@@ -239,7 +239,13 @@
         }
         searchTimeout = setTimeout(function() {
             fetch('{% url "dashboard:search_users" %}?q=' + encodeURIComponent(query))
-                .then(r => r.json())
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Kullanıcı araması yapılamadı.');
+                    }
+                    return data;
+                })
                 .then(data => {
                     const container = document.getElementById('userSearchResults');
                     if (data.results.length === 0) {
@@ -260,6 +266,9 @@
                             '</div>' +
                         '</div>';
                     }).join('');
+                })
+                .catch(error => {
+                    document.getElementById('userSearchResults').textContent = error.message;
                 });
         }, 300);
     }

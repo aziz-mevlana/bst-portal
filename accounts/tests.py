@@ -4,7 +4,7 @@ import re
 
 from django.core import mail
 from django.core.cache import cache
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils import timezone
 
@@ -127,6 +127,7 @@ class EmailVerificationFlowTests(TestCase):
         self.assertRedirects(response, reverse('accounts:login'))
         user = User.objects.get(email='verified@trakya.edu.tr')
         self.assertTrue(user.check_password('StrongPassword123!'))
+        self.assertEqual(user.profile.class_level, '2')
         self.assertEqual(ConsentRecord.objects.filter(user=user).count(), 3)
 
 
@@ -716,8 +717,11 @@ class ProfileShowcaseTests(TestCase):
         self.user.profile.showcase_projects.add(self.project)
         self.client.force_login(self.other)
 
-        response = self.client.get(reverse('accounts:user_profile', args=[self.user.pk]))
+        response = self.client.get(
+            reverse('portal:portfolio_detail', args=[self.user.profile.public_slug])
+        )
 
+        self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, self.project.title)
 
     def test_kvkk_page_contains_required_information_sections(self):
@@ -728,6 +732,112 @@ class ProfileShowcaseTests(TestCase):
         self.assertContains(response, 'İşlenen kişisel veri kategorileri')
         self.assertContains(response, 'KVKK kapsamındaki haklarınız')
         self.assertContains(response, 'Başvuru yöntemi')
+
+
+class LegacyProfileRouteRemovalTests(TestCase):
+    def setUp(self):
+        self.student = User.objects.create_user(
+            'canonical-student',
+            'canonical-student@example.com',
+            'StrongPassword123!',
+        )
+        self.viewer = User.objects.create_user(
+            'canonical-viewer',
+            'canonical-viewer@example.com',
+            'StrongPassword123!',
+        )
+
+    def test_integer_profile_route_is_404_for_anonymous_and_authenticated_users(self):
+        paths = [
+            f'/accounts/profile/{self.student.pk}/',
+            '/accounts/profile/999999/',
+        ]
+        for path in paths:
+            with self.subTest(path=path, authenticated=False):
+                self.assertEqual(self.client.get(path).status_code, 404)
+
+        self.client.force_login(self.viewer)
+        for path in paths:
+            with self.subTest(path=path, authenticated=True):
+                self.assertEqual(self.client.get(path).status_code, 404)
+
+    def test_student_and_staff_student_use_slug_portfolio_urls(self):
+        staff_student = User.objects.create_user(
+            'canonical-authority',
+            'canonical-authority@example.com',
+            'StrongPassword123!',
+        )
+        staff_student.profile.user_type = 'staff_student'
+        staff_student.profile.save(update_fields=['user_type'])
+
+        for user in (self.student, staff_student):
+            with self.subTest(role=user.profile.user_type):
+                url = user.profile.get_absolute_url()
+                self.assertEqual(
+                    url,
+                    reverse('portal:portfolio_detail', args=[user.profile.public_slug]),
+                )
+                self.assertEqual(self.client.get(url).status_code, 200)
+                self.assertNotIn(f'/accounts/profile/{user.pk}/', url)
+
+    def test_teacher_uses_canonical_academic_url_and_account_status_filter(self):
+        teacher = User.objects.create_user(
+            'canonical-teacher',
+            'canonical-teacher@example.com',
+            'StrongPassword123!',
+        )
+        teacher.profile.user_type = 'teacher'
+        teacher.profile.account_status = 'active'
+        teacher.profile.save(update_fields=['user_type', 'account_status'])
+        url = teacher.profile.get_absolute_url()
+
+        self.assertEqual(
+            url,
+            reverse('portal:academic_detail', args=[teacher.profile.public_slug]),
+        )
+        self.assertEqual(self.client.get(url).status_code, 200)
+        teacher.profile.account_status = 'pending_review'
+        teacher.profile.save(update_fields=['account_status'])
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_own_profile_showcase_route_still_works(self):
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse('accounts:profile'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Proje sergisi')
+
+    def test_successful_user_report_redirects_to_canonical_profile(self):
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse('accounts:user_report_create', args=[self.student.pk]),
+            {
+                'reason': 'spam',
+                'description': 'Tekrarlanan istenmeyen içerik.',
+                'related_content': '',
+            },
+        )
+
+        self.assertRedirects(response, self.student.profile.get_absolute_url())
+        self.assertNotEqual(response.url, f'/accounts/profile/{self.student.pk}/')
+
+    def test_user_report_uses_safe_fallback_when_profile_is_not_public(self):
+        self.student.profile.is_portfolio_public = False
+        self.student.profile.save(update_fields=['is_portfolio_public'])
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse('accounts:user_report_create', args=[self.student.pk]),
+            {
+                'reason': 'spam',
+                'description': 'Gizli profil için doğrudan istek.',
+                'related_content': '',
+            },
+        )
+
+        self.assertRedirects(response, reverse('portal:index'))
 
 
 @override_settings(
@@ -1005,8 +1115,15 @@ class ApprovedMemberApplicationReviewTests(TestCase):
         self.applicant.profile.refresh_from_db()
         self.assertEqual(self.application.status, 'approved')
         self.assertEqual(self.application.reviewed_by, self.authority)
+        self.assertEqual(self.application.reviewer_note, 'İçerik planı uygun.')
+        self.assertIsNotNone(self.application.reviewed_at)
         self.assertEqual(self.applicant.profile.user_type, 'approved_member')
         self.assertTrue(Notification.objects.filter(recipient=self.applicant, notification_type='moderation').exists())
+        self.assertTrue(AuditLog.objects.filter(
+            actor=self.authority,
+            action='approved_member_application.approved',
+            target_id=str(self.applicant.pk),
+        ).exists())
 
     def test_rejection_requires_note_and_keeps_visitor_role(self):
         self.client.force_login(self.authority)
@@ -1016,11 +1133,56 @@ class ApprovedMemberApplicationReviewTests(TestCase):
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'pending')
 
-        self.client.post(url, {'action': 'reject', 'reviewer_note': 'Başvuru daha somut olmalı.'})
+        response = self.client.post(url, {'action': 'reject', 'reviewer_note': 'Başvuru daha somut olmalı.'})
+        self.assertRedirects(response, reverse('dashboard:approved_member_applications'))
         self.application.refresh_from_db()
         self.applicant.profile.refresh_from_db()
         self.assertEqual(self.application.status, 'rejected')
+        self.assertEqual(self.application.reviewer_note, 'Başvuru daha somut olmalı.')
+        self.assertEqual(self.application.reviewed_by, self.authority)
+        self.assertIsNotNone(self.application.reviewed_at)
         self.assertEqual(self.applicant.profile.user_type, 'visitor')
+        self.assertTrue(Notification.objects.filter(recipient=self.applicant, notification_type='moderation').exists())
+        self.assertTrue(AuditLog.objects.filter(
+            actor=self.authority,
+            action='approved_member_application.rejected',
+            target_id=str(self.applicant.pk),
+        ).exists())
+
+    def test_completed_application_is_not_reviewed_again(self):
+        self.client.force_login(self.authority)
+        url = reverse('dashboard:approved_member_application_review', args=[self.application.pk])
+        self.client.post(url, {'action': 'approve', 'reviewer_note': 'İlk karar.'})
+        self.application.refresh_from_db()
+        reviewed_at = self.application.reviewed_at
+        audit_count = AuditLog.objects.filter(target_id=str(self.applicant.pk)).count()
+        notification_count = Notification.objects.filter(recipient=self.applicant).count()
+
+        response = self.client.post(url, {'action': 'reject', 'reviewer_note': 'İkinci karar.'})
+
+        self.assertRedirects(response, reverse('dashboard:approved_member_applications'))
+        self.application.refresh_from_db()
+        self.applicant.profile.refresh_from_db()
+        self.assertEqual(self.application.status, 'approved')
+        self.assertEqual(self.application.reviewer_note, 'İlk karar.')
+        self.assertEqual(self.application.reviewed_at, reviewed_at)
+        self.assertEqual(self.applicant.profile.user_type, 'approved_member')
+        self.assertEqual(AuditLog.objects.filter(target_id=str(self.applicant.pk)).count(), audit_count)
+        self.assertEqual(Notification.objects.filter(recipient=self.applicant).count(), notification_count)
+
+    @skipUnlessDBFeature('has_select_for_update_of')
+    def test_postgresql_review_lock_avoids_nullable_profile_join(self):
+        """Runs on PostgreSQL, where the former outer-join lock raised NotSupportedError."""
+
+        self.client.force_login(self.authority)
+        response = self.client.post(
+            reverse('dashboard:approved_member_application_review', args=[self.application.pk]),
+            {'action': 'reject', 'reviewer_note': 'PostgreSQL lock testi.'},
+        )
+
+        self.assertRedirects(response, reverse('dashboard:approved_member_applications'))
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'rejected')
 
     def test_unprivileged_user_cannot_review(self):
         self.client.force_login(self.applicant)

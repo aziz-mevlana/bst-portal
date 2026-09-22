@@ -10,7 +10,11 @@ def permission_denied(request, exception):
 
 
 def page_not_found(request, exception):
-    return render(request, 'errors/404.html', status=404)
+    return render(request, 'errors/404.html', {
+        'meta_title': '404 | BST Portal',
+        'meta_description': 'Aradığınız sayfa BST Portal üzerinde bulunamadı.',
+        'meta_robots': 'noindex,nofollow',
+    }, status=404)
 
 
 def server_error(request):

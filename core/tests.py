@@ -13,6 +13,57 @@ from .rate_limit import is_rate_limited
 from .models import Notification
 
 
+@override_settings(DEBUG=False)
+class NotFoundPageTests(TestCase):
+    missing_url = '/definitely-not-a-real-bst-page/'
+
+    def test_anonymous_unknown_url_renders_custom_404_with_home_action(self):
+        response = self.client.get(self.missing_url)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'errors/404.html')
+        self.assertContains(response, '404', status_code=404)
+        self.assertContains(response, 'Aradığınız sayfa bulunamadı', status_code=404)
+        self.assertContains(
+            response,
+            f'href="{reverse("portal:index")}"',
+            status_code=404,
+        )
+        self.assertContains(response, 'content="noindex,nofollow"', status_code=404)
+        self.assertNotContains(response, 'Hesap ayarlarına git', status_code=404)
+
+    def test_authenticated_unknown_url_renders_without_error_and_has_safe_action(self):
+        user = User.objects.create_user(
+            'not-found-user',
+            'not-found@example.com',
+            'StrongPassword123!',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(self.missing_url)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'errors/404.html')
+        self.assertContains(response, 'Aradığınız sayfa bulunamadı', status_code=404)
+        self.assertContains(
+            response,
+            f'href="{reverse("accounts:portfolio_settings")}"',
+            status_code=404,
+        )
+
+    def test_404_response_does_not_expose_debug_or_exception_details(self):
+        response = self.client.get('/missing-page-with-sensitive-looking-input/')
+
+        for leaked_detail in (
+            'Traceback',
+            'Resolver404',
+            'urlpatterns',
+            '/home/oguzh/bst-portal-strix',
+        ):
+            with self.subTest(leaked_detail=leaked_detail):
+                self.assertNotContains(response, leaked_detail, status_code=404)
+
+
 class SafeImageUploadTests(SimpleTestCase):
     def image_upload(self, image_format='WEBP', mode='RGB'):
         source = BytesIO()

@@ -70,12 +70,28 @@ def event_detail(request, event_id):
     registration = None
     if request.user.is_authenticated:
         registration = EventRegistration.objects.filter(event=event, user=request.user).first()
+    creator_profile = getattr(event.created_by, 'profile', None)
+    creator_profile_url = ''
+    if (
+        creator_profile
+        and event.created_by.is_active
+        and not event.created_by.is_staff
+        and not event.created_by.is_superuser
+        and creator_profile.account_status == 'active'
+        and creator_profile.user_type in {'student', 'staff_student', 'teacher'}
+        and (
+            creator_profile.is_portfolio_public
+            or request.user == event.created_by
+        )
+    ):
+        creator_profile_url = creator_profile.get_absolute_url()
     return render(request, 'events/event_detail.html', {
         'event': event,
         'registration': registration,
         'now': timezone.now(),
         'can_manage_event': _user_can_manage_event(request.user, event),
         'feedback_form': EventFeedbackForm(),
+        'creator_profile_url': creator_profile_url,
     })
 
 @login_required

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 import tempfile
 from unittest.mock import patch
 
@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -38,6 +38,215 @@ def make_user(username, user_type='student'):
     user.profile.user_type = user_type
     user.profile.save(update_fields=['user_type'])
     return user
+
+
+class ProjectViewRegressionTests(TestCase):
+    def setUp(self):
+        self.owner = make_user('view-owner')
+        self.viewer = make_user('view-viewer')
+        self.project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Görüntülenme testi projesi',
+            created_by=self.owner,
+            is_private=False,
+            visibility='public',
+            approval_status='approved',
+        )
+        self.url = reverse('projects:project_detail', args=[self.project.pk])
+
+    def view_count(self):
+        return ProjectView.objects.filter(project=self.project).count()
+
+    def anonymous_get(self, client=None, *, ip='198.51.100.10', user_agent='View Test Browser'):
+        client = client or Client()
+        return client.get(self.url, REMOTE_ADDR=ip, HTTP_USER_AGENT=user_agent)
+
+    def test_authenticated_user_is_counted_once_per_day(self):
+        self.client.force_login(self.viewer)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 1)
+        self.assertEqual(ProjectView.objects.get(project=self.project).viewer, self.viewer)
+
+    def test_authenticated_dedup_survives_session_change_and_new_client(self):
+        self.client.force_login(self.viewer)
+        first_session_key = self.client.session.session_key
+        self.client.get(self.url)
+
+        session = self.client.session
+        session.flush()
+        self.client.force_login(self.viewer)
+        self.assertNotEqual(self.client.session.session_key, first_session_key)
+        self.client.get(self.url)
+
+        new_client = Client()
+        new_client.force_login(self.viewer)
+        new_client.get(self.url)
+
+        self.assertEqual(self.view_count(), 1)
+
+    def test_anonymous_dedup_survives_different_sessions_and_cleared_cookies(self):
+        first_client = Client()
+        first_session = first_client.session
+        first_session['client'] = 'first'
+        first_session.save()
+        second_client = Client()
+        second_session = second_client.session
+        second_session['client'] = 'second'
+        second_session.save()
+        self.assertNotEqual(first_session.session_key, second_session.session_key)
+
+        self.anonymous_get(first_client)
+        first_client.cookies.clear()
+        self.anonymous_get(first_client)
+        self.anonymous_get(second_client)
+
+        self.assertEqual(self.view_count(), 1)
+
+    def test_anonymous_same_ip_with_different_user_agent_is_a_new_visitor(self):
+        self.anonymous_get(user_agent='Browser A')
+        self.anonymous_get(user_agent='Browser B')
+
+        self.assertEqual(self.view_count(), 2)
+
+    def test_anonymous_different_ip_is_a_new_visitor(self):
+        self.anonymous_get(ip='198.51.100.10')
+        self.anonymous_get(ip='198.51.100.11')
+
+        self.assertEqual(self.view_count(), 2)
+
+    def test_project_creator_is_not_counted(self):
+        self.client.force_login(self.owner)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 0)
+
+    def test_project_team_member_is_not_counted(self):
+        member = make_user('view-team-member')
+        self.project.team.add(member)
+        self.client.force_login(member)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 0)
+
+    def test_project_advisor_is_not_counted(self):
+        advisor = make_user('view-advisor', 'teacher')
+        self.project.advisor = advisor
+        self.project.save(update_fields=['advisor'])
+        self.client.force_login(advisor)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 0)
+
+    def test_staff_user_is_not_counted(self):
+        staff = make_user('view-staff')
+        staff.is_staff = True
+        staff.save(update_fields=['is_staff'])
+        self.client.force_login(staff)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 0)
+
+    def test_superuser_is_not_counted(self):
+        superuser = User.objects.create_superuser(
+            'view-superuser',
+            'view-superuser@example.com',
+            'StrongPassword123!',
+        )
+        self.client.force_login(superuser)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 0)
+
+    def test_unrelated_authenticated_user_is_counted(self):
+        self.client.force_login(self.viewer)
+
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+        self.assertEqual(self.view_count(), 1)
+
+    def test_authenticated_user_is_counted_again_on_a_new_day(self):
+        self.client.force_login(self.viewer)
+        with patch(
+            'projects.views.timezone.localdate',
+            side_effect=[date(2026, 9, 21), date(2026, 9, 22)],
+        ):
+            self.client.get(self.url)
+            self.client.get(self.url)
+
+        self.assertEqual(self.view_count(), 2)
+        self.assertSetEqual(
+            set(ProjectView.objects.values_list('date_bucket', flat=True)),
+            {date(2026, 9, 21), date(2026, 9, 22)},
+        )
+
+    def test_anonymous_user_is_counted_again_on_a_new_day(self):
+        client = Client()
+        with patch(
+            'projects.views.timezone.localdate',
+            side_effect=[date(2026, 9, 21), date(2026, 9, 22)],
+        ):
+            self.anonymous_get(client)
+            self.anonymous_get(client)
+
+        self.assertEqual(self.view_count(), 2)
+
+    @override_settings(TRUSTED_PROXY_IPS={'10.0.0.1'})
+    def test_trusted_proxy_uses_x_real_ip(self):
+        Client().get(
+            self.url,
+            REMOTE_ADDR='10.0.0.1',
+            HTTP_X_REAL_IP='198.51.100.20',
+            HTTP_USER_AGENT='Proxy Browser',
+        )
+        Client().get(
+            self.url,
+            REMOTE_ADDR='198.51.100.20',
+            HTTP_USER_AGENT='Proxy Browser',
+        )
+
+        self.assertEqual(self.view_count(), 1)
+
+    @override_settings(TRUSTED_PROXY_IPS={'10.0.0.1'})
+    def test_untrusted_remote_address_ignores_spoofed_x_real_ip(self):
+        for remote_address in ('198.51.100.21', '198.51.100.22'):
+            Client().get(
+                self.url,
+                REMOTE_ADDR=remote_address,
+                HTTP_X_REAL_IP='203.0.113.50',
+                HTTP_USER_AGENT='Proxy Browser',
+            )
+
+        self.assertEqual(self.view_count(), 2)
+
+    def test_anonymous_record_does_not_store_raw_ip_or_user_agent(self):
+        raw_ip = '198.51.100.30'
+        raw_user_agent = 'Raw Browser/1.0'
+
+        self.anonymous_get(ip=raw_ip, user_agent=raw_user_agent)
+
+        record = ProjectView.objects.get(project=self.project)
+        self.assertIsNone(record.viewer)
+        self.assertEqual(len(record.session_hash), 64)
+        self.assertNotIn(raw_ip, record.session_hash)
+        self.assertNotIn(raw_user_agent, record.session_hash)
+
+    def test_duplicate_view_request_does_not_return_server_error(self):
+        client = Client()
+
+        first_response = self.anonymous_get(client)
+        duplicate_response = self.anonymous_get(client)
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(duplicate_response.status_code, 200)
+        self.assertEqual(self.view_count(), 1)
 
 
 class ProjectPermissionTests(TestCase):
@@ -144,7 +353,7 @@ class ProjectPermissionTests(TestCase):
         self.client.force_login(self.owner)
         page = self.client.get(self.project.get_absolute_url()).content.decode()
         expected = {
-            teacher_comment.pk: f'{reverse("portal:academic_list")}#academic-{teacher.profile.pk}',
+            teacher_comment.pk: teacher.profile.get_absolute_url(),
             graduate_comment.pk: reverse('alumni:alumni_detail', args=[graduate.username]),
         }
         for pk, url in expected.items():
@@ -847,6 +1056,22 @@ class StructuredMatchingTests(TestCase):
         self.assertEqual(matches[0]['breakdown']['technology'], 40)
         self.assertEqual(matches[0]['breakdown']['availability'], 20)
         self.assertIn('Django Match Tech', matches[0]['matched_technologies'])
+
+    def test_advisor_matching_uses_canonical_academic_slug_url(self):
+        owner = make_user('advisor-match-owner')
+        teacher = make_user('advisor-match-teacher', 'teacher')
+        project = Project.objects.create(
+            project_type=ProjectType.objects.get(code='INDEPENDENT'),
+            title='Danışman eşleştirme projesi',
+            created_by=owner,
+        )
+
+        from .matching import rank_advisor_matches
+        matches = rank_advisor_matches(project)
+
+        teacher_match = next(item for item in matches if item['id'] == teacher.pk)
+        self.assertEqual(teacher_match['url'], teacher.profile.get_absolute_url())
+        self.assertNotIn(f'/accounts/profile/{teacher.pk}/', teacher_match['url'])
 
 
 class PrivateProjectAuthorizationTests(TestCase):

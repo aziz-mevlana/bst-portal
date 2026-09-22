@@ -62,6 +62,7 @@
 </div>
 
 <!-- Student Action Modal -->
+{% if is_admin_account %}
 <div id="studentActionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
     <div class="relative w-full max-w-md mx-4 bg-[#1f2937] rounded-2xl shadow-2xl border border-gray-700">
         <div class="flex items-center justify-between p-4 border-b border-gray-700">
@@ -78,8 +79,6 @@
                     <option value="2">2. Sınıf</option>
                     <option value="3">3. Sınıf</option>
                     <option value="4">4. Sınıf</option>
-                    <option value="alt">Altdan Devam Ediyor</option>
-                    <option value="bitir">Bitirdi</option>
                 </select>
             </div>
             <button onclick="updateStudentClassLevel()" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
@@ -88,6 +87,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -129,6 +129,7 @@
         studentObserver.observe(studentTrigger);
     }
 
+    {% if is_admin_account %}
     // Student Action Modal
     let currentStudentId = null;
     let currentStudentName = '';
@@ -186,5 +187,6 @@
     document.getElementById('studentActionModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeStudentActionModal();
     });
+    {% endif %}
 </script>
 {% endblock %}

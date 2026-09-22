@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Bitirme Projesi | BST Portal{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-slate-50 py-8 sm:py-12">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        {% if capstone_project %}
+            <section class="overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-9">
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="max-w-3xl">
+                        <p class="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Bitirme Projesi</p>
+                        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{{ capstone_project.project.title }}</h1>
+                        {% if capstone_project.project.description %}
+                            <p class="mt-4 whitespace-pre-line text-sm leading-6 text-slate-300 sm:text-base">{{ capstone_project.project.description }}</p>
+                        {% endif %}
+                    </div>
+                    <dl class="grid shrink-0 grid-cols-1 gap-4 rounded-2xl bg-white/10 p-5 text-sm sm:grid-cols-2 lg:grid-cols-1">
+                        <div>
+                            <dt class="text-slate-400">Danışman</dt>
+                            <dd class="mt-1 font-semibold">{{ capstone_project.project.advisor.get_full_name|default:capstone_project.project.advisor.username }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-400">Akademik dönem</dt>
+                            <dd class="mt-1 font-semibold">{{ capstone_project.term }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            <div class="mt-8 space-y-7">
+                {% for checkpoint in checkpoints %}
+                    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                        <div class="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-cyan-700">Kontrol noktası</p>
+                                <h2 class="mt-1 text-xl font-bold text-slate-900">{{ checkpoint.get_kind_display }}</h2>
+                                <p class="mt-2 text-sm text-slate-600">Son tarih: <time datetime="{{ checkpoint.due_at|date:'c' }}">{{ checkpoint.due_at|date:'d.m.Y H:i' }}</time></p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{{ checkpoint.dashboard_progress_label }}</span>
+                                {% if checkpoint.dashboard_is_overdue %}
+                                    <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">Süresi geçti</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-6 space-y-5">
+                            {% for task in checkpoint.dashboard_tasks %}
+                                <article id="task-{{ task.pk }}" class="scroll-mt-24 rounded-2xl border border-slate-200 p-4 sm:p-6">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-bold text-slate-900">{{ task.title }}</h3>
+                                            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{{ task.instructions }}</p>
+                                        </div>
+                                        <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold {{ task.dashboard_state_style }}">{{ task.dashboard_state_label }}</span>
+                                    </div>
+
+                                    <div class="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 sm:grid-cols-2">
+                                        <p><span class="font-semibold">Son tarih:</span> {{ task.due_at|date:'d.m.Y H:i' }}</p>
+                                        <p><span class="font-semibold">Gerekli dosya:</span> {{ task.required_file_count }}</p>
+                                        {% if task.dashboard_is_overdue %}
+                                            <p class="font-semibold text-red-700 sm:col-span-2">Bu görevin son teslim tarihi geçti.</p>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if task.dashboard_attempts %}
+                                        <details class="mt-5 rounded-xl border border-slate-200 bg-white">
+                                            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-800">Teslim geçmişi ({{ task.dashboard_attempts|length }})</summary>
+                                            <div class="space-y-4 border-t border-slate-200 p-4">
+                                                {% for attempt in task.dashboard_attempts %}
+                                                    <section class="rounded-xl bg-slate-50 p-4">
+                                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                                            <h4 class="font-semibold text-slate-900">{{ attempt.attempt_number }}. teslim</h4>
+                                                            <span class="text-xs font-semibold {% if attempt.is_late %}text-red-700{% else %}text-emerald-700{% endif %}">
+                                                                {% if attempt.is_late %}Geç teslim{% else %}Zamanında teslim{% endif %}
+                                                            </span>
+                                                        </div>
+                                                        <p class="mt-1 text-xs text-slate-500">{{ attempt.submitted_at|date:'d.m.Y H:i' }}</p>
+                                                        <ul class="mt-3 space-y-2">
+                                                            {% for submission_file in attempt.files.all %}
+                                                                <li>
+                                                                    <a class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 hover:text-cyan-900" href="{% url 'capstone:submission_file_download' submission_file.pk %}">
+                                                                        {{ submission_file.original_name }}
+                                                                        <span aria-hidden="true">↓</span>
+                                                                    </a>
+                                                                </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                        {% if attempt.review %}
+                                                            <div class="mt-4 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                                                                <p class="font-semibold text-slate-900">{{ attempt.review.get_decision_display }}</p>
+                                                                <p class="mt-2 whitespace-pre-line text-slate-700">{{ attempt.review.feedback }}</p>
+                                                                <p class="mt-2 text-xs text-slate-500">
+                                                                    {{ attempt.review.reviewed_by.get_full_name|default:attempt.review.reviewed_by.username }} · {{ attempt.review.reviewed_at|date:'d.m.Y H:i' }}
+                                                                </p>
+                                                            </div>
+                                                        {% else %}
+                                                            <p class="mt-4 text-sm text-amber-700">Danışman değerlendirmesi bekleniyor.</p>
+                                                        {% endif %}
+                                                    </section>
+                                                {% endfor %}
+                                            </div>
+                                        </details>
+                                    {% endif %}
+
+                                    {% if task.dashboard_can_submit %}
+                                        <form class="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 p-4" method="post" enctype="multipart/form-data" action="{% url 'capstone:student_task_submit' task.pk %}">
+                                            {% csrf_token %}
+                                            <label class="block text-sm font-semibold text-slate-900" for="files-{{ task.pk }}">Yeni teslim</label>
+                                            <p class="mt-1 text-xs text-slate-600">Tam olarak {{ task.required_file_count }} dosya seçmelisiniz.</p>
+                                            <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                                <input id="files-{{ task.pk }}" class="block w-full rounded-lg border border-slate-300 bg-white text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" type="file" name="files" multiple required>
+                                                <button class="shrink-0 rounded-lg bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-800" type="submit">Teslim et</button>
+                                            </div>
+                                        </form>
+                                    {% endif %}
+                                </article>
+                            {% empty %}
+                                <p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Bu kontrol noktası için henüz görev tanımlanmadı.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% empty %}
+                    <section class="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">Henüz kontrol noktası oluşturulmadı.</section>
+                {% endfor %}
+            </div>
+        {% else %}
+            <section class="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Bitirme Projesi</p>
+                {% if eligible %}
+                    <h1 class="mt-3 text-3xl font-bold text-slate-900">Bitirme projenizi başlatın</h1>
+                    <p class="mt-4 text-slate-600">Proje bilgilerinizi ve danışmanınızı seçerek akademik süreci başlatabilirsiniz.</p>
+                    <a class="mt-7 inline-flex rounded-xl bg-cyan-700 px-6 py-3 font-semibold text-white transition hover:bg-cyan-800" href="{% url 'capstone:student_start' %}">Bitirme projenizi başlatın</a>
+                {% else %}
+                    <h1 class="mt-3 text-2xl font-bold text-slate-900">Aktif bitirme projesi kaydı bulunmuyor</h1>
+                    <p class="mt-4 text-slate-600">Bu dönem için aktif bitirme projesi kaydınız bulunmuyor.</p>
+                {% endif %}
+            </section>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

@@ -1,3 +1,38 @@
 {% extends 'base.html' %}
-{% block title %}Sayfa Bulunamadı | BST Akademi{% endblock %}
-{% block content %}<section class="content-section text-center py-20"><h1 class="text-4xl font-bold mb-4">Sayfa bulunamadı</h1><p class="text-gray-400 mb-6">Aradığınız içerik kaldırılmış veya adresi değişmiş olabilir.</p><a class="section-link" href="{% url 'portal:index' %}">Ana sayfaya dön</a></section>{% endblock %}
+{% block title %}404 | Sayfa bulunamadı | BST Portal{% endblock %}
+
+{% block content %}
+<main class="relative isolate flex min-h-[70vh] items-center overflow-hidden bg-[var(--page-bg)] px-4 py-14 text-[var(--text-primary)] sm:py-20">
+  <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+    <div class="absolute left-[8%] top-[12%] h-56 w-56 rounded-full bg-blue-600/10 blur-3xl"></div>
+    <div class="absolute bottom-[8%] right-[8%] h-64 w-64 rounded-full bg-violet-600/10 blur-3xl"></div>
+    <div class="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.05)_1px,transparent_1px)] [background-size:32px_32px]"></div>
+  </div>
+
+  <section class="mx-auto w-full max-w-3xl text-center" aria-labelledby="not-found-title">
+    <p class="select-none bg-gradient-to-r from-blue-400 via-cyan-300 to-violet-400 bg-clip-text text-[clamp(5.5rem,22vw,11rem)] font-black leading-none tracking-[-0.08em] text-transparent" aria-hidden="true">
+      404
+    </p>
+    <p class="mt-3 text-xs font-bold uppercase tracking-[0.24em] text-blue-400">Sayfa bulunamadı</p>
+    <h1 id="not-found-title" class="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl">
+      Aradığınız sayfa bulunamadı
+    </h1>
+    <p class="mx-auto mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)] sm:text-lg">
+      Sayfa kaldırılmış, taşınmış veya bağlantı artık geçerli olmayabilir. Ana sayfadan güvenle devam edebilirsiniz.
+    </p>
+
+    <div class="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+      <a href="{% url 'portal:index' %}"
+         class="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[var(--page-bg)]">
+        Ana sayfaya dön
+      </a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'accounts:portfolio_settings' %}"
+           class="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] px-6 py-3 font-semibold text-[var(--text-primary)] transition hover:border-blue-500 hover:bg-[var(--surface-elevated)] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[var(--page-bg)]">
+          Hesap ayarlarına git
+        </a>
+      {% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -42,9 +42,9 @@
             </span>
             <span class="flex items-center gap-1 card-link">
                 <img src="{% static 'images/icons/profile.svg' %}" alt="Organizatör" class="w-4 h-4">
-                <a href="{% url 'accounts:user_profile' event.created_by.id %}" class="hover:text-blue-400 transition-colors">
+                {% if creator_profile_url %}<a href="{{ creator_profile_url }}" class="hover:text-blue-400 transition-colors">
                     {{ event.created_by.get_full_name|default:event.created_by.username }}
-                </a>
+                </a>{% else %}<span>{{ event.created_by.get_full_name|default:event.created_by.username }}</span>{% endif %}
             </span>
         </div>
     </div>

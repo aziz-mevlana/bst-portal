@@ -68,6 +68,52 @@ class ProfileModernizationTests(TestCase):
         self.user.profile.refresh_from_db()
         self.assertFalse(self.user.profile.profile_picture)
 
+    def test_student_cannot_change_class_level_through_portfolio_settings(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('accounts:portfolio_settings'),
+            {'class_level': '4'},
+        )
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.class_level, '2')
+
+    def test_staff_student_cannot_change_own_class_level(self):
+        self.user.profile.user_type = 'staff_student'
+        self.user.profile.save(update_fields=['user_type'])
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('accounts:portfolio_settings'),
+            {'class_level': '4'},
+        )
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.class_level, '2')
+
+    def test_manipulated_legacy_profile_edit_post_cannot_change_class_level(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('accounts:profile_edit'),
+            {'class_level': '4'},
+        )
+
+        self.assertRedirects(response, reverse('accounts:profile'))
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.class_level, '2')
+
+    def test_portfolio_settings_does_not_render_class_level_input(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('accounts:portfolio_settings'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="class_level"')
+
     def test_profile_image_is_decoded_and_reencoded(self):
         source = BytesIO()
         Image.new('RGB', (8, 8), color='red').save(source, format='PNG')

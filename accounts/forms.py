@@ -52,7 +52,7 @@ class PortfolioSettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = [
-            'teacher_title', 'department', 'headline', 'bio', 'graduation_year', 'class_level', 'github_username', 'linkedin_slug',
+            'teacher_title', 'department', 'headline', 'bio', 'graduation_year', 'github_username', 'linkedin_slug',
             'website_url', 'is_looking_for_job', 'is_looking_for_internship',
             'is_open_to_mentoring', 'is_open_to_team_offers', 'categories', 'technologies',
         ]
@@ -62,7 +62,6 @@ class PortfolioSettingsForm(forms.ModelForm):
             'headline': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: Backend geliştirici ve veri bilimi öğrencisi'}),
             'bio': forms.Textarea(attrs={'rows': 5, 'class': INPUT_CLASS, 'placeholder': 'Kendinizi, ilgi alanlarınızı, deneyiminizi ve hedeflerinizi anlatın'}),
             'graduation_year': forms.NumberInput(attrs={'class': INPUT_CLASS, 'min': 2020, 'max': 2100, 'placeholder': 'Örn: 2027'}),
-            'class_level': forms.Select(attrs={'class': INPUT_CLASS}),
             'github_username': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'kullanici-adi'}),
             'linkedin_slug': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'profil-adi'}),
             'website_url': forms.URLInput(attrs={'class': INPUT_CLASS, 'placeholder': 'https://siteniz.com'}),
@@ -82,7 +81,7 @@ class PortfolioSettingsForm(forms.ModelForm):
         labels = {
             'teacher_title': 'Akademik ünvan', 'department': 'Bölüm / Anabilim dalı',
             'headline': 'Kısa tanıtım', 'bio': 'Biyografi', 'graduation_year': 'Mezuniyet yılı',
-            'class_level': 'Sınıf', 'github_username': 'GitHub kullanıcı adı',
+            'github_username': 'GitHub kullanıcı adı',
             'linkedin_slug': 'LinkedIn profil kullanıcı adı',
             'website_url': 'Kişisel web sitesi', 'is_looking_for_job': 'İş arıyorum',
             'is_looking_for_internship': 'Staj arıyorum', 'is_open_to_mentoring': 'Mentorluğa açığım',
@@ -99,10 +98,6 @@ class PortfolioSettingsForm(forms.ModelForm):
         if self.instance.user_type != 'teacher':
             self.fields.pop('teacher_title', None)
             self.fields.pop('department', None)
-        if self.instance.user_type not in {'student', 'staff_student'}:
-            self.fields.pop('class_level', None)
-        else:
-            configure_required_choice(self.fields['class_level'], 'Sınıfınızı seçiniz')
 
     def clean_website_url(self):
         value = self.cleaned_data.get('website_url', '').strip()

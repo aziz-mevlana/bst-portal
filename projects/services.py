@@ -35,6 +35,11 @@ def accept_project_request_application(*, application_id, reviewer, review_note=
         .get(pk=application_id, project_request=project_request)
     )
 
+    if project_request.project_type.code == 'CAPSTONE':
+        raise ValidationError(
+            'Bitirme projeleri generic proje ilanı kabul akışından oluşturulamaz.'
+        )
+
     if not (reviewer.is_staff or reviewer.is_superuser or project_request.teacher_id == reviewer.id):
         raise PermissionDenied('Bu başvuruyu kabul etme yetkiniz yok.')
 
