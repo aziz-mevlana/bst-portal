@@ -1,12 +1,18 @@
+from urllib.parse import urlsplit
+
+from django.core.exceptions import ValidationError
 from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
-from django.urls import reverse
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
 
-from accounts.models import Profile
+from accounts.models import PortfolioCertificate, Profile
+from accounts.validators import validate_public_website
 from alumni.models import Alumni
 from career.models import Opportunity
 from core.analytics import record_analytics_event
@@ -388,3 +394,48 @@ def portfolio_detail(request, slug):
         )[:160],
         'meta_robots': 'index,follow' if profile.is_portfolio_public else 'noindex,nofollow',
     })
+
+
+def _get_visible_portfolio_certificate(request, slug, certificate_id):
+    certificate = get_object_or_404(
+        PortfolioCertificate.objects.select_related('profile__user'),
+        pk=certificate_id,
+        profile__public_slug=slug,
+        profile__user_type__in={'student', 'staff_student'},
+        profile__user__is_active=True,
+        profile__user__is_staff=False,
+        profile__user__is_superuser=False,
+        is_public=True,
+    )
+    if not certificate.profile.is_portfolio_public and request.user != certificate.profile.user:
+        raise Http404
+    return certificate
+
+
+def _validated_certificate_target(certificate):
+    if not certificate.credential_url:
+        raise Http404
+    try:
+        validate_public_website(certificate.credential_url)
+    except ValidationError as exc:
+        raise Http404 from exc
+    return certificate.credential_url
+
+
+@never_cache
+@require_GET
+def portfolio_certificate_warning(request, slug, certificate_id):
+    certificate = _get_visible_portfolio_certificate(request, slug, certificate_id)
+    target = _validated_certificate_target(certificate)
+    return render(request, 'portal/certificate_external_link_warning.html', {
+        'certificate': certificate,
+        'target_host': urlsplit(target).hostname,
+    })
+
+
+@never_cache
+@require_POST
+def portfolio_certificate_continue(request, slug, certificate_id):
+    certificate = _get_visible_portfolio_certificate(request, slug, certificate_id)
+    target = _validated_certificate_target(certificate)
+    return redirect(target)

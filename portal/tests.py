@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import Profile
+from accounts.forms import PortfolioCertificateForm
+from accounts.models import PortfolioCertificate, Profile
 from alumni.models import Alumni
 from career.models import Opportunity
 from projects.models import (
@@ -17,6 +18,166 @@ from projects.models import (
     TeamOpenRole,
     Technology,
 )
+
+
+class PortfolioCertificateSecurityTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            'certificate-owner',
+            'certificate-owner@example.com',
+            'StrongPassword123!',
+        )
+        self.other_user = User.objects.create_user(
+            'other-certificate-owner',
+            'other-certificate-owner@example.com',
+            'StrongPassword123!',
+        )
+        self.certificate = PortfolioCertificate.objects.create(
+            profile=self.owner.profile,
+            title='Güvenli Yazılım',
+            issuer='Example University',
+            credential_url='https://certs.example.edu/verify/ABC-123?source=portfolio',
+        )
+        self.other_certificate = PortfolioCertificate.objects.create(
+            profile=self.other_user.profile,
+            title='Başka Sertifika',
+            issuer='Other University',
+            credential_url='https://credentials.example.org/other',
+        )
+
+    def certificate_form(self, credential_url):
+        return PortfolioCertificateForm(data={
+            'title': 'Test Sertifikası',
+            'issuer': 'Test Kurumu',
+            'credential_url': credential_url,
+            'credential_id': '',
+            'is_public': True,
+        })
+
+    def test_http_and_https_credential_urls_are_accepted(self):
+        for credential_url in ('https://example.com/verify/1', 'http://example.com/verify/1'):
+            with self.subTest(credential_url=credential_url):
+                self.assertTrue(self.certificate_form(credential_url).is_valid())
+
+    def test_dangerous_protocols_are_rejected(self):
+        for credential_url in (
+            'javascript:alert(1)',
+            'data:text/html,<script>alert(1)</script>',
+            'file:///etc/passwd',
+            'ftp://example.com/certificate',
+            'https://[broken-address/certificate',
+        ):
+            with self.subTest(credential_url=credential_url):
+                self.assertFalse(self.certificate_form(credential_url).is_valid())
+
+    def test_local_and_non_global_targets_are_rejected(self):
+        for credential_url in (
+            'http://localhost/certificate',
+            'https://issuer.localhost/certificate',
+            'https://issuer.local/certificate',
+            'http://127.0.0.1/certificate',
+            'http://10.0.0.1/certificate',
+            'http://192.0.2.1/certificate',
+            'http://[::1]/certificate',
+        ):
+            with self.subTest(credential_url=credential_url):
+                self.assertFalse(self.certificate_form(credential_url).is_valid())
+
+    def test_url_credentials_are_rejected(self):
+        for credential_url in (
+            'https://user@example.com/certificate',
+            'https://user:password@example.com/certificate',
+        ):
+            with self.subTest(credential_url=credential_url):
+                self.assertFalse(self.certificate_form(credential_url).is_valid())
+
+    def test_certificate_add_endpoint_rejects_an_unsafe_url(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse('accounts:portfolio_certificate_add'), {
+            'title': 'İç ağ sertifikası',
+            'issuer': 'Test Kurumu',
+            'credential_url': 'http://127.0.0.1/admin',
+            'credential_id': '',
+            'is_public': 'on',
+        })
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.assertFalse(PortfolioCertificate.objects.filter(title='İç ağ sertifikası').exists())
+
+    def test_public_portfolio_links_to_internal_warning_with_safe_rel(self):
+        response = self.client.get(reverse(
+            'portal:portfolio_detail', args=[self.owner.profile.public_slug]
+        ))
+        warning_url = reverse(
+            'portal:portfolio_certificate_warning',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        self.assertContains(response, f'href="{warning_url}"')
+        self.assertContains(response, 'rel="noopener noreferrer nofollow ugc"')
+        self.assertNotContains(response, self.certificate.credential_url)
+
+    def test_certificate_id_cannot_be_swapped_between_profiles(self):
+        mismatched_url = reverse(
+            'portal:portfolio_certificate_warning',
+            args=[self.owner.profile.public_slug, self.other_certificate.pk],
+        )
+        mismatched_continue_url = reverse(
+            'portal:portfolio_certificate_continue',
+            args=[self.owner.profile.public_slug, self.other_certificate.pk],
+        )
+        self.assertEqual(self.client.get(mismatched_url).status_code, 404)
+        self.assertEqual(self.client.post(mismatched_continue_url).status_code, 404)
+
+    def test_warning_does_not_accept_an_arbitrary_redirect_target(self):
+        attacker_url = 'https://attacker.example/phishing'
+        warning_url = reverse(
+            'portal:portfolio_certificate_warning',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        continue_url = reverse(
+            'portal:portfolio_certificate_continue',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        warning = self.client.get(warning_url, {'next': attacker_url, 'url': attacker_url})
+        self.assertEqual(warning.status_code, 200)
+        self.assertNotContains(warning, attacker_url)
+        response = self.client.post(continue_url, {'next': attacker_url})
+        self.assertEqual(response['Location'], self.certificate.credential_url)
+
+    def test_valid_certificate_warning_then_continue_flow(self):
+        warning_url = reverse(
+            'portal:portfolio_certificate_warning',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        continue_url = reverse(
+            'portal:portfolio_certificate_continue',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        warning = self.client.get(warning_url)
+        self.assertEqual(warning.status_code, 200)
+        self.assertContains(warning, 'BST Portal\'dan ayrılıyorsunuz')
+        self.assertContains(warning, 'certs.example.edu')
+        self.assertContains(warning, f'action="{continue_url}"')
+        self.assertNotContains(warning, self.certificate.credential_url)
+
+        response = self.client.post(continue_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], self.certificate.credential_url)
+        self.assertEqual(self.client.get(continue_url).status_code, 405)
+
+    def test_continue_revalidates_stored_credential_url(self):
+        PortfolioCertificate.objects.filter(pk=self.certificate.pk).update(
+            credential_url='http://127.0.0.1/internal'
+        )
+        warning_url = reverse(
+            'portal:portfolio_certificate_warning',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        continue_url = reverse(
+            'portal:portfolio_certificate_continue',
+            args=[self.owner.profile.public_slug, self.certificate.pk],
+        )
+        self.assertEqual(self.client.get(warning_url).status_code, 404)
+        self.assertEqual(self.client.post(continue_url).status_code, 404)
 
 
 class AcademicProfileTests(TestCase):

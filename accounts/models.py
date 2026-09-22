@@ -349,7 +349,7 @@ class PortfolioCertificate(models.Model):
     title = models.CharField(max_length=200)
     issuer = models.CharField(max_length=180)
     issued_at = models.DateField(blank=True, null=True)
-    credential_url = models.URLField(blank=True)
+    credential_url = models.URLField(blank=True, validators=[validate_public_website])
     credential_id = models.CharField(max_length=120, blank=True)
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

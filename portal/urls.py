@@ -1,6 +1,9 @@
 from django.urls import path
 from django.views.generic import TemplateView
-from .views import IndexView, academic_detail, academic_list, portfolio_detail, talent_list
+from .views import (
+    IndexView, academic_detail, academic_list, portfolio_certificate_continue,
+    portfolio_certificate_warning, portfolio_detail, talent_list,
+)
 from .search import global_search
 
 app_name = 'portal'
@@ -12,6 +15,16 @@ urlpatterns = [
     path('academics/', academic_list, name='academic_list'),
     path('academics/<slug:slug>/', academic_detail, name='academic_detail'),
     path('u/<slug:slug>/', portfolio_detail, name='portfolio_detail'),
+    path(
+        'u/<slug:slug>/certificates/<int:certificate_id>/verify/',
+        portfolio_certificate_warning,
+        name='portfolio_certificate_warning',
+    ),
+    path(
+        'u/<slug:slug>/certificates/<int:certificate_id>/continue/',
+        portfolio_certificate_continue,
+        name='portfolio_certificate_continue',
+    ),
     path('legal/privacy/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
     path('legal/kvkk/', TemplateView.as_view(template_name='legal/kvkk.html'), name='kvkk_notice'),
     path('legal/terms/', TemplateView.as_view(template_name='legal/terms.html'), name='terms'),

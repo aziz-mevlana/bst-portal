@@ -51,16 +51,19 @@ def validate_public_website(value):
     value = (value or '').strip()
     if not value:
         return
-    parsed = urlparse(value)
-    if parsed.scheme not in {'http', 'https'} or not parsed.hostname or parsed.username or parsed.password:
-        raise ValidationError('Yalnızca güvenli bir HTTP/HTTPS web sitesi adresi girin.')
     try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname
+        username = parsed.username
+        password = parsed.password
         port = parsed.port
     except ValueError as exc:
-        raise ValidationError('Web sitesi portu geçersiz.') from exc
+        raise ValidationError('Yalnızca geçerli bir HTTP/HTTPS web sitesi adresi girin.') from exc
+    if parsed.scheme not in {'http', 'https'} or not hostname or username or password:
+        raise ValidationError('Yalnızca güvenli bir HTTP/HTTPS web sitesi adresi girin.')
     if port not in {None, 80, 443}:
         raise ValidationError('Kişisel web sitesi yalnızca standart HTTP/HTTPS portlarını kullanabilir.')
-    hostname = parsed.hostname.rstrip('.').casefold()
+    hostname = hostname.rstrip('.').casefold()
     if hostname == 'localhost' or hostname.endswith(('.localhost', '.local')):
         raise ValidationError('Yerel ağ adresleri kişisel web sitesi olarak kullanılamaz.')
     try:

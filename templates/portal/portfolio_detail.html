@@ -110,7 +110,7 @@
           <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-400">Gelişim</p>
           <h2 id="portfolio-certificates-title" class="mt-2 text-2xl font-bold">Sertifikalar</h2>
           <div class="mt-5 grid gap-3 sm:grid-cols-2">
-            {% for certificate in certificates %}<article class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"><h3 class="font-bold">{{ certificate.title }}</h3><p class="mt-1 text-sm text-[var(--text-muted)]">{{ certificate.issuer }}{% if certificate.issued_at %} · {{ certificate.issued_at|date:'Y' }}{% endif %}</p>{% if certificate.credential_url %}<a href="{{ certificate.credential_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="mt-4 inline-flex text-sm font-bold text-blue-300">Sertifikayı doğrula →</a>{% endif %}</article>{% endfor %}
+            {% for certificate in certificates %}<article class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"><h3 class="font-bold">{{ certificate.title }}</h3><p class="mt-1 text-sm text-[var(--text-muted)]">{{ certificate.issuer }}{% if certificate.issued_at %} · {{ certificate.issued_at|date:'Y' }}{% endif %}</p>{% if certificate.credential_url %}<a href="{% url 'portal:portfolio_certificate_warning' slug=portfolio.public_slug certificate_id=certificate.pk %}" target="_blank" rel="noopener noreferrer nofollow ugc" class="mt-4 inline-flex text-sm font-bold text-blue-300">Sertifikayı doğrula →</a>{% endif %}</article>{% endfor %}
           </div>
         </section>
       {% endif %}
