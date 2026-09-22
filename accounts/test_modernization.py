@@ -24,6 +24,7 @@ from .roles import bootstrap_bst_authority_group
 from .validators import (
     validate_github_username,
     validate_linkedin_slug,
+    validate_portal_username,
     validate_public_website,
 )
 
@@ -46,6 +47,14 @@ class ProfileModernizationTests(TestCase):
         for invalid in ('https://linkedin.com/in/bst', 'linkedin.com/in/bst', 'bad/path'):
             with self.assertRaises(ValidationError):
                 validate_linkedin_slug(invalid)
+
+    def test_portal_username_requires_one_leading_at_sign(self):
+        validate_portal_username('@oguzhan')
+        with self.assertRaisesMessage(ValidationError, 'Kullanıcı adı @ ile başlamalıdır.'):
+            validate_portal_username('oguzhan')
+        for invalid in ('@@oguzhan', '@oguz@han', '@'):
+            with self.subTest(username=invalid), self.assertRaises(ValidationError):
+                validate_portal_username(invalid)
 
     def test_legacy_profile_endpoint_rejects_html_disguised_as_picture(self):
         self.client.force_login(self.user)

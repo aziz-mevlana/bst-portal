@@ -27,7 +27,7 @@ from .models import (
 )
 from alumni.models import AlumniRegistrationRequest
 from .email_service import EmailConfigurationError, send_transactional_email
-from .validators import institutional_email_domain
+from .validators import institutional_email_domain, validate_portal_username
 from .permissions import ensure_interactive_account
 from .image_utils import MAX_PROFILE_IMAGE_SIZE, sanitize_profile_image
 from django.contrib.auth.models import User
@@ -262,6 +262,12 @@ def register_view(request):
             username = f"{base_username}{counter}"
             counter += 1
 
+        try:
+            validate_portal_username(username)
+        except ValidationError as exc:
+            messages.error(request, ' '.join(exc.messages))
+            return redirect('accounts:register')
+
         existing_verification = EmailVerification.objects.filter(
             email=email,
             is_verified=False,
@@ -425,6 +431,13 @@ def verify_email_view(request):
             if user_type not in PUBLIC_REGISTRATION_ROLES or not verification.password_hash:
                 verification.delete()
                 messages.error(request, 'Kayıt verisi geçersiz. Lütfen yeniden kayıt olun.')
+                request.session.pop('verify_email', None)
+                return redirect('accounts:register')
+            try:
+                validate_portal_username(data.get('username', ''))
+            except ValidationError as exc:
+                verification.delete()
+                messages.error(request, ' '.join(exc.messages))
                 request.session.pop('verify_email', None)
                 return redirect('accounts:register')
 

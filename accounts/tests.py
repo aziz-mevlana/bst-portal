@@ -42,6 +42,7 @@ class EmailVerificationFlowTests(TestCase):
 
         self.assertRedirects(response, reverse('accounts:verify_email'))
         verification = EmailVerification.objects.get(email='student@trakya.edu.tr')
+        self.assertTrue(verification.session_data['username'].startswith('@'))
         self.assertNotIn('password', verification.session_data)
         self.assertTrue(verification.password_hash.startswith('pbkdf2_'))
         self.assertEqual(self.client.session['verify_email'], 'student@trakya.edu.tr')
@@ -265,9 +266,70 @@ class AccountSettingsTests(TestCase):
         self.assertRedirects(response, reverse('accounts:portfolio_settings'))
         self.user.refresh_from_db()
         self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.username, 'settings-user')
         self.assertEqual(self.user.first_name, 'Yeni')
         self.assertEqual(self.user.profile.phone_number, '05550000000')
         self.assertEqual(self.user.profile.user_type, 'student')
+
+    def test_valid_portal_username_can_be_saved(self):
+        response = self.client.post(reverse('accounts:account_settings_update'), {
+            'first_name': 'Eski',
+            'last_name': 'Kullanıcı',
+            'username': '@oguzhan',
+            'phone_number': '',
+        })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, '@oguzhan')
+
+    def test_manipulated_username_without_required_at_sign_is_rejected_server_side(self):
+        self.user.username = '@settings-user'
+        self.user.save(update_fields=['username'])
+
+        response = self.client.post(reverse('accounts:account_settings_update'), {
+            'first_name': 'Manipüle',
+            'last_name': 'Kullanıcı',
+            'username': 'settings-user',
+            'phone_number': '',
+        })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, '@settings-user')
+        self.assertEqual(self.user.first_name, 'Eski')
+
+    def test_extra_or_embedded_at_sign_is_rejected(self):
+        self.user.username = '@settings-user'
+        self.user.save(update_fields=['username'])
+
+        for username in ('@@settings-user', '@settings@user', '@'):
+            with self.subTest(username=username):
+                response = self.client.post(reverse('accounts:account_settings_update'), {
+                    'first_name': 'Eski',
+                    'last_name': 'Kullanıcı',
+                    'username': username,
+                    'phone_number': '',
+                })
+                self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+                self.user.refresh_from_db()
+                self.assertEqual(self.user.username, '@settings-user')
+
+    def test_duplicate_username_is_rejected_case_insensitively(self):
+        self.user.username = '@settings-user'
+        self.user.save(update_fields=['username'])
+        User.objects.create_user('@Oguzhan', password='StrongPassword123!')
+
+        response = self.client.post(reverse('accounts:account_settings_update'), {
+            'first_name': 'Eski',
+            'last_name': 'Kullanıcı',
+            'username': '@oguzhan',
+            'phone_number': '',
+        })
+
+        self.assertRedirects(response, reverse('accounts:portfolio_settings'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, '@settings-user')
 
     def test_email_does_not_change_before_new_address_is_verified(self):
         response = self.client.post(reverse('accounts:email_change_request'), {'new_email': 'new@trakya.edu.tr'})

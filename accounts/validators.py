@@ -10,6 +10,16 @@ GITHUB_USERNAME_RE = re.compile(r'^(?!-)(?!.*--)[A-Za-z0-9-]{1,39}(?<!-)$')
 LINKEDIN_SLUG_RE = re.compile(r'^[A-Za-z0-9](?:[A-Za-z0-9-]{1,98}[A-Za-z0-9])?$')
 
 
+def validate_portal_username(value):
+    username = value or ''
+    if not username.startswith('@'):
+        raise ValidationError('Kullanıcı adı @ ile başlamalıdır.')
+    if username == '@':
+        raise ValidationError('Kullanıcı adı @ işaretinden sonra en az bir karakter içermelidir.')
+    if username.count('@') != 1:
+        raise ValidationError('Kullanıcı adında @ işareti yalnızca ilk karakterde ve bir kez bulunmalıdır.')
+
+
 def institutional_email_domain(email):
     normalized = (email or '').strip().casefold()
     if normalized.count('@') != 1:

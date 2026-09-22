@@ -8,7 +8,7 @@ from .models import (
     CommunicationPreference, CommunityRegistration, DataSubjectRequest, PortfolioCertificate,
     Profile, UserReport,
 )
-from .validators import institutional_email_domain
+from .validators import institutional_email_domain, validate_portal_username
 from .image_utils import sanitize_profile_image
 from projects.models import ProjectCategory, Technology
 
@@ -251,6 +251,8 @@ class AccountSettingsForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
+        if username != self.user.username:
+            validate_portal_username(username)
         if User.objects.exclude(pk=self.user.pk).filter(username__iexact=username).exists():
             raise forms.ValidationError('Bu kullanıcı adı kullanılıyor.')
         return username
