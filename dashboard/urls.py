@@ -1,10 +1,15 @@
 from django.urls import path
 from . import views
 from .footer_views import footer_settings
+from . import course_views
 
 app_name = 'dashboard'
 
 urlpatterns = [
+    path('courses/', course_views.course_list, name='courses'),
+    path('courses/new/', course_views.course_edit, name='course_create'),
+    path('courses/<int:course_id>/edit/', course_views.course_edit, name='course_edit'),
+    path('courses/<int:course_id>/instructors/', course_views.course_instructor_change, name='course_instructor_change'),
     path('footer/', footer_settings, name='footer_settings'),
     path('', views.dashboard_home, name='home'),
     path('my-projects/', views.student_my_projects, name='my_projects'),

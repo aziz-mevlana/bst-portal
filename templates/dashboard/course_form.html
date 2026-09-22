@@ -1,0 +1,2 @@
+{% extends 'dashboard/base.html' %}
+{% block dashboard_content %}<main class="mx-auto max-w-2xl p-6 text-white"><h1 class="text-3xl font-bold">{% if course %}Dersi düzenle{% else %}Yeni ders{% endif %}</h1><form method="post" class="mt-6 space-y-4 rounded-xl bg-gray-900 p-6">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div><label class="block" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<button class="rounded bg-blue-600 px-4 py-2">Kaydet</button></form></main>{% endblock %}

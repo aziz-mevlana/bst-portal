@@ -71,6 +71,7 @@ class Notification(models.Model):
         ('team_invite', 'Ekip daveti'),
         ('team_invite_result', 'Ekip daveti sonucu'),
         ('project_like_milestone', 'Proje beğeni eşiği'),
+        ('project_milestone', 'Proje aşaması'),
         ('project_featured', 'Proje öne çıkarıldı'),
         ('website_review', 'Kişisel web sitesi incelemesi'),
         ('alumni_registration', 'Mezun kayıt talebi'),

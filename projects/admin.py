@@ -27,7 +27,84 @@ from .models import (
     ProjectWritingSuggestion,
     Technology,
     Team, TeamInvitation, TeamMembership, TeamOpenRole,
+    Course, CourseInstructor, ProjectMilestone, ProjectMilestoneSubmission,
+    ProjectMilestoneReview, ProjectMilestoneSubmissionFile, ProjectMilestoneSubmissionLink,
 )
+from core.audit import record_audit_event
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'code')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        record_audit_event(actor=request.user, action='course.updated' if change else 'course.created', target=obj)
+
+    def delete_model(self, request, obj):
+        obj.delete()
+        record_audit_event(actor=request.user, action='course.updated', target=obj, metadata={'is_active': False})
+
+    def delete_queryset(self, request, queryset):
+        for course in queryset:
+            self.delete_model(request, course)
+
+
+@admin.register(CourseInstructor)
+class CourseInstructorAdmin(admin.ModelAdmin):
+    list_display = ('course', 'instructor', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('course__name', 'instructor__username')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        record_audit_event(actor=request.user, action='course.instructor.assigned' if obj.is_active else 'course.instructor.removed', target=obj,
+                           metadata={'course_id': obj.course_id, 'instructor_id': obj.instructor_id})
+
+    def delete_model(self, request, obj):
+        obj.is_active = False
+        obj.save(update_fields=['is_active'])
+        record_audit_event(actor=request.user, action='course.instructor.removed', target=obj)
+
+    def delete_queryset(self, request, queryset):
+        for assignment in queryset:
+            self.delete_model(request, assignment)
+
+
+@admin.register(ProjectMilestone)
+class ProjectMilestoneAdmin(admin.ModelAdmin):
+    list_display = ('project', 'order', 'title', 'due_at', 'max_score')
+
+    def save_model(self, request, obj, form, change):
+        old_deadline = type(obj).objects.filter(pk=obj.pk).values_list('due_at', flat=True).first() if change else None
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj._acting_user = request.user
+        super().save_model(request, obj, form, change)
+        record_audit_event(actor=request.user, action='project.milestone.updated' if change else 'project.milestone.created', target=obj)
+        if change and old_deadline != obj.due_at:
+            record_audit_event(actor=request.user, action='project.milestone.deadline_changed', target=obj)
+
+    def delete_model(self, request, obj):
+        obj.delete()
+
+
+class ImmutableMilestoneAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+for milestone_model in (ProjectMilestoneSubmission, ProjectMilestoneReview,
+                        ProjectMilestoneSubmissionFile, ProjectMilestoneSubmissionLink):
+    admin.site.register(milestone_model, ImmutableMilestoneAdmin)
 
 
 @admin.register(ProjectType)

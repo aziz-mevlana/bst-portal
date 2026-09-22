@@ -10,6 +10,12 @@ from django.utils.text import slugify
 from django.urls import reverse
 from urllib.parse import urlparse
 from PIL import Image
+from django.conf import settings
+from django.db.models import Q
+from accounts.policies import is_teacher
+from .storage import project_milestone_private_storage, milestone_file_path
+import os
+import unicodedata
 
 
 class ProjectCategory(models.Model):
@@ -265,6 +271,66 @@ class ProjectProgram(models.Model):
         return self.name
 
 
+class Course(models.Model):
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=40, blank=True)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [models.UniqueConstraint(models.functions.Lower('code'), condition=~Q(code=''), name='course_code_ci_unique')]
+
+    def __str__(self):
+        return f'{self.code} · {self.name}' if self.code else self.name
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.strip()
+        self.code = self.code.strip().upper()
+        if not self.slug:
+            base = slugify(self.code or self.name) or 'ders'
+            candidate = base
+            counter = 2
+            while type(self).objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f'{base}-{counter}'
+                counter += 1
+            self.slug = candidate
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_active = False
+        self.save(update_fields=['is_active', 'updated_at'])
+
+
+class CourseInstructor(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name='instructor_assignments')
+    instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='course_assignments')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['course', 'instructor'], name='unique_course_instructor')]
+
+    def clean(self):
+        if self.is_active and self.instructor_id and not is_teacher(self.instructor):
+            raise ValidationError({'instructor': 'Yalnızca akademisyen ders hocası olabilir.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+def validate_course_requirement(project_type, course_id):
+    if project_type and project_type.requires_course and not course_id:
+        raise ValidationError({'course': 'Bu proje türü için ders zorunludur.'})
+    if project_type and not project_type.requires_course and course_id:
+        raise ValidationError({'course': 'Bu proje türünde ders seçilemez.'})
+
+
 class ProjectRequest(models.Model):
     """An academic project announcement that students can apply to."""
 
@@ -292,7 +358,8 @@ class ProjectRequest(models.Model):
         on_delete=models.PROTECT,
         related_name='requests',
     )
-    course = models.CharField(max_length=200, blank=True, null=True)
+    course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name='requests', blank=True, null=True)
+    legacy_course_unmapped = models.CharField(max_length=200, blank=True, default='', editable=False)
     description = models.TextField(blank=True, null=True, verbose_name='Açıklama')
     requirements = models.TextField(blank=True, null=True, verbose_name='Gerekli Koşullar')
     expected_output = models.TextField(blank=True, verbose_name='Beklenen Çıktı')
@@ -326,6 +393,10 @@ class ProjectRequest(models.Model):
         if self.teacher:
             return f'{self.title} - {self.teacher.get_full_name()}'
         return self.title
+
+    def save(self, *args, **kwargs):
+        validate_course_requirement(self.project_type, self.course_id)
+        super().save(*args, **kwargs)
 
     def get_semester_display_full(self):
         return self.get_semester_display() if self.semester else None
@@ -393,6 +464,7 @@ class Project(models.Model):
         on_delete=models.PROTECT,
         related_name='projects',
     )
+    course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name='projects', blank=True, null=True)
     creation_source = models.CharField(max_length=24, choices=CREATION_SOURCE_CHOICES, default='STUDENT_IDEA')
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     title = models.CharField(max_length=200)
@@ -432,6 +504,11 @@ class Project(models.Model):
         return reverse('projects:project_public_detail', kwargs={'slug': self.slug})
 
     def save(self, *args, **kwargs):
+        validate_course_requirement(self.project_type, self.course_id)
+        if self.pk:
+            previous_course_id = type(self).objects.filter(pk=self.pk).values_list('course_id', flat=True).first()
+            if previous_course_id != self.course_id and self.milestones.filter(submissions__isnull=False).exists():
+                raise ValidationError({'course': 'Teslim geçmişi başladıktan sonra ders değiştirilemez.'})
         if not self.slug:
             base = slugify(self.title) or 'proje'
             candidate = base
@@ -451,6 +528,199 @@ class Project(models.Model):
     @property
     def logo_media(self):
         return next((item for item in self.media.all() if item.media_type == 'project_logo'), None)
+
+    @property
+    def milestone_score(self):
+        approved = []
+        for milestone in self.milestones.all():
+            latest = milestone.latest_submission
+            if latest and hasattr(latest, 'review') and latest.review.outcome == 'APPROVED':
+                approved.append((latest.review.score, milestone.max_score))
+        if not approved:
+            return None
+        earned = sum(score for score, _ in approved)
+        maximum = sum(max_score for _, max_score in approved)
+        return {'earned': earned, 'maximum': maximum, 'percent': round(earned * 100 / maximum)}
+
+
+class ProjectMilestone(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='milestones')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.PositiveSmallIntegerField()
+    due_at = models.DateTimeField(blank=True, null=True)
+    max_score = models.PositiveSmallIntegerField()
+    is_required = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'pk']
+        constraints = [models.UniqueConstraint(fields=['project', 'order'], name='unique_project_milestone_order'), models.CheckConstraint(condition=Q(max_score__gt=0), name='positive_project_milestone_score')]
+
+    def clean(self):
+        if self.project_id and self.project.project_type.code == 'CAPSTONE':
+            raise ValidationError('CAPSTONE projelerinde generic aşama kullanılamaz.')
+        if self.project_id and (getattr(self, '_acting_user', None) or self.created_by_id):
+            from .milestone_policies import can_manage_project_milestones
+            actor = getattr(self, '_acting_user', None) or self.created_by
+            if not can_manage_project_milestones(actor, self.project):
+                raise ValidationError('Bu aşamayı yönetme yetkisi yok.')
+        if self.pk and self.submissions.exists():
+            old = type(self).objects.get(pk=self.pk)
+            for field in ('project_id', 'created_by_id', 'title', 'description', 'order', 'max_score', 'is_required'):
+                if getattr(old, field) != getattr(self, field):
+                    raise ValidationError('Teslimden sonra aşamanın akademik tanımı değiştirilemez.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.submissions.exists():
+            raise ValidationError('Teslim geçmişi olan aşama silinemez.')
+        return super().delete(*args, **kwargs)
+
+    @property
+    def latest_submission(self):
+        cached = getattr(self, '_prefetched_objects_cache', {}).get('submissions')
+        if cached is not None:
+            return max(cached, key=lambda item: item.attempt_number, default=None)
+        return self.submissions.order_by('-attempt_number').first()
+
+    @property
+    def state(self):
+        latest = self.latest_submission
+        if not latest:
+            return 'NOT_SUBMITTED'
+        if not hasattr(latest, 'review'):
+            return 'AWAITING_REVIEW'
+        return latest.review.outcome
+
+
+class ProjectMilestoneSubmission(models.Model):
+    milestone = models.ForeignKey(ProjectMilestone, on_delete=models.PROTECT, related_name='submissions')
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    attempt_number = models.PositiveSmallIntegerField()
+    completion_note = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(default=timezone.now, editable=False)
+    is_late = models.BooleanField(default=False, editable=False)
+
+    class Meta:
+        ordering = ['attempt_number']
+        constraints = [models.UniqueConstraint(fields=['milestone', 'attempt_number'], name='unique_milestone_attempt')]
+
+    def clean(self):
+        if self.pk:
+            raise ValidationError('Teslim değiştirilemez.')
+        if not self.milestone_id or not self.submitted_by_id:
+            return
+        from .milestone_policies import can_submit_project_milestone
+        if not can_submit_project_milestone(self.submitted_by, self.milestone):
+            raise ValidationError('Bu aşamayı teslim etme yetkisi yok.')
+        previous = self.milestone.latest_submission
+        if previous and (not hasattr(previous, 'review') or previous.review.outcome != 'REVISION_REQUIRED'):
+            raise ValidationError('Bu aşama yeni teslim kabul etmiyor.')
+        expected = previous.attempt_number + 1 if previous else 1
+        if self.attempt_number != expected:
+            raise ValidationError({'attempt_number': 'Geçersiz teslim numarası.'})
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Teslim değiştirilemez.')
+        self.submitted_at = timezone.now()
+        self.is_late = bool(self.milestone.due_at and self.submitted_at > self.milestone.due_at)
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Teslim silinemez.')
+
+
+class ProjectMilestoneReview(models.Model):
+    class Outcome(models.TextChoices):
+        APPROVED = 'APPROVED', 'Onaylandı'
+        REVISION_REQUIRED = 'REVISION_REQUIRED', 'Revizyon gerekli'
+
+    submission = models.OneToOneField(ProjectMilestoneSubmission, on_delete=models.PROTECT, related_name='review')
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    outcome = models.CharField(max_length=20, choices=Outcome.choices)
+    score = models.PositiveSmallIntegerField(blank=True, null=True)
+    feedback = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def clean(self):
+        if self.pk:
+            raise ValidationError('Değerlendirme değiştirilemez.')
+        if self.submission_id:
+            milestone = self.submission.milestone
+            from .milestone_policies import can_review_project_milestone
+            if self.reviewed_by_id and not can_review_project_milestone(self.reviewed_by, milestone):
+                raise ValidationError('Bu aşamayı değerlendirme yetkisi yok.')
+            if milestone.latest_submission.pk != self.submission_id:
+                raise ValidationError('Eski teslim değerlendirilemez.')
+            if self.score is not None and self.score > milestone.max_score:
+                raise ValidationError({'score': 'Puan üst sınırı aşamaz.'})
+        if self.outcome == self.Outcome.APPROVED and self.score is None:
+            raise ValidationError({'score': 'Onay için puan zorunludur.'})
+        if self.outcome == self.Outcome.REVISION_REQUIRED and not self.feedback.strip():
+            raise ValidationError({'feedback': 'Revizyon için geri bildirim zorunludur.'})
+
+    def save(self, *args, **kwargs):
+        self.reviewed_at = timezone.now()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Değerlendirme silinemez.')
+
+
+class ProjectMilestoneSubmissionLink(models.Model):
+    submission = models.ForeignKey(ProjectMilestoneSubmission, on_delete=models.PROTECT, related_name='links')
+    url = models.URLField(max_length=500)
+    label = models.CharField(max_length=120, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        from accounts.validators import validate_public_website
+        validate_public_website(self.url)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Kanıt bağlantısı değiştirilemez.')
+        if not getattr(self.submission, '_accepting_evidence', False):
+            raise ValidationError('Mevcut teslime kanıt eklenemez.')
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Kanıt bağlantısı silinemez.')
+
+
+class ProjectMilestoneSubmissionFile(models.Model):
+    submission = models.ForeignKey(ProjectMilestoneSubmission, on_delete=models.PROTECT, related_name='files')
+    file = models.FileField(storage=project_milestone_private_storage, upload_to=milestone_file_path)
+    original_name = models.CharField(max_length=255, editable=False)
+    size_bytes = models.PositiveBigIntegerField(editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Kanıt dosyası değiştirilemez.')
+        if not getattr(self.submission, '_accepting_evidence', False):
+            raise ValidationError('Mevcut teslime kanıt eklenemez.')
+        if self.file.size <= 0 or self.file.size > 20 * 1024 * 1024:
+            raise ValidationError('Dosyalar 20 MB sınırında olmalıdır.')
+        validate_project_upload_content(self.file)
+        name = unicodedata.normalize('NFKC', self.file.name).replace('\\', '/')
+        self.original_name = os.path.basename(name).replace('\x00', '').replace('\r', '').replace('\n', '').strip()[:255] or 'dosya'
+        self.size_bytes = self.file.size
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Kanıt dosyası silinemez.')
 
 
 class ProjectProgramParticipation(models.Model):

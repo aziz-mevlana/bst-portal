@@ -208,6 +208,10 @@ STORAGES = {
         'BACKEND': 'capstone.storage.PrivateFileSystemStorage',
         'OPTIONS': {'location': PRIVATE_MEDIA_ROOT},
     },
+    'project_milestone_private': {
+        'BACKEND': 'projects.storage.ProjectMilestonePrivateStorage',
+        'OPTIONS': {'location': PRIVATE_MEDIA_ROOT / 'project_milestones'},
+    },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },

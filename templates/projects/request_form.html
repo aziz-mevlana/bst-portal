@@ -17,7 +17,7 @@
       {% if form.non_field_errors %}<div class="rounded-xl border border-red-500/40 bg-red-950/30 p-4 text-red-300">{{ form.non_field_errors }}</div>{% endif %}
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         {% for field in form %}
-          <div class="{% if field.name == 'description' or field.name == 'requirements' or field.name == 'expected_output' or field.name == 'categories' or field.name == 'technologies' %}md:col-span-2{% endif %}">
+          <div {% if field.name == 'course' %}data-course-field{% endif %} class="{% if field.name == 'description' or field.name == 'requirements' or field.name == 'expected_output' or field.name == 'categories' or field.name == 'technologies' %}md:col-span-2{% endif %}">
             <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-gray-200">{{ field.label }}{% if field.field.required %}<span class="ml-1 text-blue-400">*</span>{% endif %}</label>
             {% if field.errors %}<div class="mb-2 rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-300">{{ field.errors }}</div>{% endif %}
             {% if field|widget_type == 'checkboxselectmultiple' %}
@@ -35,4 +35,6 @@
     </form>
   </div>
 </div>
+{{ form.course_required_type_ids|json_script:'course-required-types' }}
+<script nonce="{{ csp_nonce }}">(function(){const required=JSON.parse(document.getElementById('course-required-types').textContent).map(String);const type=document.getElementById('id_project_type');const field=document.querySelector('[data-course-field]');const course=document.getElementById('id_course');function update(){const show=required.includes(type.value);field.hidden=!show;if(!show)course.value='';}type.addEventListener('change',update);update();})();</script>
 {% endblock %}

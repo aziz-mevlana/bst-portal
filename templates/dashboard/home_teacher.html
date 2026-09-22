@@ -1,6 +1,15 @@
 {% extends 'dashboard/base.html' %}
 
 {% block dashboard_content %}
+{% if user_type == 'teacher' and not request.user.is_staff %}
+<div class="mb-7"><p class="text-sm font-semibold uppercase tracking-widest text-blue-400">Akademik iş akışı</p><h1 class="mt-1 text-3xl font-bold">Öğretmen paneli</h1></div>
+<div class="mb-7 grid gap-5 xl:grid-cols-2">
+  <section class="dashboard-card rounded-2xl p-5"><div class="flex justify-between"><h2 class="text-xl font-bold">Değerlendirme Bekleyenler</h2><a class="text-blue-300" href="{% url 'dashboard:projects' %}?scope=pending-review">Tümü · {{ teacher_pending_count }}</a></div><div class="mt-4 space-y-3">{% for submission in teacher_pending_submissions %}<a class="block rounded-lg bg-gray-800 p-3" href="{{ submission.milestone.project.get_absolute_url }}#milestone-{{ submission.milestone_id }}">{{ submission.milestone.project.title }} · {{ submission.milestone.title }}<span class="block text-xs text-gray-400">{{ submission.submitted_at|date:'d.m.Y H:i' }}</span></a>{% empty %}<p class="text-sm text-gray-400">Bekleyen teslim yok.</p>{% endfor %}</div></section>
+  <section class="dashboard-card rounded-2xl p-5"><div class="flex justify-between"><h2 class="text-xl font-bold">Derslerim</h2><a class="text-blue-300" href="{% url 'dashboard:courses' %}">Derslere git</a></div><div class="mt-4 space-y-3">{% for course in teacher_courses %}<a class="block rounded-lg bg-gray-800 p-3" href="{% url 'dashboard:projects' %}?scope=course&course={{ course.slug }}">{{ course.name }}<span class="block text-xs text-gray-400">{{ course.project_count }} proje · {{ course.pending_count }} bekleyen</span></a>{% empty %}<p class="text-sm text-gray-400">Atanmış ders yok.</p>{% endfor %}</div></section>
+  <section class="dashboard-card rounded-2xl p-5"><div class="flex justify-between"><h2 class="text-xl font-bold">Danışmanlıklarım</h2><a class="text-blue-300" href="{% url 'dashboard:projects' %}?scope=advised">Tümü</a></div><div class="mt-4 space-y-3">{% for project in teacher_advised_projects %}<a class="block rounded-lg bg-gray-800 p-3" href="{{ project.get_absolute_url }}">{{ project.title }}</a>{% empty %}<p class="text-sm text-gray-400">Danışmanlık projesi yok.</p>{% endfor %}</div></section>
+  <section class="dashboard-card rounded-2xl p-5"><h2 class="text-xl font-bold">İlgili Projeler</h2><p class="mt-3 text-gray-300">Danışmanlık ve ders projeleri: {{ teacher_related_count }}</p><a class="mt-4 inline-block text-blue-300" href="{% url 'dashboard:projects' %}?scope=all">Projeleri görüntüle</a></section>
+</div>
+{% endif %}
 <div class="mb-7 flex items-center justify-between gap-4">
   <div>
     <p class="text-sm font-semibold uppercase tracking-widest text-blue-400">Genel görünüm</p>

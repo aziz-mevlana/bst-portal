@@ -36,6 +36,7 @@
 
   <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_300px]">
     <div class="space-y-8">
+      {% include 'projects/partials/milestones.html' %}
       {% if case_study.problem or case_study.solution %}
         <section class="grid gap-5 md:grid-cols-2">
           {% if case_study.problem %}<article class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6"><p class="text-sm font-semibold uppercase tracking-widest text-red-300">Problem</p><div class="mt-4 whitespace-pre-line leading-7 text-gray-300">{{ case_study.problem }}</div></article>{% endif %}

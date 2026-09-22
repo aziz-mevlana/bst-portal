@@ -30,6 +30,9 @@ from .models import (
     ProjectType,
     ProjectUpdate,
     Technology,
+    Course,
+    ProjectMilestone,
+    ProjectMilestoneReview,
 )
 
 
@@ -39,6 +42,25 @@ INPUT_CLASS = (
     'focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all'
 )
 MAX_PROJECT_ASSET_BATCH_SIZE = 100 * 1024 * 1024
+
+
+class ProjectMilestoneForm(forms.ModelForm):
+    class Meta:
+        model = ProjectMilestone
+        fields = ('title', 'description', 'order', 'due_at', 'max_score', 'is_required')
+        widgets = {'due_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')}
+
+
+class ProjectMilestoneReviewForm(forms.ModelForm):
+    class Meta:
+        model = ProjectMilestoneReview
+        fields = ('outcome', 'score', 'feedback')
+
+
+class ProjectMilestoneSubmissionForm(forms.Form):
+    completion_note = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    evidence_links = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}), help_text='Her satıra bir URL')
+    # Files are validated as a batch in the workflow service.
 
 
 def validate_generic_project_type(project_type, *, original_code=None):
@@ -92,7 +114,7 @@ class RequestForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Proje başlığını giriniz'}),
             'project_type': forms.Select(attrs={'class': INPUT_CLASS}),
-            'course': forms.TextInput(attrs={'class': INPUT_CLASS, 'placeholder': 'Örn: Yazılım Mühendisliği'}),
+            'course': forms.Select(attrs={'class': INPUT_CLASS}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': INPUT_CLASS, 'placeholder': 'Projeyi ve çözmek istediğiniz problemi açıklayın'}),
             'requirements': forms.Textarea(attrs={'rows': 3, 'class': INPUT_CLASS, 'placeholder': 'Öğrencide aranan bilgi ve yetenekler'}),
             'expected_output': forms.Textarea(attrs={'rows': 3, 'class': INPUT_CLASS, 'placeholder': 'Proje sonunda beklenen çıktı'}),
@@ -126,6 +148,8 @@ class RequestForm(forms.ModelForm):
                 Q(is_active=True) | Q(pk=self.instance.project_type_id)
             ).exclude(code='CAPSTONE')
         self.fields['project_type'].queryset = active_types
+        self.course_required_type_ids = list(active_types.filter(requires_course=True).values_list('pk', flat=True))
+        self.fields['course'].queryset = Course.objects.filter(Q(is_active=True) | Q(pk=self.instance.course_id)).distinct()
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')
         configure_optional_choice(self.fields['semester'], 'Dönem seçiniz (isteğe bağlı)')
         configure_required_choice(self.fields['status'], 'İlan durumunu seçiniz')
@@ -151,7 +175,7 @@ class RequestForm(forms.ModelForm):
         cleaned = super().clean()
         if 'project_type' not in cleaned and self.is_bound:
             submitted_id = self.data.get(self.add_prefix('project_type'))
-            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id else None
+            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id and str(submitted_id).isdigit() else None
             if submitted_type is not None:
                 try:
                     validate_generic_request_project_type(
@@ -165,6 +189,8 @@ class RequestForm(forms.ModelForm):
         course = cleaned.get('course')
         if project_type and project_type.requires_course and not course:
             self.add_error('course', 'Bu proje türü için ders bilgisi zorunludur.')
+        if project_type and not project_type.requires_course and course:
+            self.add_error('course', 'Bu proje türünde ders seçilemez.')
         return cleaned
 
 
@@ -420,7 +446,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = [
-            'project_type', 'creation_source', 'title', 'description',
+            'project_type', 'course', 'creation_source', 'title', 'description',
             'expected_output', 'project_link', 'advisor', 'team_entity', 'team', 'categories',
             'technologies', 'development_status', 'visibility',
         ]
@@ -498,6 +524,8 @@ class ProjectForm(forms.ModelForm):
                 Q(is_active=True) | Q(pk=self.instance.project_type_id)
             ).exclude(code='CAPSTONE')
         self.fields['project_type'].queryset = project_types
+        self.course_required_type_ids = list(project_types.filter(requires_course=True).values_list('pk', flat=True))
+        self.fields['course'].queryset = Course.objects.filter(Q(is_active=True) | Q(pk=self.instance.course_id)).distinct()
         if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
             self.fields['project_type'].disabled = True
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')
@@ -559,7 +587,7 @@ class ProjectForm(forms.ModelForm):
         if self.is_bound and self._original_project_type_code == 'CAPSTONE':
             submitted_id = self.data.get(self.add_prefix('project_type'))
             if submitted_id and str(submitted_id) != str(self.instance.project_type_id):
-                submitted_type = ProjectType.objects.filter(pk=submitted_id).first()
+                submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if str(submitted_id).isdigit() else None
                 if submitted_type is not None:
                     try:
                         validate_generic_project_type(
@@ -570,7 +598,7 @@ class ProjectForm(forms.ModelForm):
                         self.add_error('project_type', exc)
         if 'project_type' not in cleaned and self.is_bound:
             submitted_id = self.data.get(self.add_prefix('project_type'))
-            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id else None
+            submitted_type = ProjectType.objects.filter(pk=submitted_id).first() if submitted_id and str(submitted_id).isdigit() else None
             if submitted_type is not None:
                 try:
                     validate_generic_project_type(
@@ -580,6 +608,14 @@ class ProjectForm(forms.ModelForm):
                 except forms.ValidationError as exc:
                     self._errors.pop('project_type', None)
                     self.add_error('project_type', exc)
+        project_type = cleaned.get('project_type')
+        course = cleaned.get('course')
+        if project_type and project_type.requires_course and not course:
+            self.add_error('course', 'Bu proje türü için ders zorunludur.')
+        if project_type and not project_type.requires_course and course:
+            self.add_error('course', 'Bu proje türünde ders seçilemez.')
+        if self.instance.pk and course and self.instance.course_id != course.pk and self.instance.milestones.filter(submissions__isnull=False).exists():
+            self.add_error('course', 'Teslim geçmişinden sonra ders değiştirilemez.')
         return cleaned
 
 

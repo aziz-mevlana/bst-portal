@@ -1,0 +1,12 @@
+{% extends 'projects/base.html' %}
+{% block project_content %}
+<main class="mx-auto max-w-3xl px-4 py-10 text-white">
+  <a class="text-blue-300" href="{{ project.get_absolute_url }}">← {{ project.title }}</a>
+  <h1 class="mt-4 text-3xl font-bold">{% if milestone %}Aşamayı düzenle{% else %}Yeni proje aşaması{% endif %}</h1>
+  <form method="post" class="mt-6 space-y-4 rounded-2xl border border-gray-700 bg-gray-900 p-6">
+    {% csrf_token %}{{ form.non_field_errors }}
+    {% for field in form %}<div><label class="mb-2 block" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+    <button class="rounded-xl bg-blue-600 px-5 py-3 font-semibold">Kaydet</button>
+  </form>
+</main>
+{% endblock %}

@@ -10,7 +10,9 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import reverse
-from projects.models import Project, ProjectRequest, ProjectCategory, ProjectSave, Technology
+from projects.models import Project, ProjectRequest, ProjectCategory, ProjectSave, Technology, Course, CourseInstructor, ProjectMilestoneSubmission
+from projects.query import apply_project_filters, requested_view
+from accounts.policies import is_teacher as policy_is_teacher
 from accounts.models import CommunityRegistration, MODERATION_REASON_CHOICES, Profile
 from accounts.models import UserModerationAction, UserReport, WebsiteModerationHistory
 from accounts.policies import can_moderate_target, can_review_website, is_admin as policy_is_admin
@@ -583,6 +585,27 @@ def teacher_dashboard_home(request):
         'recent_activities': _recent_activity_feed(),
         **statistics,
     }
+    if policy_is_teacher(user) and not policy_is_admin(user):
+        related = Q(milestone__project__advisor=user) | Q(
+            milestone__project__course__instructor_assignments__instructor=user,
+            milestone__project__course__instructor_assignments__is_active=True,
+        )
+        pending = ProjectMilestoneSubmission.objects.filter(related, review__isnull=True).distinct().select_related(
+            'milestone', 'milestone__project').order_by('submitted_at')
+        courses = Course.objects.filter(instructor_assignments__instructor=user, instructor_assignments__is_active=True).annotate(
+            project_count=Count('projects', distinct=True),
+            pending_count=Count('projects__milestones__submissions', filter=Q(
+                projects__milestones__submissions__review__isnull=True,
+            ), distinct=True)).distinct()
+        context.update({
+            'teacher_pending_submissions': pending[:8],
+            'teacher_pending_count': pending.count(),
+            'teacher_courses': courses,
+            'teacher_advised_projects': Project.objects.filter(advisor=user).select_related('course')[:8],
+            'teacher_related_count': Project.objects.filter(
+                Q(advisor=user) | Q(course__instructor_assignments__instructor=user, course__instructor_assignments__is_active=True)
+            ).distinct().count(),
+        })
     return render(request, 'dashboard/home_teacher.html', context)
 
 
@@ -786,106 +809,76 @@ def dashboard_students_load_more(request):
     })
 
 
+def _dashboard_project_queryset(request):
+    user = request.user
+    queryset = Project.objects.select_related('project_type', 'course', 'advisor', 'created_by', 'project_request').prefetch_related('team', 'categories', 'technologies')
+    scope = request.GET.get('scope', 'all')
+    if scope not in {'all', 'pending-review', 'advised', 'course'}:
+        scope = 'all'
+    teacher = policy_is_teacher(user)
+    if teacher:
+        relevant = Q(advisor=user) | Q(course__instructor_assignments__instructor=user, course__instructor_assignments__is_active=True)
+        if scope == 'advised':
+            queryset = queryset.filter(advisor=user)
+        elif scope == 'course':
+            queryset = queryset.filter(course__instructor_assignments__instructor=user, course__instructor_assignments__is_active=True)
+        else:
+            queryset = queryset.filter(relevant)
+    elif not policy_is_admin(user):
+        queryset = queryset.filter(
+            Q(visibility__in={'public', 'unlisted'}, approval_status='approved')
+            | Q(created_by=user) | Q(team=user) | Q(advisor=user)
+        )
+    if scope == 'pending-review' and (teacher or policy_is_admin(user)):
+        queryset = queryset.filter(
+            milestones__submissions__isnull=False,
+            milestones__submissions__review__isnull=True,
+        )
+    queryset = apply_project_filters(queryset, request.GET, dashboard=True)
+    return queryset.order_by('created_at', 'pk') if scope == 'pending-review' else queryset.order_by('-created_at', '-pk')
+
+
 @login_required
 def dashboard_projects(request):
     user = request.user
-    manager_access = is_admin(user)
-
-    # User type for template
-    user_type = user.profile.user_type if user and hasattr(user, 'profile') else None
-
-    # Get filter parameters
-    query = request.GET.get('q', '')
-    status = request.GET.get('status', '')
-    request_id = request.GET.get('project_request', '')
-    
-    if manager_access:
-        projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
-    else:
-        projects = Project.objects.filter(
-            Q(visibility__in={'public', 'unlisted'}, approval_status='approved')
-            | Q(created_by=user)
-            | Q(team=user)
-            | Q(advisor=user)
-            | Q(project_request__teacher=user)
-        ).distinct().prefetch_related('team', 'categories', 'technologies', 'project_request')
-    
-    # Apply filters
-    if query:
-        projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    
-    if status:
-        projects = projects.filter(status=status)
-    
-    if request_id:
-        projects = projects.filter(project_request_id=request_id)
-    
-    total_count = projects.count()
-    projects = projects[:DASHBOARD_PAGE_SIZE]
-    has_more = total_count > DASHBOARD_PAGE_SIZE
-    
-    # Get teacher requests for the filter dropdown (only for teachers)
-    if is_admin(user):
-        teacher_requests = ProjectRequest.objects.all()
-    elif getattr(user.profile, 'user_type', '') == 'teacher':
-        teacher_requests = ProjectRequest.objects.filter(teacher=user)
-    else:
-        teacher_requests = ProjectRequest.objects.none()
-    
+    queryset = _dashboard_project_queryset(request)
+    total_count = queryset.count()
+    projects = queryset[:DASHBOARD_PAGE_SIZE]
+    teacher = policy_is_teacher(user)
+    teacher_requests = (ProjectRequest.objects.all() if policy_is_admin(user) else
+                        ProjectRequest.objects.filter(teacher=user) if teacher else ProjectRequest.objects.none())
     context = {
         'projects': projects,
-        'query': query,
-        'selected_status': status,
+        'query': request.GET.get('q', ''),
+        'selected_status': request.GET.get('status', ''),
         'statuses': Project.STATUS_CHOICES,
         'teacher_requests': teacher_requests,
-        'selected_request': request_id,
-        'is_teacher_or_staff': manager_access,
-        'user_type': user_type,
-        'has_more': has_more,
+        'selected_request': request.GET.get('project_request', ''),
+        'is_teacher_or_staff': teacher or policy_is_admin(user),
+        'user_type': getattr(getattr(user, 'profile', None), 'user_type', None),
+        'has_more': total_count > DASHBOARD_PAGE_SIZE,
         'next_offset': DASHBOARD_PAGE_SIZE,
+        'courses': Course.objects.filter(is_active=True),
+        'selected_course': request.GET.get('course', ''),
+        'selected_scope': request.GET.get('scope', 'all'),
+        'selected_view': requested_view(request.GET),
     }
     return render(request, 'dashboard/projects.html', context)
 
 
 @login_required
 def dashboard_projects_load_more(request):
-    user = request.user
-    manager_access = is_admin(user)
-    
-    offset = int(request.GET.get('offset', 0))
-    query = request.GET.get('q', '')
-    status = request.GET.get('status', '')
-    request_id = request.GET.get('project_request', '')
-    
-    if manager_access:
-        projects = Project.objects.all().prefetch_related('team', 'categories', 'technologies', 'project_request', 'advisor', 'created_by')
-    else:
-        projects = Project.objects.filter(
-            Q(visibility__in={'public', 'unlisted'}, approval_status='approved')
-            | Q(created_by=user)
-            | Q(team=user)
-            | Q(advisor=user)
-            | Q(project_request__teacher=user)
-        ).distinct().prefetch_related('team', 'categories', 'technologies', 'project_request')
-
-    if query:
-        projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    if status:
-        projects = projects.filter(status=status)
-    if request_id:
-        projects = projects.filter(project_request_id=request_id)
-
-    total_count = projects.count()
-    projects = projects[offset:offset + DASHBOARD_PAGE_SIZE]
-    has_more = offset + DASHBOARD_PAGE_SIZE < total_count
-    
-    html = render_to_string('dashboard/partials/project_card.html', {'projects': projects})
-    
-    return JsonResponse({
-        'items': html,
-        'has_more': has_more,
-        'next_offset': offset + DASHBOARD_PAGE_SIZE,
-    })
+    try:
+        offset = max(0, int(request.GET.get('offset', 0)))
+    except (TypeError, ValueError):
+        offset = 0
+    queryset = _dashboard_project_queryset(request)
+    total_count = queryset.count()
+    projects = queryset[offset:offset + DASHBOARD_PAGE_SIZE]
+    template = 'projects/partials/project_list_item.html' if requested_view(request.GET) == 'list' else 'dashboard/partials/project_card.html'
+    html = render_to_string(template, {'projects': projects}, request=request)
+    return JsonResponse({'items': html, 'has_more': offset + DASHBOARD_PAGE_SIZE < total_count,
+                         'next_offset': offset + DASHBOARD_PAGE_SIZE})
 
 
 def dashboard_alumni(request):

@@ -31,6 +31,8 @@
 <!-- Filters -->
 <div class="dashboard-card rounded-xl shadow p-4 mb-6">
     <form method="get" class="dashboard-filter-form" aria-label="Projeleri filtrele">
+        <input type="hidden" name="view" value="{{ selected_view }}">
+        {% if user_type == 'teacher' or request.user.is_staff %}<select name="scope" aria-label="Proje kapsamı" class="rounded-lg dashboard-input"><option value="all" {% if selected_scope == 'all' %}selected{% endif %}>İlgili projeler</option><option value="pending-review" {% if selected_scope == 'pending-review' %}selected{% endif %}>Değerlendirme bekleyenler</option><option value="advised" {% if selected_scope == 'advised' %}selected{% endif %}>Danışmanlıklarım</option><option value="course" {% if selected_scope == 'course' %}selected{% endif %}>Ders projeleri</option></select>{% endif %}
         <input type="text" name="q" value="{{ query }}" placeholder="Proje ara..." 
                aria-label="Proje ara"
                class="flex-1 px-4 py-2 dashboard-input rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
@@ -50,14 +52,16 @@
             <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
+        <select name="course" aria-label="Ders" class="rounded-lg dashboard-input"><option value="">Tüm dersler</option>{% for course in courses %}<option value="{{ course.slug }}" {% if selected_course == course.slug %}selected{% endif %}>{{ course.name }}</option>{% endfor %}</select>
         <button type="submit" class="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Filtrele</button>
     </form>
 </div>
 
 <!-- Projects Grid -->
-<div id="dashboard-project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="mb-4 flex justify-end gap-2"><button type="button" data-project-view="grid" class="rounded-lg border px-3 py-2">Kart</button><button type="button" data-project-view="list" class="rounded-lg border px-3 py-2">Liste</button></div>
+<div id="dashboard-project-grid" class="{% if selected_view == 'list' %}space-y-3{% else %}grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6{% endif %}">
     {% if projects %}
-    {% include 'dashboard/partials/project_card.html' %}
+    {% if selected_view == 'list' %}{% include 'projects/partials/project_list_item.html' %}{% else %}{% include 'dashboard/partials/project_card.html' %}{% endif %}
     {% else %}
     <div class="col-span-full dashboard-card rounded-xl p-8 text-center">
         <p class="text-gray-400">Henüz danışmanlık yaptığınız bir proje bulunmuyor.</p>
@@ -203,6 +207,7 @@
 
 {% block extra_js %}
 <script>
+    (function(){const params=new URLSearchParams(location.search);const explicit=params.get('view');if(!['grid','list'].includes(explicit)){const saved=localStorage.getItem('bst-project-view');if(['grid','list'].includes(saved)&&saved!=='grid'){params.set('view',saved);location.replace(location.pathname+'?'+params.toString());return;}}else{localStorage.setItem('bst-project-view',explicit);}document.querySelectorAll('[data-project-view]').forEach(button=>button.addEventListener('click',()=>{const view=button.dataset.projectView;localStorage.setItem('bst-project-view',view);params.set('view',view);location.href=location.pathname+'?'+params.toString();}));})();
     let currentProjectId = null;
 
     function escapeHtml(value) {
@@ -453,9 +458,8 @@
                 
                 const url = new URL('{% url "dashboard:projects_load_more" %}', window.location.origin);
                 url.searchParams.set('offset', dashOffset);
-                {% if query %}url.searchParams.set('q', '{{ query }}');{% endif %}
-                {% if selected_status %}url.searchParams.set('status', '{{ selected_status }}');{% endif %}
-                {% if selected_request %}url.searchParams.set('project_request', '{{ selected_request }}');{% endif %}
+                new URLSearchParams(window.location.search).forEach((value, key) => url.searchParams.append(key, value));
+                url.searchParams.set('offset', dashOffset);
 
                 fetch(url)
                     .then(r => r.json())

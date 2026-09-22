@@ -1,9 +1,14 @@
 from django.urls import path
-from . import views
+from . import views, milestone_views
 
 app_name = 'projects'
 
 urlpatterns = [
+    path('<int:project_id>/milestones/new/', milestone_views.milestone_edit, name='milestone_create'),
+    path('<int:project_id>/milestones/<int:milestone_id>/edit/', milestone_views.milestone_edit, name='milestone_edit'),
+    path('milestones/<int:milestone_id>/submit/', milestone_views.milestone_submit, name='milestone_submit'),
+    path('milestone-submissions/<int:submission_id>/review/', milestone_views.milestone_review, name='milestone_review'),
+    path('milestone-files/<int:file_id>/download/', milestone_views.milestone_file, name='milestone_file'),
     path('', views.project_list, name='project_list'),
     path('load-more/', views.project_load_more, name='project_load_more'),
     path('teams/', views.team_list, name='team_list'),

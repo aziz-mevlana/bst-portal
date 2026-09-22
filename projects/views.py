@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Prefetch, Q
+from django.db.models import Count, Max, Prefetch, Q, prefetch_related_objects
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
@@ -32,6 +32,10 @@ from .forms import (
     validate_generic_request_project_type,
 )
 from .services import accept_project_request_application
+from .milestone_policies import can_manage_project_milestones, can_submit_project_milestone
+from .models import CourseInstructor
+from .models import Course
+from .query import apply_project_filters, requested_view
 from .team_services import (
     cancel_invitation, can_disband_team, create_team, disband_team, invite_user,
     respond_to_invitation, update_membership_role,
@@ -41,6 +45,7 @@ from core.analytics import record_analytics_event
 from core.notifications import create_notification
 from core.rate_limit import _client_ip, is_rate_limited
 from accounts.permissions import ensure_full_participation_account, ensure_interactive_account
+from accounts.policies import is_teacher
 from accounts.validators import validate_public_website
 from django.template.loader import render_to_string
 
@@ -105,6 +110,7 @@ def _can_view_project(user, project):
         user == project.created_by
         or user == project.advisor
         or project.team.filter(pk=user.pk).exists()
+        or (project.course_id and is_teacher(user) and CourseInstructor.objects.filter(course_id=project.course_id, instructor=user, is_active=True).exists())
         or _is_platform_staff(user)
     )
 
@@ -373,6 +379,7 @@ def project_list(request):
     project_type_id = request.GET.get('type', '')
     source = request.GET.get('source', '')
     program_id = request.GET.get('program', '')
+    course_slug = request.GET.get('course', '')
     sort = request.GET.get('sort', 'newest')
     offset = _safe_offset(request)
     
@@ -388,32 +395,18 @@ def project_list(request):
     # projects they directly participate in.
     if not (user and _is_platform_staff(user)):
         if user and user.is_authenticated:
+            course_access = Q(course__instructor_assignments__instructor=user, course__instructor_assignments__is_active=True) if is_teacher(user) else Q(pk__in=[])
             projects = projects.filter(
                 Q(visibility='public', approval_status='approved') |
                 Q(team=user) |
                 Q(created_by=user) |
-                Q(advisor=user)
+                Q(advisor=user) |
+                course_access
             ).distinct()
         else:
             projects = projects.filter(visibility='public', approval_status='approved')
     
-    if query:
-        projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    for category_id in category_ids:
-        projects = projects.filter(categories__id=category_id)
-    for technology_id in technology_ids:
-        projects = projects.filter(technologies__id=technology_id)
-    if status:
-        projects = projects.filter(development_status=status)
-    if project_type_id:
-        projects = projects.filter(project_type_id=project_type_id)
-    if source:
-        projects = projects.filter(creation_source=source)
-    if program_id:
-        projects = projects.filter(program_participations__program_id=program_id)
-    
-    projects = projects.annotate(like_count=Count('likes', distinct=True))
-    projects = projects.order_by('-like_count', '-created_at') if sort == 'liked' else projects.order_by('-created_at')
+    projects = apply_project_filters(projects, request.GET, category_ids=category_ids, technology_ids=technology_ids)
     page_size = PAGE_SIZE
     
     total_count = projects.distinct().count()
@@ -423,7 +416,7 @@ def project_list(request):
     active_filter_labels = []
     if query:
         active_filter_labels.append(f'Arama: {query[:60]}')
-    if project_type_id:
+    if project_type_id.isdigit():
         label = ProjectType.objects.filter(pk=project_type_id).values_list('name', flat=True).first()
         if label:
             active_filter_labels.append(f'Tür: {label}')
@@ -437,10 +430,14 @@ def project_list(request):
     for value, label in Project.CREATION_SOURCE_CHOICES:
         if source == value:
             active_filter_labels.append(f'Kaynak: {label}')
-    if program_id:
+    if program_id.isdigit():
         label = ProjectProgram.objects.filter(pk=program_id).values_list('name', flat=True).first()
         if label:
             active_filter_labels.append(f'Program: {label}')
+    if course_slug:
+        course_label = Course.objects.filter(slug=course_slug).values_list('name', flat=True).first()
+        if course_label:
+            active_filter_labels.append(f'Ders: {course_label}')
     
     context = {
         'projects': projects,
@@ -450,6 +447,9 @@ def project_list(request):
         'project_types': ProjectType.objects.filter(is_active=True),
         'creation_sources': [choice for choice in Project.CREATION_SOURCE_CHOICES if choice[0] != 'LEGACY'],
         'programs': ProjectProgram.objects.filter(is_active=True),
+        'courses': Course.objects.filter(is_active=True),
+        'selected_course': course_slug,
+        'selected_view': requested_view(request.GET),
         'selected_categories': category_ids,
         'selected_technologies': technology_ids,
         'selected_status': status,
@@ -489,37 +489,23 @@ def project_load_more(request):
     
     if not (user and _is_platform_staff(user)):
         if user and user.is_authenticated:
+            course_access = Q(course__instructor_assignments__instructor=user, course__instructor_assignments__is_active=True) if is_teacher(user) else Q(pk__in=[])
             projects = projects.filter(
                 Q(visibility='public', approval_status='approved') |
                 Q(team=user) |
                 Q(created_by=user) |
-                Q(advisor=user)
+                Q(advisor=user) |
+                course_access
             ).distinct()
         else:
             projects = projects.filter(visibility='public', approval_status='approved')
     
-    if query:
-        projects = projects.filter(Q(title__icontains=query) | Q(description__icontains=query))
-    for category_id in category_ids:
-        projects = projects.filter(categories__id=category_id)
-    for technology_id in technology_ids:
-        projects = projects.filter(technologies__id=technology_id)
-    if status:
-        projects = projects.filter(development_status=status)
-    if project_type_id:
-        projects = projects.filter(project_type_id=project_type_id)
-    if source:
-        projects = projects.filter(creation_source=source)
-    if program_id:
-        projects = projects.filter(program_participations__program_id=program_id)
-    
-    projects = projects.annotate(like_count=Count('likes', distinct=True))
-    projects = projects.order_by('-like_count', '-created_at') if sort == 'liked' else projects.order_by('-created_at')
+    projects = apply_project_filters(projects, request.GET, category_ids=category_ids, technology_ids=technology_ids)
     total_count = projects.distinct().count()
     projects = projects.distinct()[offset:offset + limit]
     has_more = offset + limit < total_count
     
-    html = render_to_string('projects/partials/project_item.html', {'projects': projects})
+    html = render_to_string('projects/partials/project_list_item.html' if requested_view(request.GET) == 'list' else 'projects/partials/project_item.html', {'projects': projects})
     
     return JsonResponse({
         'items': html,
@@ -845,6 +831,22 @@ def project_detail(request, project_id):
         messages.error(request, 'Bu projeyi görüntüleme yetkiniz bulunmuyor.')
         return redirect('projects:project_list')
     _record_project_view(request, project)
+    milestone_items = []
+    if not _is_capstone_project(project):
+        can_manage_milestones = can_manage_project_milestones(user, project)
+        can_see_milestones = can_manage_milestones or (user.is_authenticated and (project.created_by_id == user.pk or project.team.filter(pk=user.pk).exists()))
+        if can_see_milestones:
+            prefetch_related_objects([project], 'milestones__submissions__review',
+                                     'milestones__submissions__links', 'milestones__submissions__files')
+        for milestone in project.milestones.all() if can_see_milestones else []:
+            milestone_items.append({
+                'milestone': milestone,
+                'state': milestone.state,
+                'latest': milestone.latest_submission,
+                'can_submit': can_submit_project_milestone(user, milestone) and milestone.state in {'NOT_SUBMITTED', 'REVISION_REQUIRED'},
+            })
+    else:
+        can_manage_milestones = False
     
     updates = project.updates.all()
     comments = list(project.comments.filter(parent__isnull=True).select_related(
@@ -897,6 +899,14 @@ def project_detail(request, project_id):
             documents.append(item)
     canonical_url = request.build_absolute_uri(project.get_absolute_url())
     context = {
+        'milestone_items': milestone_items,
+        'can_manage_milestones': can_manage_milestones,
+        'milestone_score': project.milestone_score if milestone_items else None,
+        'milestone_approved_count': sum(item['state'] == 'APPROVED' for item in milestone_items),
+        'milestone_required_count': sum(item['milestone'].is_required for item in milestone_items),
+        'required_milestones_ready': bool(milestone_items) and all(
+            item['state'] == 'APPROVED' for item in milestone_items if item['milestone'].is_required
+        ),
         'project': project,
         'updates': updates,
         'comments': comments,
@@ -1175,6 +1185,7 @@ def project_create(request):
 def project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     original_project_type_code = project.project_type.code
+    original_development_status = project.development_status
     if request.user != project.created_by and request.user != project.advisor and not _is_platform_staff(request.user):
         messages.error(request, 'Bu projeyi düzenleme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
@@ -1186,13 +1197,23 @@ def project_update(request, project_id):
         image_form = ProjectImageUploadForm(request.POST, request.FILES)
         if form.is_valid() and repository_form.is_valid() and image_form.is_valid():
             updated_project = form.save(commit=False)
+            incomplete_for_completion = (
+                original_project_type_code != 'CAPSTONE'
+                and updated_project.development_status == 'completed'
+                and original_development_status != 'completed'
+                and project.milestones.filter(is_required=True).exclude(
+                    submissions__review__outcome='APPROVED'
+                ).exists()
+            )
             try:
                 validate_generic_project_type(
                     updated_project.project_type,
                     original_code=original_project_type_code,
                 )
+                if incomplete_for_completion and request.user != project.advisor and not _is_platform_staff(request.user):
+                    raise ValidationError('Zorunlu aşamalar onaylanmadan proje tamamlanamaz.')
             except ValidationError as exc:
-                form.add_error('project_type', exc)
+                form.add_error(None, exc)
             else:
                 with transaction.atomic():
                     if original_project_type_code != 'CAPSTONE':
@@ -1220,6 +1241,9 @@ def project_update(request, project_id):
                         target=updated_project,
                         request=request,
                     )
+                    if incomplete_for_completion:
+                        record_audit_event(actor=request.user, action='project.completion_overridden', target=updated_project,
+                                           metadata={'reason': 'required_milestones_incomplete'}, request=request)
                 messages.success(request, 'Proje başarıyla güncellendi.')
                 return redirect('projects:project_detail', project_id=project.id)
     else:
@@ -1994,13 +2018,23 @@ def complete_project(request, project_id):
 
     is_team_member = request.user in project.team.all()
     is_advisor = request.user == project.advisor
-    if request.user != project.created_by and not is_team_member and not is_advisor and not request.user.is_staff:
+    if request.user != project.created_by and not is_team_member and not is_advisor and not _is_platform_staff(request.user):
         messages.error(request, 'Bu projeyi tamamlama yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
 
     if project.development_status != 'in_progress':
         messages.error(request, 'Bu proje devam ediyor durumunda değil.')
         return redirect('projects:project_detail', project_id=project.id)
+
+    incomplete = project.milestones.filter(is_required=True).exclude(
+        submissions__review__outcome='APPROVED'
+    ).exists()
+    if incomplete and not (is_advisor or _is_platform_staff(request.user)):
+        messages.error(request, 'Zorunlu aşamalar onaylanmadan proje tamamlanamaz.')
+        return redirect('projects:project_detail', project_id=project.id)
+    if incomplete:
+        record_audit_event(actor=request.user, action='project.completion_overridden', target=project,
+                           metadata={'reason': 'required_milestones_incomplete'}, request=request)
 
     project.status = 'completed'
     project.development_status = 'completed'
@@ -2061,6 +2095,11 @@ def change_project_status(request, project_id):
     except (json.JSONDecodeError, TypeError):
         return JsonResponse({'success': False, 'error': 'Geçersiz istek verisi.'}, status=400)
     new_status = data.get('status')
+    if new_status == 'completed' and project.milestones.filter(is_required=True).exclude(
+        submissions__review__outcome='APPROVED'
+    ).exists():
+        record_audit_event(actor=user, action='project.completion_overridden', target=project,
+                           metadata={'reason': 'required_milestones_incomplete'}, request=request)
 
     transitions = {
         'draft': ['in_review'],

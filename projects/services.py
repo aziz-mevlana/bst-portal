@@ -6,7 +6,7 @@ from django.utils import timezone
 from core.audit import record_audit_event
 from core.notifications import create_notification
 
-from .models import Project, ProjectRequest, ProjectRequestApplication
+from .models import Project, ProjectRequest, ProjectRequestApplication, validate_course_requirement
 
 
 logger = logging.getLogger(__name__)
@@ -56,10 +56,12 @@ def accept_project_request_application(*, application_id, reviewer, review_note=
         raise ValidationError('Yalnızca bekleyen bir başvuru kabul edilebilir.')
     if not project_request.project_type_id:
         raise ValidationError('İstek için proje türü belirlenmemiş.')
+    validate_course_requirement(project_request.project_type, project_request.course_id)
 
     project = Project.objects.create(
         project_request=project_request,
         project_type=project_request.project_type,
+        course=project_request.course,
         creation_source='ACADEMIC_REQUEST',
         title=project_request.title,
         advisor=project_request.teacher,
