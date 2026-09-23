@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import CapstoneSubmissionReview, CapstoneTask
+from .models import CapstoneCheckpointEvaluation, CapstoneSubmissionReview, CapstoneTask
 
 
 User = get_user_model()
@@ -94,3 +94,19 @@ class CapstoneReviewForm(forms.Form):
             'placeholder': 'Öğrenciye akademik geri bildiriminizi yazın',
         }),
     )
+
+
+class CapstoneProposalRejectForm(forms.Form):
+    advisor_note = forms.CharField(label='Ret gerekçesi', max_length=5000, strip=True,
+                                   widget=forms.Textarea(attrs={'class': 'form-textarea w-full', 'rows': 3}))
+
+
+class CapstoneEvaluationForm(forms.ModelForm):
+    class Meta:
+        model = CapstoneCheckpointEvaluation
+        fields = ('score', 'feedback')
+        labels = {'score': 'Puan', 'feedback': 'Akademik geri bildirim'}
+        widgets = {
+            'score': forms.NumberInput(attrs={'class': 'form-input w-full', 'min': 0}),
+            'feedback': forms.Textarea(attrs={'class': 'form-textarea w-full', 'rows': 3}),
+        }

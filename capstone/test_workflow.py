@@ -8,7 +8,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase
 
 from projects.models import Project, ProjectType
@@ -55,7 +55,9 @@ class WorkflowFixtureMixin:
             is_active=True,
         )
         project = Project.objects.create(
-            project_type=ProjectType.objects.get(code='CAPSTONE'),
+            project_type=ProjectType.objects.get_or_create(
+                code='CAPSTONE', defaults={'name': 'Bitirme Projesi', 'slug': 'bitirme-projesi'}
+            )[0],
             title='Workflow projesi',
             created_by=self.owner,
             advisor=self.advisor,
@@ -295,7 +297,7 @@ class CapstoneWorkflowConcurrencyTests(WorkflowFixtureMixin, TransactionTestCase
             except Exception as exc:
                 results.put(exc)
             finally:
-                close_old_connections()
+                connections.close_all()
 
         def submit_in_thread():
             close_old_connections()
@@ -314,7 +316,7 @@ class CapstoneWorkflowConcurrencyTests(WorkflowFixtureMixin, TransactionTestCase
             except Exception as exc:
                 results.put(exc)
             finally:
-                close_old_connections()
+                connections.close_all()
 
         threads = [Thread(target=review_in_thread), Thread(target=submit_in_thread)]
         for thread in threads:

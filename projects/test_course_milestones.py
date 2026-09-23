@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from core.models import AuditLog, Notification
 
-from .forms import ProjectForm, RequestForm
+from .forms import ProjectForm, ProjectMilestoneForm, RequestForm
 from .milestone_policies import can_manage_project_milestones, can_submit_project_milestone
 from .milestone_services import review_milestone, save_milestone, submit_milestone
 from .models import (
@@ -133,6 +133,45 @@ class MilestoneWorkflowTests(TestCase):
         self.client.force_login(self.advisor)
         response = self.client.get(reverse('projects:milestone_create', args=[capstone_project.pk]))
         self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.client.post(reverse('projects:milestone_delete', args=[capstone_project.pk, self.milestone.pk]),
+                                          {'confirm_delete': 'yes'}).status_code, 404)
+
+    def test_milestone_form_labels_are_turkish(self):
+        form = ProjectMilestoneForm()
+        self.assertEqual({name: form.fields[name].label for name in (
+            'title', 'description', 'order', 'due_at', 'max_score', 'is_required'
+        )}, {'title': 'Başlık', 'description': 'Açıklama', 'order': 'Sıra',
+             'due_at': 'Son Teslim Tarihi', 'max_score': 'Azami Puan', 'is_required': 'Zorunlu'})
+
+    def test_empty_milestone_delete_requires_permission_and_audits(self):
+        url = reverse('projects:milestone_delete', args=[self.project.pk, self.milestone.pk])
+        self.client.force_login(self.unrelated)
+        self.assertEqual(self.client.post(url, {'confirm_delete': 'yes'}).status_code, 404)
+        self.advisor.profile.user_type = 'student'
+        self.advisor.profile.class_level = '2'
+        self.advisor.profile.save(update_fields=['user_type', 'class_level'])
+        self.client.force_login(self.advisor)
+        self.assertEqual(self.client.post(url, {'confirm_delete': 'yes'}).status_code, 404)
+        self.advisor.profile.user_type = 'teacher'
+        self.advisor.profile.class_level = None
+        self.advisor.profile.save(update_fields=['user_type', 'class_level'])
+        self.client.force_login(self.advisor)
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(url, {})
+        self.assertTrue(ProjectMilestone.objects.filter(pk=self.milestone.pk).exists())
+        response = self.client.post(url, {'confirm_delete': 'yes'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ProjectMilestone.objects.filter(pk=self.milestone.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action='project.milestone.deleted',
+                                                target_id=str(self.milestone.pk)).exists())
+
+    def test_milestone_with_academic_history_cannot_be_deleted(self):
+        submit_milestone(milestone=self.milestone, actor=self.member)
+        self.client.force_login(self.advisor)
+        response = self.client.post(reverse('projects:milestone_delete', args=[self.project.pk, self.milestone.pk]),
+                                    {'confirm_delete': 'yes'}, follow=True)
+        self.assertContains(response, 'Teslim veya değerlendirme geçmişi bulunan proje aşaması silinemez.')
+        self.assertTrue(ProjectMilestone.objects.filter(pk=self.milestone.pk).exists())
 
     def test_revoked_or_downgraded_instructor_cannot_use_old_urls(self):
         submission = submit_milestone(milestone=self.milestone, actor=self.member)

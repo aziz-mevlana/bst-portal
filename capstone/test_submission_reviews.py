@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase
 
 from projects.models import Project, ProjectType
@@ -45,7 +45,7 @@ class SubmissionReviewFixtureMixin:
             is_active=True,
         )
         project = Project.objects.create(
-            project_type=ProjectType.objects.get(code='CAPSTONE'),
+            project_type=ProjectType.objects.get_or_create(code='CAPSTONE', defaults={'name': 'Bitirme Projesi', 'slug': 'capstone'})[0],
             title='Submission review projesi',
             created_by=self.owner,
             advisor=self.advisor,
@@ -248,7 +248,7 @@ class CapstoneSubmissionReviewConcurrencyTests(SubmissionReviewFixtureMixin, Tra
             except Exception as exc:
                 results.put(exc)
             finally:
-                close_old_connections()
+                connections.close_all()
 
         threads = [
             Thread(target=review_in_thread, args=(reviewer.pk,))

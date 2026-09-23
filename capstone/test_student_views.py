@@ -12,6 +12,7 @@ from projects.models import ProjectType
 from .models import (
     CapstoneEnrollment,
     CapstoneProject,
+    CapstoneProposal,
     CapstoneSubmissionAttempt,
     CapstoneSubmissionFile,
     CapstoneSubmissionReview,
@@ -173,7 +174,7 @@ class CapstoneStudentViewTests(TestCase):
         self.assertNotIn(self.inactive_teacher.pk, advisor_ids)
         self.assertNotIn(admin_teacher.pk, advisor_ids)
 
-    def test_valid_start_uses_service_and_redirects_to_dashboard(self):
+    def test_valid_start_submits_proposal_before_project_creation(self):
         self.login()
 
         response = self.client.post(self.start_url, {
@@ -183,9 +184,10 @@ class CapstoneStudentViewTests(TestCase):
         })
 
         self.assertRedirects(response, self.home_url)
-        capstone_project = CapstoneProject.objects.get(project__created_by=self.owner)
-        self.assertEqual(capstone_project.project.advisor, self.advisor)
-        self.assertEqual(capstone_project.checkpoints.count(), 4)
+        proposal = CapstoneProposal.objects.get(student=self.owner)
+        self.assertEqual(proposal.requested_advisor, self.advisor)
+        self.assertEqual(proposal.status, CapstoneProposal.Status.PENDING)
+        self.assertFalse(CapstoneProject.objects.filter(project__created_by=self.owner).exists())
 
     def test_manipulated_invalid_advisor_is_rejected_as_form_error(self):
         self.login()

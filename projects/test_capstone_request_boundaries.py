@@ -66,7 +66,7 @@ class GenericProjectRequestCapstoneBoundaryTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'generic proje ilanı akışından oluşturulamaz')
+        self.assertContains(response, 'normal proje ilanı akışından oluşturulamaz')
         self.assertFalse(ProjectRequest.objects.filter(title='Kaçak CAPSTONE ilanı').exists())
 
     def test_normal_request_cannot_be_changed_to_capstone(self):

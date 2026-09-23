@@ -4,17 +4,21 @@ import mimetypes
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
+from django.core.paginator import Paginator
+from django.db.models import Prefetch, Q, Sum
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from accounts.policies import role_of
+from accounts.policies import is_admin, role_of
 
-from .forms import CapstoneReviewForm, CapstoneStartForm, CapstoneTaskForm
+from .forms import CapstoneEvaluationForm, CapstoneProposalRejectForm, CapstoneReviewForm, CapstoneStartForm, CapstoneTaskForm
 from .models import (
     CapstoneCheckpoint,
+    CapstoneCheckpointEvaluation,
+    CapstoneEnrollment,
+    CapstoneProposal,
     CapstoneProject,
     CapstoneSubmissionAttempt,
     CapstoneSubmissionFile,
@@ -24,17 +28,25 @@ from .models import (
 from .policies import (
     can_administer_capstone,
     can_review_capstone,
+    can_review_capstone_proposal,
     can_view_capstone,
     is_capstone_eligible_student,
 )
 from .services import (
-    create_capstone_project,
+    create_capstone_task,
     create_capstone_submission,
+    complete_capstone_project,
+    approve_capstone_proposal,
+    evaluate_capstone_checkpoint,
+    reject_capstone_proposal,
     review_capstone_submission,
+    submit_capstone_proposal,
+    withdraw_capstone_proposal,
 )
 from .workflow import (
     CheckpointProgress,
     TaskWorkflowState,
+    capstone_overview,
     get_checkpoint_progress,
     get_task_workflow_state,
     is_checkpoint_overdue,
@@ -77,12 +89,13 @@ def _active_term():
 
 
 def _student_dashboard_project(user, term):
-    return (
-        _capstone_projects_with_workflow()
-        .filter(term=term, project__created_by=user)
-        .exclude(project__development_status='cancelled')
-        .first()
+    projects = _capstone_projects_with_workflow().filter(project__created_by=user).exclude(
+        project__development_status='cancelled'
     )
+    current = projects.filter(term=term).first() if term else None
+    if current:
+        return current
+    return projects.exclude(project__development_status='completed').order_by('-term__academic_year', '-created_at').first()
 
 
 def _capstone_projects_with_workflow():
@@ -102,7 +115,7 @@ def _capstone_projects_with_workflow():
         .order_by('due_at', 'pk')
     )
     checkpoint_queryset = (
-        CapstoneCheckpoint.objects.prefetch_related(
+        CapstoneCheckpoint.objects.select_related('evaluation', 'evaluation__evaluated_by').prefetch_related(
             Prefetch('tasks', queryset=task_queryset)
         )
         .order_by('due_at', 'kind')
@@ -134,6 +147,7 @@ def _prepare_dashboard(capstone_project):
         checkpoint.dashboard_progress_label = CHECKPOINT_LABELS[progress]
         checkpoint.dashboard_is_overdue = is_checkpoint_overdue(checkpoint)
         checkpoint.dashboard_tasks = tasks
+    capstone_project.overview = capstone_overview(capstone_project)
     return checkpoints
 
 
@@ -165,7 +179,7 @@ def _is_advisor_workspace_user(user):
 
 
 def _advisor_access_or_404(user):
-    if not _is_advisor_workspace_user(user):
+    if not (_is_advisor_workspace_user(user) or is_admin(user)):
         raise Http404
 
 
@@ -184,6 +198,10 @@ def _prepare_advisor_project(
 
     for checkpoint in checkpoints:
         checkpoint.advisor_task_error_form = None
+        checkpoint.advisor_evaluation_form = (
+            CapstoneEvaluationForm(auto_id=f'id_evaluation_{checkpoint.pk}_%s')
+            if checkpoint in capstone_project.overview['ready_evaluations'] else None
+        )
         if checkpoint.dashboard_progress == CheckpointProgress.COMPLETED:
             completed_checkpoint_count += 1
             if checkpoint.pk == task_checkpoint_id and task_form is not None:
@@ -231,11 +249,10 @@ def _prepare_advisor_project(
 
 
 def _advisor_project_or_404(user, project_id):
-    return get_object_or_404(
-        _capstone_projects_with_workflow(),
-        pk=project_id,
-        project__advisor=user,
-    )
+    queryset = _capstone_projects_with_workflow()
+    if not is_admin(user):
+        queryset = queryset.filter(project__advisor=user)
+    return get_object_or_404(queryset, pk=project_id)
 
 
 def _render_advisor_project(
@@ -257,6 +274,7 @@ def _render_advisor_project(
     return render(request, 'capstone/advisor_project_detail.html', {
         'capstone_project': capstone_project,
         'checkpoints': capstone_project.advisor_checkpoints,
+        'overview': capstone_project.overview,
     })
 
 
@@ -264,18 +282,24 @@ def _render_advisor_project(
 @require_GET
 def student_home(request):
     term = _active_term()
-    capstone_project = _student_dashboard_project(request.user, term) if term else None
+    capstone_project = _student_dashboard_project(request.user, term)
     if capstone_project is not None:
+        checkpoints = _prepare_dashboard(capstone_project)
         return render(request, 'capstone/student_home.html', {
-            'term': term,
+            'term': capstone_project.term,
             'capstone_project': capstone_project,
-            'checkpoints': _prepare_dashboard(capstone_project),
+            'checkpoints': checkpoints,
+            'overview': capstone_project.overview,
         })
 
     eligible = bool(term and is_capstone_eligible_student(request.user, term))
+    proposal = CapstoneProposal.objects.select_related('requested_advisor').filter(
+        term=term, student=request.user
+    ).first() if term else None
     return render(request, 'capstone/student_home.html', {
         'term': term,
         'eligible': eligible,
+        'proposal': proposal,
     })
 
 
@@ -289,11 +313,14 @@ def student_start(request):
     if _student_dashboard_project(request.user, term) is not None:
         messages.info(request, 'Bu dönem için bitirme projeniz zaten bulunuyor.')
         return redirect('capstone:student_home')
+    if CapstoneProposal.objects.filter(term=term, student=request.user, status=CapstoneProposal.Status.PENDING).exists():
+        messages.info(request, 'Danışman onayı bekleyen teklifiniz bulunuyor.')
+        return redirect('capstone:student_home')
 
     form = CapstoneStartForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         try:
-            create_capstone_project(
+            submit_capstone_proposal(
                 student=request.user,
                 advisor=form.cleaned_data['advisor'],
                 title=form.cleaned_data['title'],
@@ -304,10 +331,23 @@ def student_start(request):
             for message in _validation_messages(error):
                 form.add_error(None, message)
         else:
-            messages.success(request, 'Bitirme projeniz başarıyla başlatıldı.')
+            messages.success(request, 'Teklifiniz danışman onayına gönderildi.')
             return redirect('capstone:student_home')
 
     return render(request, 'capstone/student_start.html', {'form': form, 'term': term})
+
+
+@login_required
+@require_POST
+def student_proposal_withdraw(request, proposal_id):
+    proposal = get_object_or_404(CapstoneProposal, pk=proposal_id, student=request.user)
+    try:
+        withdraw_capstone_proposal(proposal=proposal, student=request.user)
+    except ValidationError as error:
+        messages.error(request, ' '.join(_validation_messages(error)))
+    else:
+        messages.success(request, 'Teklifiniz geri çekildi.')
+    return redirect('capstone:student_home')
 
 
 @login_required
@@ -341,14 +381,76 @@ def student_task_submit(request, task_id):
 @require_GET
 def advisor_home(request):
     _advisor_access_or_404(request.user)
-    projects = list(
-        _capstone_projects_with_workflow()
-        .filter(project__advisor=request.user)
-        .order_by('-term__academic_year', 'term__semester', 'project__title')
-    )
+    project_queryset = _capstone_projects_with_workflow().exclude(project__development_status='cancelled')
+    proposal_queryset = CapstoneProposal.objects.filter(status=CapstoneProposal.Status.PENDING).select_related('student', 'student__profile', 'term', 'requested_advisor')
+    if not is_admin(request.user):
+        project_queryset = project_queryset.filter(project__advisor=request.user)
+        proposal_queryset = proposal_queryset.filter(requested_advisor=request.user)
+    selected_term = request.GET.get('term', '')
+    if selected_term.isdigit():
+        project_queryset = project_queryset.filter(term_id=selected_term)
+        proposal_queryset = proposal_queryset.filter(term_id=selected_term)
+    query = request.GET.get('q', '').strip()[:100]
+    if query:
+        project_queryset = project_queryset.filter(Q(project__title__icontains=query) | Q(project__created_by__username__icontains=query) |
+                                                   Q(project__created_by__first_name__icontains=query) | Q(project__created_by__last_name__icontains=query))
+    projects = list(project_queryset.order_by('-term__academic_year', 'term__semester', 'project__title'))
     for capstone_project in projects:
         _prepare_advisor_project(capstone_project)
-    return render(request, 'capstone/advisor_home.html', {'capstone_projects': projects})
+    all_projects = projects
+    attention_projects = [item for item in all_projects if (
+        item.overview['pending_review_count'] or item.overview['ready_evaluations']
+        or item.overview['overdue_task_count'] or item.overview['completion_ready']
+    )]
+    selected_stage = request.GET.get('stage', '')
+    if selected_stage in {'Fikir', 'Planlama', 'Geliştiriliyor', 'Test / Son Kontroller', 'Tamamlandı'}:
+        projects = [item for item in projects if item.overview['stage'] == selected_stage]
+    if request.GET.get('attention') == 'pending':
+        projects = [item for item in projects if item.overview['pending_review_count']]
+    elif request.GET.get('attention') == 'overdue':
+        projects = [item for item in projects if item.overview['overdue_task_count']]
+    elif request.GET.get('attention') == 'ready':
+        projects = [item for item in projects if item.overview['completion_ready']]
+    proposal_count = proposal_queryset.count()
+    proposal_page = Paginator(proposal_queryset.order_by('created_at', 'pk'), 20).get_page(request.GET.get('proposal_page'))
+    project_page = Paginator(projects, 20).get_page(request.GET.get('page'))
+    project_query = request.GET.copy()
+    project_query.pop('page', None)
+    proposal_query = request.GET.copy()
+    proposal_query.pop('proposal_page', None)
+    active_term = _active_term()
+    academic_totals = list(CapstoneCheckpointEvaluation.objects.filter(
+        checkpoint__capstone_project__term=active_term
+    ).values('checkpoint__capstone_project_id').annotate(total=Sum('score')).values_list('total', flat=True)) if is_admin(request.user) and active_term else []
+    admin_overviews = [capstone_overview(item) for item in _capstone_projects_with_workflow().filter(
+        term=active_term
+    ).exclude(project__development_status='cancelled')] if is_admin(request.user) and active_term else []
+    context = {
+        'capstone_projects': project_page, 'project_page': project_page,
+        'proposals': proposal_page, 'proposal_page': proposal_page,
+        'proposal_count': proposal_count, 'project_page_query': project_query.urlencode(),
+        'proposal_page_query': proposal_query.urlencode(), 'reject_form': CapstoneProposalRejectForm(),
+        'attention_projects': attention_projects[:10],
+        'pending_evaluation_count': sum(len(item.overview['ready_evaluations']) for item in all_projects),
+        'terms': CapstoneTerm.objects.all(), 'selected_term': selected_term, 'selected_stage': selected_stage,
+        'selected_attention': request.GET.get('attention', ''), 'query': query,
+        'active_project_count': sum(not item.overview['completed'] for item in all_projects),
+        'pending_review_count': sum(item.overview['pending_review_count'] for item in all_projects),
+        'overdue_count': sum(bool(item.overview['overdue_task_count']) for item in all_projects),
+        'ready_count': sum(bool(item.overview['completion_ready']) for item in all_projects),
+        'active_term': active_term,
+        'admin_summary': {
+            'enrolled': CapstoneEnrollment.objects.filter(term=active_term, is_active=True).count(),
+            'active_projects': CapstoneProject.objects.filter(term=active_term).exclude(project__development_status__in=['cancelled', 'completed']).count(),
+            'completed_projects': CapstoneProject.objects.filter(term=active_term, project__development_status='completed').count(),
+            'pending_proposals': CapstoneProposal.objects.filter(term=active_term, status=CapstoneProposal.Status.PENDING).count(),
+            'pending_reviews': sum(item['pending_review_count'] for item in admin_overviews),
+            'overdue_projects': sum(bool(item['overdue_task_count']) for item in admin_overviews),
+            'average_score': round(sum(academic_totals) / len(academic_totals), 1) if academic_totals else None,
+            'evaluated_projects': len(academic_totals),
+        } if is_admin(request.user) and active_term else None,
+    }
+    return render(request, 'capstone/advisor_home.html', context)
 
 
 @login_required
@@ -365,21 +467,16 @@ def advisor_project_detail(request, project_id):
 @require_POST
 def advisor_task_create(request, checkpoint_id):
     _advisor_access_or_404(request.user)
-    checkpoint = get_object_or_404(
-        CapstoneCheckpoint.objects.select_related('capstone_project__project'),
-        pk=checkpoint_id,
-        capstone_project__project__advisor=request.user,
-    )
+    checkpoint_queryset = CapstoneCheckpoint.objects.select_related('capstone_project__project')
+    if not is_admin(request.user):
+        checkpoint_queryset = checkpoint_queryset.filter(capstone_project__project__advisor=request.user)
+    checkpoint = get_object_or_404(checkpoint_queryset, pk=checkpoint_id)
     form = CapstoneTaskForm(request.POST)
     if get_checkpoint_progress(checkpoint) == CheckpointProgress.COMPLETED:
-        form.add_error(None, 'Tamamlanmış kontrol noktasına yeni görev eklenemez.')
+        form.add_error(None, 'Tamamlanmış değerlendirme aşamasına yeni görev eklenemez.')
     elif form.is_valid():
-        task = form.save(commit=False)
-        task.capstone_project = checkpoint.capstone_project
-        task.checkpoint = checkpoint
-        task.created_by = request.user
         try:
-            task.save()
+            task = create_capstone_task(checkpoint=checkpoint, actor=request.user, values=form.cleaned_data)
         except ValidationError as error:
             _add_validation_error(form, error)
         else:
@@ -406,13 +503,10 @@ def advisor_task_create(request, checkpoint_id):
 @require_POST
 def advisor_submission_review(request, attempt_id):
     _advisor_access_or_404(request.user)
-    attempt = get_object_or_404(
-        CapstoneSubmissionAttempt.objects.select_related(
-            'task__capstone_project__project'
-        ),
-        pk=attempt_id,
-        task__capstone_project__project__advisor=request.user,
-    )
+    attempt_queryset = CapstoneSubmissionAttempt.objects.select_related('task__capstone_project__project')
+    if not is_admin(request.user):
+        attempt_queryset = attempt_queryset.filter(task__capstone_project__project__advisor=request.user)
+    attempt = get_object_or_404(attempt_queryset, pk=attempt_id)
     form = CapstoneReviewForm(request.POST)
     if form.is_valid():
         try:
@@ -442,6 +536,62 @@ def advisor_submission_review(request, attempt_id):
         review_form=form,
         review_attempt_id=attempt.pk,
     )
+
+
+@login_required
+@require_POST
+def advisor_proposal_decide(request, proposal_id):
+    proposal = get_object_or_404(CapstoneProposal, pk=proposal_id)
+    if not can_review_capstone_proposal(request.user, proposal):
+        raise Http404
+    decision = request.POST.get('decision')
+    try:
+        if decision == 'approve':
+            approve_capstone_proposal(proposal=proposal, actor=request.user)
+            messages.success(request, 'Bitirme projesi onaylandı ve akademik süreç başlatıldı.')
+        elif decision == 'reject':
+            form = CapstoneProposalRejectForm(request.POST)
+            if not form.is_valid():
+                raise ValidationError('Ret gerekçesi zorunludur.')
+            reject_capstone_proposal(proposal=proposal, actor=request.user, note=form.cleaned_data['advisor_note'])
+            messages.success(request, 'Teklif gerekçesiyle reddedildi.')
+        else:
+            raise Http404
+    except ValidationError as error:
+        messages.error(request, ' '.join(_validation_messages(error)))
+    return redirect('capstone:advisor_home')
+
+
+@login_required
+@require_POST
+def advisor_checkpoint_evaluate(request, checkpoint_id):
+    checkpoint = get_object_or_404(CapstoneCheckpoint.objects.select_related('capstone_project__project'), pk=checkpoint_id)
+    if not can_review_capstone(request.user, checkpoint.capstone_project):
+        raise Http404
+    form = CapstoneEvaluationForm(request.POST)
+    if form.is_valid():
+        try:
+            evaluate_capstone_checkpoint(checkpoint=checkpoint, actor=request.user, **form.cleaned_data)
+            messages.success(request, 'Akademik puan kaydedildi.')
+        except ValidationError as error:
+            messages.error(request, ' '.join(_validation_messages(error)))
+    else:
+        messages.error(request, 'Puan ve geri bildirimi kontrol edin.')
+    return redirect(reverse('capstone:advisor_project_detail', args=[checkpoint.capstone_project_id]) + f'#checkpoint-{checkpoint.pk}')
+
+
+@login_required
+@require_POST
+def advisor_project_complete(request, project_id):
+    capstone_project = get_object_or_404(CapstoneProject.objects.select_related('project'), pk=project_id)
+    if not can_review_capstone(request.user, capstone_project):
+        raise Http404
+    try:
+        complete_capstone_project(capstone_project=capstone_project, actor=request.user)
+        messages.success(request, 'Bitirme projesi tamamlandı.')
+    except ValidationError as error:
+        messages.error(request, ' '.join(_validation_messages(error)))
+    return redirect('capstone:advisor_project_detail', project_id=project_id)
 
 
 def _can_download_submission_file(user, capstone_project):

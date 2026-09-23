@@ -45,9 +45,23 @@ def can_view_capstone(user, capstone_project):
         return False
     return bool(
         user.pk == project.created_by_id
-        or user.pk == project.advisor_id
+        or (user.is_active and role_of(user) == 'teacher' and user.pk == project.advisor_id)
         or is_admin(user)
     )
+
+
+def can_review_capstone_proposal(user, proposal):
+    return bool(_authenticated_user(user) and (
+        is_admin(user) or (
+            user.is_active and role_of(user) == 'teacher' and user.pk == proposal.requested_advisor_id
+        )
+    ))
+
+
+def can_view_capstone_proposal(user, proposal):
+    return bool(_authenticated_user(user) and (
+        user.pk == proposal.student_id or can_review_capstone_proposal(user, proposal)
+    ))
 
 
 def can_submit_capstone(user, capstone_project):

@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from .models import (
     CapstoneEnrollment,
+    CapstoneProposal,
     CapstoneProject,
     CapstoneSubmissionAttempt,
     CapstoneSubmissionFile,
@@ -16,6 +17,7 @@ from .models import (
     CapstoneTask,
     CapstoneTerm,
 )
+from .services import approve_capstone_proposal
 from .storage import PrivateFileSystemStorage
 from .workflow import (
     CheckpointProgress,
@@ -76,6 +78,8 @@ class CapstoneEndToEndIntegrationTests(TestCase):
             'advisor': self.advisor.pk,
         })
         self.assertRedirects(response, reverse('capstone:student_home'))
+        proposal = CapstoneProposal.objects.get(student=self.student, term=self.term)
+        approve_capstone_proposal(proposal=proposal, actor=self.advisor)
         return CapstoneProject.objects.get(project__created_by=self.student)
 
     def create_task_through_advisor(self, checkpoint, title='Integration görevi'):

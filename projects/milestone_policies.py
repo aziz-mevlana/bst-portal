@@ -7,8 +7,8 @@ def _generic(project):
 
 
 def can_manage_project_milestones(user, project):
-    return bool(user.is_authenticated and _generic(project) and (
-        is_admin(user) or project.advisor_id == user.pk or (
+    return bool(user.is_authenticated and user.is_active and _generic(project) and (
+        is_admin(user) or (is_teacher(user) and project.advisor_id == user.pk) or (
             project.course_id and is_teacher(user) and CourseInstructor.objects.filter(
                 course_id=project.course_id, instructor=user, is_active=True
             ).exists()

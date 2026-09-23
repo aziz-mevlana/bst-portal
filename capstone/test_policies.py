@@ -108,14 +108,14 @@ class CapstoneAuthorizationPolicySmokeTests(TestCase):
     def test_inactive_or_non_teacher_assigned_advisor_cannot_review(self):
         self.advisor.is_active = False
         self.advisor.save(update_fields=['is_active'])
-        self.assert_permissions(self.advisor, view=True)
+        self.assert_permissions(self.advisor, view=False)
 
         self.advisor.is_active = True
         self.advisor.save(update_fields=['is_active'])
         self.advisor.profile.user_type = 'student'
         self.advisor.profile.class_level = '4'
         self.advisor.profile.save(update_fields=['user_type', 'class_level'])
-        self.assert_permissions(self.advisor, view=True)
+        self.assert_permissions(self.advisor, view=False)
 
     def test_owner_authorization_is_independent_from_class_and_enrollment(self):
         self.assertEqual(self.owner.profile.class_level, '3')

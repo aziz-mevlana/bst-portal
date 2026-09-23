@@ -11,7 +11,41 @@
             <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Atandığınız projelerdeki görevleri, teslimleri ve bekleyen değerlendirmeleri takip edin.</p>
         </header>
 
-        <section class="mt-8 grid gap-5 lg:grid-cols-2">
+        <section class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Danışman özeti">
+            <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Aktif proje</p><p class="mt-2 text-2xl font-bold">{{ active_project_count }}</p></div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Bekleyen teklif</p><p class="mt-2 text-2xl font-bold">{{ proposal_count }}</p></div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Bekleyen teslim</p><p class="mt-2 text-2xl font-bold">{{ pending_review_count }}</p></div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Gecikmiş proje</p><p class="mt-2 text-2xl font-bold">{{ overdue_count }}</p></div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Tamamlamaya hazır</p><p class="mt-2 text-2xl font-bold">{{ ready_count }}</p></div>
+        </section>
+        {% if admin_summary %}<section class="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50 p-5"><h2 class="font-bold text-indigo-950">Bölüm özeti · {{ active_term }}</h2><p class="mt-2 text-sm text-indigo-900">Kayıtlı öğrenci: {{ admin_summary.enrolled }} · Aktif proje: {{ admin_summary.active_projects }} · Tamamlanan proje: {{ admin_summary.completed_projects }} · Bekleyen teklif: {{ admin_summary.pending_proposals }} · Bekleyen değerlendirme: {{ admin_summary.pending_reviews }} · Gecikmiş proje: {{ admin_summary.overdue_projects }} · Puanlanan proje: {{ admin_summary.evaluated_projects }}{% if admin_summary.average_score != None %} · Ortalama alınan puan: {{ admin_summary.average_score }}{% endif %}</p></section>{% endif %}
+
+        <section id="proposal-list" class="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <h2 class="text-xl font-bold text-slate-900">İlgilenmeniz gerekenler</h2>
+            {% if proposal_count or pending_review_count or pending_evaluation_count or ready_count or overdue_count %}<p class="mt-2 text-sm text-slate-600">{{ proposal_count }} danışmanlık talebi, {{ pending_review_count }} teslim, {{ pending_evaluation_count }} akademik puanlama, {{ ready_count }} tamamlamaya hazır proje, {{ overdue_count }} gecikmiş proje.</p>{% else %}<p class="mt-2 text-sm text-slate-600">Şu anda işlem bekleyen kayıt yok.</p>{% endif %}
+            {% for proposal in proposals %}<article id="proposal-{{ proposal.pk }}" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <p class="text-xs font-semibold uppercase tracking-wide text-amber-800">Danışmanlık talebi · {{ proposal.term }} · {{ proposal.created_at|date:'d.m.Y' }}</p>
+                <h3 class="mt-2 text-lg font-bold text-slate-900">{{ proposal.title }}</h3>
+                <p class="mt-1 text-sm text-slate-700">{{ proposal.student.get_full_name|default:proposal.student.username }} · {{ proposal.student.profile.class_level }}. sınıf</p>
+                <p class="mt-3 whitespace-pre-line text-sm text-slate-700">{{ proposal.description }}</p>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <details class="rounded-xl border border-emerald-300 bg-white px-4 py-2"><summary class="cursor-pointer font-semibold text-emerald-800">Kabul Et</summary><p class="mt-2 text-sm text-slate-600">Onay sonrası proje ve dört resmi değerlendirme aşaması oluşturulacak.</p><form method="post" action="{% url 'capstone:advisor_proposal_decide' proposal.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="approve"><button class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white" type="submit">Onayı doğrula</button></form></details>
+                    <details class="rounded-xl border border-red-300 bg-white px-4 py-2"><summary class="cursor-pointer font-semibold text-red-800">Reddet</summary><form class="mt-3 space-y-2" method="post" action="{% url 'capstone:advisor_proposal_decide' proposal.pk %}">{% csrf_token %}<input type="hidden" name="decision" value="reject"><label class="block text-sm font-semibold" for="reason-{{ proposal.pk }}">Ret gerekçesi</label><textarea id="reason-{{ proposal.pk }}" class="w-full rounded-lg border border-slate-300 p-2" name="advisor_note" required></textarea><button class="rounded-lg bg-red-700 px-4 py-2 font-semibold text-white" type="submit">Gerekçeyle reddet</button></form></details>
+                </div>
+            </article>{% endfor %}
+            {% for item in attention_projects %}<a class="mt-3 block rounded-xl border border-slate-200 p-4 hover:border-cyan-300" href="{% url 'capstone:advisor_project_detail' item.pk %}"><span class="font-semibold text-slate-900">{{ item.project.title }}</span><span class="mt-1 block text-sm text-slate-600">{{ item.project.created_by.get_full_name|default:item.project.created_by.username }}{% if item.overview.pending_review_count %} · {{ item.overview.pending_review_count }} teslim bekliyor{% endif %}{% if item.overview.ready_evaluations %} · {{ item.overview.ready_evaluations|length }} puanlama bekliyor{% endif %}{% if item.overview.overdue_task_count %} · {{ item.overview.overdue_task_count }} görev gecikti{% endif %}{% if item.overview.completion_ready %} · Tamamlamaya hazır{% endif %}</span></a>{% endfor %}
+            {% if proposal_page.has_other_pages %}<nav class="mt-5 flex items-center justify-between text-sm" aria-label="Teklif sayfaları">{% if proposal_page.has_previous %}<a class="font-semibold text-cyan-700" href="?{{ proposal_page_query }}&proposal_page={{ proposal_page.previous_page_number }}#proposal-list">Önceki teklifler</a>{% else %}<span></span>{% endif %}<span>{{ proposal_page.number }} / {{ proposal_page.paginator.num_pages }}</span>{% if proposal_page.has_next %}<a class="font-semibold text-cyan-700" href="?{{ proposal_page_query }}&proposal_page={{ proposal_page.next_page_number }}#proposal-list">Sonraki teklifler</a>{% endif %}</nav>{% endif %}
+        </section>
+
+        <form class="mt-8 grid gap-3 rounded-2xl bg-white p-5 sm:grid-cols-2 lg:grid-cols-5" method="get">
+            <label class="text-sm font-semibold">Dönem<select class="mt-1 w-full rounded-lg border p-2" name="term"><option value="">Tümü</option>{% for term in terms %}<option value="{{ term.pk }}" {% if selected_term == term.pk|stringformat:'s' %}selected{% endif %}>{{ term }}</option>{% endfor %}</select></label>
+            <label class="text-sm font-semibold">Aşama<select class="mt-1 w-full rounded-lg border p-2" name="stage"><option value="">Tümü</option><option value="Fikir" {% if selected_stage == 'Fikir' %}selected{% endif %}>Fikir</option><option value="Planlama" {% if selected_stage == 'Planlama' %}selected{% endif %}>Planlama</option><option value="Geliştiriliyor" {% if selected_stage == 'Geliştiriliyor' %}selected{% endif %}>Geliştiriliyor</option><option value="Test / Son Kontroller" {% if selected_stage == 'Test / Son Kontroller' %}selected{% endif %}>Test / Son Kontroller</option><option value="Tamamlandı" {% if selected_stage == 'Tamamlandı' %}selected{% endif %}>Tamamlandı</option></select></label>
+            <label class="text-sm font-semibold">İşlem<select class="mt-1 w-full rounded-lg border p-2" name="attention"><option value="">Tümü</option><option value="pending" {% if selected_attention == 'pending' %}selected{% endif %}>Değerlendirme bekliyor</option><option value="overdue" {% if selected_attention == 'overdue' %}selected{% endif %}>Gecikmiş</option><option value="ready" {% if selected_attention == 'ready' %}selected{% endif %}>Tamamlamaya hazır</option></select></label>
+            <label class="text-sm font-semibold">Öğrenci / proje<input class="mt-1 w-full rounded-lg border p-2" name="q" value="{{ query }}"></label>
+            <button class="self-end rounded-lg bg-cyan-700 px-4 py-2.5 font-semibold text-white" type="submit">Filtrele</button>
+        </form>
+
+        <section id="project-list" class="mt-8 grid gap-5 lg:grid-cols-2">
             {% for capstone_project in capstone_projects %}
                 <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div class="flex items-start justify-between gap-4">
@@ -21,6 +55,7 @@
                             <p class="mt-2 text-sm text-slate-600">
                                 Öğrenci: <span class="font-semibold text-slate-800">{{ capstone_project.project.created_by.get_full_name|default:capstone_project.project.created_by.username }}</span>
                             </p>
+                            <p class="mt-2 text-sm font-semibold text-cyan-800">{{ capstone_project.overview.stage }} · %{{ capstone_project.overview.progress_percent }} ilerleme</p>
                         </div>
                         {% if capstone_project.pending_review_count %}
                             <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{{ capstone_project.pending_review_count }} değerlendirme bekliyor</span>
@@ -29,11 +64,11 @@
 
                     <dl class="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                         <div class="rounded-xl bg-slate-50 p-3">
-                            <dt class="text-slate-500">Checkpoint</dt>
+                            <dt class="text-slate-500">Değerlendirme aşaması</dt>
                             <dd class="mt-1 font-bold text-slate-900">{{ capstone_project.completed_checkpoint_count }}/{{ capstone_project.total_checkpoint_count }}</dd>
                         </div>
                         <div class="rounded-xl bg-slate-50 p-3">
-                            <dt class="text-slate-500">Bekleyen review</dt>
+                            <dt class="text-slate-500">Bekleyen değerlendirme</dt>
                             <dd class="mt-1 font-bold text-slate-900">{{ capstone_project.pending_review_count }}</dd>
                         </div>
                         <div class="col-span-2 rounded-xl bg-slate-50 p-3 sm:col-span-1">
@@ -41,6 +76,7 @@
                             <dd class="mt-1 font-bold {% if capstone_project.overdue_task_count %}text-red-700{% else %}text-slate-900{% endif %}">{{ capstone_project.overdue_task_count }}</dd>
                         </div>
                     </dl>
+                    <p class="mt-4 text-sm text-slate-600">Akademik puan: {{ capstone_project.overview.score_earned }}/{{ capstone_project.overview.score_total_max }} · Sıradaki tarih: {{ capstone_project.overview.next_deadline|date:'d.m.Y'|default:'Bekleniyor' }}</p>
 
                     <a class="mt-6 inline-flex rounded-xl bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-800" href="{% url 'capstone:advisor_project_detail' capstone_project.pk %}">Projeyi aç</a>
                 </article>
@@ -50,6 +86,7 @@
                 </div>
             {% endfor %}
         </section>
+        {% if project_page.has_other_pages %}<nav class="mt-6 flex items-center justify-between text-sm" aria-label="Proje sayfaları">{% if project_page.has_previous %}<a class="font-semibold text-cyan-700" href="?{{ project_page_query }}&page={{ project_page.previous_page_number }}#project-list">Önceki projeler</a>{% else %}<span></span>{% endif %}<span>{{ project_page.number }} / {{ project_page.paginator.num_pages }}</span>{% if project_page.has_next %}<a class="font-semibold text-cyan-700" href="?{{ project_page_query }}&page={{ project_page.next_page_number }}#project-list">Sonraki projeler</a>{% endif %}</nav>{% endif %}
     </div>
 </main>
 {% endblock %}

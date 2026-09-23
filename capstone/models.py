@@ -144,6 +144,11 @@ class CapstoneProject(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    completed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='completed_capstone_projects', editable=False,
+    )
 
     class Meta:
         ordering = ['term', 'project_id']
@@ -182,6 +187,7 @@ class CapstoneCheckpoint(models.Model):
     )
     kind = models.CharField(max_length=22, choices=Kind.choices)
     due_at = models.DateTimeField()
+    max_score = models.PositiveSmallIntegerField(default=25, validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -192,17 +198,125 @@ class CapstoneCheckpoint(models.Model):
                 fields=['capstone_project', 'kind'],
                 name='unique_capstone_checkpoint_kind',
             ),
+            models.CheckConstraint(condition=Q(max_score__gt=0), name='cap_checkpoint_score_positive'),
         ]
         indexes = [
             models.Index(fields=['capstone_project', 'due_at'], name='cap_checkpoint_due_idx'),
         ]
 
     def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk, evaluation__isnull=False).exists():
+            old = type(self).objects.get(pk=self.pk)
+            if old.max_score != self.max_score or old.due_at != self.due_at:
+                raise ValidationError('Puanlanmış değerlendirme aşamasının akademik tanımı değiştirilemez.')
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.capstone_project} - {self.get_kind_display()}'
+
+
+class CapstoneProposal(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Danışman onayı bekliyor'
+        APPROVED = 'APPROVED', 'Onaylandı'
+        REJECTED = 'REJECTED', 'Reddedildi'
+        WITHDRAWN = 'WITHDRAWN', 'Geri çekildi'
+
+    term = models.ForeignKey(CapstoneTerm, on_delete=models.PROTECT, related_name='proposals')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='capstone_proposals')
+    requested_advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='requested_capstone_proposals')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    advisor_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name='reviewed_capstone_proposals')
+    reviewed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    resulting_capstone_project = models.OneToOneField(CapstoneProject, on_delete=models.PROTECT, null=True, blank=True, related_name='source_proposal')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.UniqueConstraint(
+            fields=['term', 'student'], condition=Q(status='PENDING'), name='unique_pending_capstone_proposal'
+        )]
+        indexes = [models.Index(fields=['requested_advisor', 'status'], name='cap_proposal_advisor_idx')]
+
+    def clean(self):
+        super().clean()
+        if self._state.adding and self.status == self.Status.PENDING:
+            from accounts.policies import role_of
+            from .policies import is_capstone_eligible_student
+            if not self.term_id or not self.term.is_active or not is_capstone_eligible_student(self.student, self.term):
+                raise ValidationError('Aktif döneme kayıtlı 4. sınıf öğrenci gereklidir.')
+            if not self.requested_advisor.is_active or role_of(self.requested_advisor) != 'teacher' or self.requested_advisor.is_staff:
+                raise ValidationError({'requested_advisor': 'Aktif bir akademisyen seçilmelidir.'})
+            if CapstoneProject.objects.filter(project__created_by_id=self.student_id).exclude(
+                project__development_status__in=['cancelled', 'completed']
+            ).exists():
+                raise ValidationError('Öğrencinin zaten aktif bitirme projesi var.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            for field in ('term_id', 'student_id', 'requested_advisor_id', 'title', 'description', 'resulting_capstone_project_id'):
+                if field != 'resulting_capstone_project_id' and getattr(old, field) != getattr(self, field):
+                    raise ValidationError('Kaydedilmiş teklifin akademik bilgileri değiştirilemez.')
+            if old.status != self.Status.PENDING and any(getattr(old, field) != getattr(self, field) for field in (
+                'status', 'advisor_note', 'reviewed_by_id', 'reviewed_at', 'resulting_capstone_project_id'
+            )):
+                raise ValidationError('Sonuçlanmış teklif değiştirilemez.')
+        if self.status == self.Status.APPROVED and not self.resulting_capstone_project_id:
+            raise ValidationError({'resulting_capstone_project': 'Onaylanan teklif projeye bağlanmalıdır.'})
+        if self.status == self.Status.APPROVED and self.resulting_capstone_project_id:
+            capstone_project = self.resulting_capstone_project
+            if (capstone_project.term_id != self.term_id or
+                    capstone_project.project.created_by_id != self.student_id or
+                    capstone_project.project.advisor_id != self.requested_advisor_id):
+                raise ValidationError({'resulting_capstone_project': 'Proje teklifin öğrenci, danışman ve dönemiyle eşleşmelidir.'})
+        if self.status == self.Status.REJECTED and not (self.advisor_note or '').strip():
+            raise ValidationError({'advisor_note': 'Ret gerekçesi zorunludur.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Akademik teklif geçmişi silinemez.')
+
+
+class CapstoneCheckpointEvaluation(models.Model):
+    checkpoint = models.OneToOneField(CapstoneCheckpoint, on_delete=models.PROTECT, related_name='evaluation')
+    evaluated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='capstone_checkpoint_evaluations')
+    score = models.PositiveSmallIntegerField()
+    feedback = models.TextField(max_length=5000)
+    evaluated_at = models.DateTimeField(editable=False)
+
+    def clean(self):
+        super().clean()
+        if self.pk:
+            raise ValidationError('Akademik değerlendirme değiştirilemez.')
+        self.feedback = (self.feedback or '').strip()
+        if not self.feedback:
+            raise ValidationError({'feedback': 'Akademik geri bildirim zorunludur.'})
+        if self.checkpoint_id:
+            from .policies import can_review_capstone
+            from .workflow import CheckpointProgress, get_checkpoint_progress
+            if self.evaluated_by_id and not can_review_capstone(self.evaluated_by, self.checkpoint.capstone_project):
+                raise ValidationError({'evaluated_by': 'Bu değerlendirme aşamasını puanlama yetkiniz yok.'})
+            if get_checkpoint_progress(self.checkpoint) != CheckpointProgress.COMPLETED:
+                raise ValidationError('Değerlendirme aşamasının tüm görevleri kabul edilmelidir.')
+            if self.score is not None and self.score > self.checkpoint.max_score:
+                raise ValidationError({'score': 'Puan üst sınırı aşamaz.'})
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Akademik değerlendirme değiştirilemez.')
+        self.evaluated_at = timezone.now()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Akademik değerlendirme silinemez.')
 
 
 class CapstoneTask(models.Model):
@@ -254,9 +368,11 @@ class CapstoneTask(models.Model):
                 errors['created_by'] = 'Görevi yalnızca atanmış danışman veya Django yöneticisi oluşturabilir.'
         if self.capstone_project_id and self.checkpoint_id:
             if self.checkpoint.capstone_project_id != self.capstone_project_id:
-                errors['checkpoint'] = 'Kontrol noktası aynı bitirme projesine ait olmalıdır.'
+                errors['checkpoint'] = 'Değerlendirme aşaması aynı bitirme projesine ait olmalıdır.'
             if self.due_at and self.due_at > self.checkpoint.due_at:
-                errors['due_at'] = 'Görev tarihi kontrol noktası tarihinden sonra olamaz.'
+                errors['due_at'] = 'Görev tarihi değerlendirme aşamasının tarihinden sonra olamaz.'
+            if self.checkpoint.pk and CapstoneCheckpointEvaluation.objects.filter(checkpoint=self.checkpoint).exists():
+                errors['checkpoint'] = 'Akademik puanlaması yapılmış değerlendirme aşamasına görev eklenemez veya görev değiştirilemez.'
         if errors:
             raise ValidationError(errors)
 

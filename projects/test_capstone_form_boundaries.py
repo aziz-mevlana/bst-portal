@@ -41,8 +41,30 @@ class GenericProjectCapstoneBoundaryTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'yalnızca özel CAPSTONE oluşturma akışıyla')
+        self.assertContains(response, 'yalnızca özel Bitirme Projesi talep akışıyla')
         self.assertFalse(Project.objects.filter(title='Kaçak CAPSTONE').exists())
+
+    def test_only_fourth_year_students_see_bitirme_projesi_option(self):
+        for level in ('1', '2', '3'):
+            self.owner.profile.class_level = level
+            self.owner.profile.save(update_fields=['class_level'])
+            response = self.client.get(reverse('projects:project_create'))
+            self.assertNotContains(response, f'<option value="{self.capstone_type.pk}"')
+        self.owner.profile.class_level = '4'
+        self.owner.profile.save(update_fields=['class_level'])
+        response = self.client.get(reverse('projects:project_create'))
+        self.assertContains(response, f'<option value="{self.capstone_type.pk}"')
+        self.assertContains(response, 'Bitirme Projesi')
+        self.assertNotContains(response, '>CAPSTONE</option>')
+        self.assertContains(response, reverse('capstone:student_home'))
+        self.owner.profile.user_type = 'staff_student'
+        self.owner.profile.save(update_fields=['user_type'])
+        self.assertContains(self.client.get(reverse('projects:project_create')),
+                            f'<option value="{self.capstone_type.pk}"')
+        response = self.client.post(reverse('projects:project_create'),
+                                    self.project_data(project_type=self.capstone_type, title='Doğrudan bitirme'))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Project.objects.filter(title='Doğrudan bitirme').exists())
 
     def test_generic_create_still_accepts_normal_project_type(self):
         response = self.client.post(
@@ -262,4 +284,4 @@ class GenericProjectCapstoneBoundaryTests(TestCase):
 
         self.assertEqual(create_response.status_code, 200)
         self.assertEqual(update_response.status_code, 200)
-        self.assertContains(update_response, 'normal düzenleme akışında CAPSTONE olarak değiştirilemez')
+        self.assertContains(update_response, 'normal düzenleme akışında Bitirme Projesi olarak değiştirilemez')

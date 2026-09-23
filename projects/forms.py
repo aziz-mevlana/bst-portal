@@ -48,6 +48,11 @@ class ProjectMilestoneForm(forms.ModelForm):
     class Meta:
         model = ProjectMilestone
         fields = ('title', 'description', 'order', 'due_at', 'max_score', 'is_required')
+        labels = {
+            'title': 'Başlık', 'description': 'Açıklama', 'order': 'Sıra',
+            'due_at': 'Son Teslim Tarihi', 'max_score': 'Azami Puan',
+            'is_required': 'Zorunlu',
+        }
         widgets = {'due_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')}
 
 
@@ -55,11 +60,12 @@ class ProjectMilestoneReviewForm(forms.ModelForm):
     class Meta:
         model = ProjectMilestoneReview
         fields = ('outcome', 'score', 'feedback')
+        labels = {'outcome': 'Karar', 'score': 'Puan', 'feedback': 'Geri bildirim'}
 
 
 class ProjectMilestoneSubmissionForm(forms.Form):
-    completion_note = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    evidence_links = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}), help_text='Her satıra bir URL')
+    completion_note = forms.CharField(label='Tamamlama notu', required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    evidence_links = forms.CharField(label='Kanıt bağlantıları', required=False, widget=forms.Textarea(attrs={'rows': 3}), help_text='Her satıra bir URL')
     # Files are validated as a batch in the workflow service.
 
 
@@ -69,10 +75,10 @@ def validate_generic_project_type(project_type, *, original_code=None):
     new_code = getattr(project_type, 'code', None)
     if original_code is None and new_code == 'CAPSTONE':
         raise forms.ValidationError(
-            'Bitirme projeleri yalnızca özel CAPSTONE oluşturma akışıyla başlatılabilir.'
+            'Bitirme projeleri yalnızca özel Bitirme Projesi talep akışıyla başlatılabilir.'
         )
     if original_code is not None and (original_code == 'CAPSTONE') != (new_code == 'CAPSTONE'):
-        raise forms.ValidationError('Proje türü normal düzenleme akışında CAPSTONE olarak değiştirilemez.')
+        raise forms.ValidationError('Proje türü normal düzenleme akışında Bitirme Projesi olarak değiştirilemez.')
 
 
 def validate_generic_request_project_type(project_type, *, original_code=None):
@@ -81,10 +87,10 @@ def validate_generic_request_project_type(project_type, *, original_code=None):
     new_code = getattr(project_type, 'code', None)
     if original_code is None and new_code == 'CAPSTONE':
         raise forms.ValidationError(
-            'Bitirme projeleri generic proje ilanı akışından oluşturulamaz.'
+            'Bitirme projeleri normal proje ilanı akışından oluşturulamaz.'
         )
     if original_code is not None and (original_code == 'CAPSTONE') != (new_code == 'CAPSTONE'):
-        raise forms.ValidationError('Proje ilanı türü CAPSTONE sınırını geçecek şekilde değiştirilemez.')
+        raise forms.ValidationError('Proje ilanı türü Bitirme Projesi olarak değiştirilemez.')
 
 
 class RequestForm(forms.ModelForm):
@@ -523,7 +529,15 @@ class ProjectForm(forms.ModelForm):
             project_types = ProjectType.objects.filter(
                 Q(is_active=True) | Q(pk=self.instance.project_type_id)
             ).exclude(code='CAPSTONE')
+        elif current_user and current_user.is_authenticated:
+            profile = getattr(current_user, 'profile', None)
+            if profile and profile.user_type in {'student', 'staff_student'} and profile.class_level == '4':
+                project_types = ProjectType.objects.filter(is_active=True)
         self.fields['project_type'].queryset = project_types
+        self.fields['project_type'].label_from_instance = lambda project_type: (
+            'Bitirme Projesi' if project_type.code == 'CAPSTONE' else project_type.name
+        )
+        self.capstone_type_id = project_types.filter(code='CAPSTONE').values_list('pk', flat=True).first()
         self.course_required_type_ids = list(project_types.filter(requires_course=True).values_list('pk', flat=True))
         self.fields['course'].queryset = Course.objects.filter(Q(is_active=True) | Q(pk=self.instance.course_id)).distinct()
         if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':

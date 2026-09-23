@@ -166,7 +166,7 @@ class CapstoneAdvisorViewTests(TestCase):
             'advisor-ui-staff-teacher', 'teacher', is_staff=True
         )
         self.login(staff_teacher)
-        self.assertEqual(self.client.get(self.home_url).status_code, 404)
+        self.assertEqual(self.client.get(self.home_url).status_code, 200)
 
     def test_anonymous_advisor_home_redirects_to_login(self):
         response = self.client.get(self.home_url)
@@ -251,7 +251,7 @@ class CapstoneAdvisorViewTests(TestCase):
             ),
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'kontrol noktası tarihinden sonra olamaz')
+        self.assertContains(response, 'değerlendirme aşamasının tarihinden sonra olamaz')
         self.assertFalse(CapstoneTask.objects.filter(title='Yeni danışman görevi').exists())
 
     def test_unrelated_teacher_student_and_other_project_checkpoint_are_hidden(self):
@@ -291,7 +291,7 @@ class CapstoneAdvisorViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Tamamlanmış kontrol noktasına yeni görev eklenemez')
+        self.assertContains(response, 'Tamamlanmış değerlendirme aşamasına yeni görev eklenemez')
         self.assertEqual(self.checkpoint.tasks.count(), 1)
 
     def test_review_endpoint_accepts_all_defined_decisions_with_prg(self):

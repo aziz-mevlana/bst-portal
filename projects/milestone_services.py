@@ -42,6 +42,21 @@ def save_milestone(*, project, actor, values, milestone=None):
     return milestone
 
 
+@transaction.atomic
+def delete_milestone(*, milestone, actor):
+    milestone = ProjectMilestone.objects.select_for_update().select_related(
+        'project', 'project__project_type'
+    ).get(pk=milestone.pk)
+    if not can_manage_project_milestones(actor, milestone.project):
+        raise PermissionDenied
+    if milestone.submissions.exists():
+        raise ValidationError('Teslim veya değerlendirme geçmişi bulunan proje aşaması silinemez.')
+    project_id, milestone_id = milestone.project_id, milestone.pk
+    record_audit_event(actor=actor, action='project.milestone.deleted', target=milestone,
+                       metadata={'project_id': project_id, 'milestone_id': milestone_id})
+    milestone.delete()
+
+
 def submit_milestone(*, milestone, actor, note='', links=(), files=()):
     saved_files = []
     try:

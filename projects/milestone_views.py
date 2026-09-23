@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import ProjectMilestoneForm, ProjectMilestoneReviewForm, ProjectMilestoneSubmissionForm
 from .milestone_policies import can_manage_project_milestones, can_submit_project_milestone, can_view_project_milestone_evidence
-from .milestone_services import review_milestone, save_milestone, submit_milestone
+from .milestone_services import delete_milestone, review_milestone, save_milestone, submit_milestone
 from .models import Project, ProjectMilestone, ProjectMilestoneSubmission, ProjectMilestoneSubmissionFile
 
 
@@ -30,6 +30,25 @@ def milestone_edit(request, project_id, milestone_id=None):
         else:
             return redirect(f'{project.get_absolute_url()}#milestone-{saved.pk}')
     return render(request, 'projects/milestone_form.html', {'project': project, 'form': form, 'milestone': milestone})
+
+
+@login_required
+@require_POST
+def milestone_delete(request, project_id, milestone_id):
+    milestone = get_object_or_404(ProjectMilestone.objects.select_related('project', 'project__project_type'),
+                                  pk=milestone_id, project_id=project_id)
+    if not can_manage_project_milestones(request.user, milestone.project):
+        raise Http404
+    if request.POST.get('confirm_delete') != 'yes':
+        messages.error(request, 'Aşamayı silmek için onay gereklidir.')
+    else:
+        try:
+            delete_milestone(milestone=milestone, actor=request.user)
+        except ValidationError as exc:
+            messages.error(request, '; '.join(exc.messages))
+        else:
+            messages.success(request, 'Proje aşaması silindi.')
+    return redirect(f'{milestone.project.get_absolute_url()}#milestones')
 
 
 @login_required

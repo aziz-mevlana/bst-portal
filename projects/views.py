@@ -96,7 +96,7 @@ def _reject_generic_capstone_workflow(request, project):
         return False
     messages.error(
         request,
-        'CAPSTONE akademik işlemleri yalnızca özel bitirme projesi akışından yönetilebilir.',
+        'Bitirme Projesi akademik işlemleri yalnızca özel bitirme projesi akışından yönetilebilir.',
     )
     return True
 
@@ -106,6 +106,10 @@ def _can_view_project(user, project):
         return True
     if not user.is_authenticated:
         return False
+    if _is_capstone_project(project):
+        return bool(user == project.created_by or _is_platform_staff(user) or (
+            user == project.advisor and user.is_active and is_teacher(user)
+        ))
     return bool(
         user == project.created_by
         or user == project.advisor
@@ -116,6 +120,11 @@ def _can_view_project(user, project):
 
 
 def _can_manage_project(user, project):
+    if _is_capstone_project(project):
+        return bool(user.is_authenticated and (
+            user == project.created_by or _is_platform_staff(user) or
+            (user == project.advisor and user.is_active and is_teacher(user))
+        ))
     return bool(
         user.is_authenticated
         and (
@@ -127,6 +136,8 @@ def _can_manage_project(user, project):
 
 
 def _can_add_project_update(user, project):
+    if _is_capstone_project(project):
+        return _can_manage_project(user, project)
     return bool(
         user.is_authenticated and (
             user == project.created_by or user == project.advisor or project.team.filter(pk=user.pk).exists()
@@ -1936,7 +1947,7 @@ def send_feedback(request, project_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'error': 'CAPSTONE akademik değerlendirmesi özel bitirme projesi akışından yapılmalıdır.',
+                'error': 'Bitirme Projesi akademik değerlendirmesi özel bitirme projesi akışından yapılmalıdır.',
             }, status=409)
         return redirect('projects:project_detail', project_id=project.id)
     
@@ -2077,7 +2088,7 @@ def change_project_status(request, project_id):
     if _is_capstone_project(project):
         return JsonResponse({
             'success': False,
-            'error': 'CAPSTONE durumu yalnızca özel bitirme projesi akışından yönetilebilir.',
+            'error': 'Bitirme Projesi durumu yalnızca özel bitirme projesi akışından yönetilebilir.',
         }, status=409)
 
     user = request.user

@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase
 
 from projects.models import Project, ProjectType
@@ -54,7 +54,7 @@ class SubmissionServiceFixtureMixin:
             is_active=True,
         )
         project = Project.objects.create(
-            project_type=ProjectType.objects.get(code='CAPSTONE'),
+            project_type=ProjectType.objects.get_or_create(code='CAPSTONE', defaults={'name': 'Bitirme Projesi', 'slug': 'capstone'})[0],
             title='Submission service projesi',
             created_by=self.owner,
             advisor=self.advisor,
@@ -292,7 +292,7 @@ class CapstoneSubmissionConcurrencyTests(SubmissionServiceFixtureMixin, Transact
             except Exception as exc:
                 results.put(('error', exc))
             finally:
-                close_old_connections()
+                connections.close_all()
 
         threads = [Thread(target=submit_in_thread, args=(index,)) for index in (1, 2)]
         for thread in threads:
