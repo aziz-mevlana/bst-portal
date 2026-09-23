@@ -91,7 +91,8 @@ def capstone_overview(capstone_project, now=None):
     current_time = now or timezone.now()
     checkpoints = list(capstone_project.checkpoints.all())
     by_kind = {checkpoint.kind: checkpoint for checkpoint in checkpoints}
-    earned = assessed_max = total_max = progress_units = 0
+    earned = assessed_max = total_max = 0
+    completed_checkpoints = 0
     pending_reviews = overdue_tasks = accepted_tasks = task_count = 0
     ready_evaluations = []
     deadlines = []
@@ -112,14 +113,13 @@ def capstone_overview(capstone_project, now=None):
         if evaluation:
             earned += evaluation.score
             assessed_max += checkpoint.max_score
-            progress_units += checkpoint.max_score
-        elif tasks:
-            progress_units += checkpoint.max_score * checkpoint.dashboard_accepted_count / len(tasks) / 2
+        if tasks and checkpoint.dashboard_accepted_count == len(tasks):
+            completed_checkpoints += 1
         if tasks or evaluation:
             any_activity = True
         if tasks and checkpoint.dashboard_accepted_count == len(tasks) and not evaluation:
             ready_evaluations.append(checkpoint)
-        if not evaluation:
+        if not tasks or checkpoint.dashboard_accepted_count != len(tasks):
             deadlines.append(checkpoint.due_at)
         for task in tasks:
             state = get_task_workflow_state(task)
@@ -135,7 +135,7 @@ def capstone_overview(capstone_project, now=None):
     if next_action is None and pending_reviews:
         next_action = {'text': 'Tesliminiz danışman değerlendirmesi bekliyor.'}
     if next_action is None and ready_evaluations:
-        next_action = {'text': 'Tamamlanan değerlendirme aşaması akademik puanlama bekliyor.'}
+        next_action = {'text': 'Tamamlanan kontrol noktaları danışmanınız tarafından izleniyor.'}
     if next_action is None:
         for checkpoint in checkpoints:
             for task in checkpoint.tasks.all():
@@ -152,15 +152,14 @@ def capstone_overview(capstone_project, now=None):
         checkpoint.kind in OFFICIAL_CHECKPOINT_KINDS
         and checkpoint.dashboard_task_count > 0
         and checkpoint.dashboard_accepted_count == checkpoint.dashboard_task_count
-        and checkpoint.dashboard_evaluation is not None
         for checkpoint in checkpoints
     )
     if completed:
         stage_index = 4
         next_action = {'text': 'Bitirme projeniz tamamlandı. Proje vitrininizi tamamlayın.'}
-    elif by_kind.get('POST_MIDTERM_REVIEW') and getattr(by_kind['POST_MIDTERM_REVIEW'], 'evaluation', None):
+    elif by_kind.get('POST_MIDTERM_REVIEW') and get_checkpoint_progress(by_kind['POST_MIDTERM_REVIEW']) == CheckpointProgress.COMPLETED:
         stage_index = 3
-    elif by_kind.get('FIRST_REVIEW') and getattr(by_kind['FIRST_REVIEW'], 'evaluation', None):
+    elif by_kind.get('FIRST_REVIEW') and get_checkpoint_progress(by_kind['FIRST_REVIEW']) == CheckpointProgress.COMPLETED:
         stage_index = 2
     elif any_activity:
         stage_index = 1
@@ -173,7 +172,7 @@ def capstone_overview(capstone_project, now=None):
         'stage_index': stage_index,
         'timeline': [{'label': label, 'state': 'complete' if index < stage_index else 'current' if index == stage_index else 'upcoming'}
                      for index, label in enumerate(CAPSTONE_STAGES)],
-        'progress_percent': 100 if completed else round(100 * progress_units / total_max) if total_max else 0,
+        'progress_percent': 100 if completed else round(100 * completed_checkpoints / len(checkpoints)) if checkpoints else 0,
         'score_earned': earned,
         'score_assessed_max': assessed_max,
         'score_total_max': total_max,

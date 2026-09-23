@@ -17,7 +17,7 @@ from .models import (
     CapstoneTask,
     CapstoneTerm,
 )
-from .services import approve_capstone_proposal
+from .services import approve_capstone_proposal, submit_capstone_proposal
 from .storage import PrivateFileSystemStorage
 from .workflow import (
     CheckpointProgress,
@@ -71,14 +71,10 @@ class CapstoneEndToEndIntegrationTests(TestCase):
         self.client.force_login(user)
 
     def start_capstone(self):
-        self.login(self.student)
-        response = self.client.post(reverse('capstone:student_start'), {
-            'title': 'Uçtan Uca Bitirme Projesi',
-            'description': 'Deployment öncesi integration testi.',
-            'advisor': self.advisor.pk,
-        })
-        self.assertRedirects(response, reverse('capstone:student_home'))
-        proposal = CapstoneProposal.objects.get(student=self.student, term=self.term)
+        # Existing production projects retain the four legacy checkpoints and task workflow.
+        proposal = submit_capstone_proposal(student=self.student, advisor=self.advisor,
+            term=self.term, title='Uçtan Uca Bitirme Projesi',
+            description='Eski kayıt uyumluluk testi.')
         approve_capstone_proposal(proposal=proposal, actor=self.advisor)
         return CapstoneProject.objects.get(project__created_by=self.student)
 
@@ -246,7 +242,7 @@ class CapstoneEndToEndIntegrationTests(TestCase):
     def test_state_changing_routes_do_not_mutate_on_get(self):
         self.login(self.student)
         response = self.client.get(reverse('capstone:student_start'))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         self.assertFalse(CapstoneProject.objects.exists())
 
         capstone_project = self.start_capstone()

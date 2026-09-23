@@ -912,7 +912,6 @@ def project_detail(request, project_id):
     context = {
         'milestone_items': milestone_items,
         'can_manage_milestones': can_manage_milestones,
-        'milestone_score': project.milestone_score if milestone_items else None,
         'milestone_approved_count': sum(item['state'] == 'APPROVED' for item in milestone_items),
         'milestone_required_count': sum(item['milestone'].is_required for item in milestone_items),
         'required_milestones_ready': bool(milestone_items) and all(

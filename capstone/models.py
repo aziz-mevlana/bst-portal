@@ -90,6 +90,11 @@ class CapstoneEnrollment(models.Model):
         related_name='capstone_enrollments',
     )
     is_active = models.BooleanField(default=True)
+    advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True,
+                                related_name='capstone_advisees')
+    advisor_assigned_at = models.DateTimeField(null=True, blank=True, editable=False)
+    advisor_assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True,
+                                            blank=True, related_name='assigned_capstone_advisors', editable=False)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -615,3 +620,13 @@ class CapstoneSubmissionReview(models.Model):
 
     def __str__(self):
         return f'{self.submission_attempt} - {self.get_decision_display()}'
+
+
+from .academic_models import (  # noqa: E402,F401 - register the new academic models
+    CapstoneAcademicReview, CapstoneAcademicSubmission, CapstoneAcademicSubmissionFile,
+    CapstoneAcademicSubmissionLink, CapstoneAdvisorPrivateNote, CapstoneChecklistItem,
+    CapstoneChecklistTick, CapstoneHelpAttachment, CapstoneHelpMessage, CapstoneHelpRequest,
+    CapstoneLiteratureReview, CapstoneLiteratureVersion, CapstoneMeetingNote,
+    CapstoneMeetingRequest, CapstonePlan, CapstonePlanCheckpoint, CapstonePlanTemplate,
+    CapstoneStudentCheckpoint, CapstoneTemplateCheckpoint, CapstoneTemplateExpectation,
+)

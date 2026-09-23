@@ -25,25 +25,6 @@ class CapstoneStartForm(forms.Form):
             'placeholder': 'Projenizin amacını ve kapsamını kısaca açıklayın',
         }),
     )
-    advisor = forms.ModelChoiceField(
-        label='Danışman',
-        queryset=User.objects.none(),
-        empty_label='Danışman seçin',
-        widget=forms.Select(attrs={'class': 'form-select w-full'}),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['advisor'].queryset = (
-            User.objects.filter(
-                is_active=True,
-                is_staff=False,
-                is_superuser=False,
-                profile__user_type='teacher',
-            )
-            .select_related('profile')
-            .order_by('first_name', 'last_name', 'username')
-        )
 
 
 class CapstoneTaskForm(forms.ModelForm):

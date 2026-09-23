@@ -31,7 +31,7 @@
             <section class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Bitirme projesi özeti">
                 <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Genel ilerleme</p><p class="mt-2 text-2xl font-bold text-slate-900">%{{ overview.progress_percent }}</p></div>
                 <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Mevcut aşama</p><p class="mt-2 font-bold text-slate-900">{{ overview.stage }}</p></div>
-                <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Akademik puan</p><p class="mt-2 font-bold text-slate-900">{{ overview.score_earned }} / {{ overview.score_total_max }}</p><p class="text-xs text-slate-500">{{ overview.score_assessed_max }} puanlık bölüm değerlendirildi</p></div>
+                <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Onaylanan kontrol noktaları</p><p class="mt-2 font-bold text-slate-900">{{ capstone_project.completed_checkpoint_count }} / {{ capstone_project.total_checkpoint_count }}</p></div>
                 <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Sıradaki teslim</p><p class="mt-2 font-bold text-slate-900">{{ overview.next_deadline|date:'d.m.Y H:i'|default:'Bekleniyor' }}</p></div>
                 <div class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-xs text-slate-500">Danışman değerlendirmesi</p><p class="mt-2 font-bold text-slate-900">{{ overview.pending_review_count }} bekliyor</p></div>
             </section>
@@ -57,7 +57,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 flex flex-wrap gap-3 text-sm text-slate-700"><span>{{ checkpoint.dashboard_accepted_count }}/{{ checkpoint.dashboard_task_count }} görev kabul edildi</span><span>Akademik puan: {% if checkpoint.dashboard_evaluation %}{{ checkpoint.dashboard_evaluation.score }}{% else %}Henüz puanlanmadı{% endif %} / {{ checkpoint.max_score }}</span></div>
+                        <div class="mt-4 flex flex-wrap gap-3 text-sm text-slate-700"><span>{{ checkpoint.dashboard_accepted_count }}/{{ checkpoint.dashboard_task_count }} görev kabul edildi</span></div>
                         {% if checkpoint.dashboard_evaluation %}<p class="mt-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">Danışman geri bildirimi: {{ checkpoint.dashboard_evaluation.feedback }}</p>{% endif %}
                         <details class="mt-5" {% if checkpoint.dashboard_is_overdue %}open{% endif %}><summary class="cursor-pointer font-semibold text-cyan-800">Görevleri ve teslim geçmişini göster</summary>
 
@@ -145,19 +145,16 @@
         {% else %}
             <section class="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Bitirme Projesi</p>
-                {% if proposal.status == 'PENDING' %}
-                    <h1 class="mt-3 text-3xl font-bold text-slate-900">Danışman onayı bekleniyor</h1>
-                    <p class="mt-4 text-slate-600">{{ proposal.requested_advisor.get_full_name|default:proposal.requested_advisor.username }} · {{ proposal.created_at|date:'d.m.Y H:i' }}</p>
-                    <p class="mt-2 text-slate-700">{{ proposal.title }}</p>
-                    <form class="mt-6" method="post" action="{% url 'capstone:student_proposal_withdraw' proposal.pk %}">{% csrf_token %}<button class="rounded-xl border border-slate-300 px-5 py-2.5 font-semibold text-slate-700" type="submit">Teklifi geri çek</button></form>
-                {% elif eligible %}
-                    <h1 class="mt-3 text-3xl font-bold text-slate-900">Bitirme projenizi başlatın</h1>
-                    {% if proposal.status == 'REJECTED' %}<p class="mt-4 rounded-xl bg-red-50 p-4 text-left text-red-800">Danışman geri bildirimi: {{ proposal.advisor_note }}</p>{% endif %}
-                    <p class="mt-4 text-slate-600">1. Fikrinizi girin · 2. Danışman seçin · 3. Danışman onayını bekleyin · 4. Dört akademik değerlendirme noktasından geçin.</p>
-                    <a class="mt-7 inline-flex rounded-xl bg-cyan-700 px-6 py-3 font-semibold text-white transition hover:bg-cyan-800" href="{% url 'capstone:student_start' %}">{% if proposal.status == 'REJECTED' %}Yeni teklif oluştur{% else %}Bitirme projenizi başlatın{% endif %}</a>
+                {% if enrollment and enrollment.advisor %}
+                    <h1 class="mt-3 text-3xl font-bold text-slate-900">Proje bilgilerinizi tamamlayın</h1>
+                    <p class="mt-4 text-slate-600">Danışman: {{ enrollment.advisor.get_full_name|default:enrollment.advisor.username }}</p>
+                    <a class="mt-7 inline-flex rounded-xl bg-cyan-700 px-6 py-3 font-semibold text-white" href="{% url 'capstone:student_start' %}">Proje Bilgilerini Tamamla</a>
+                {% elif enrollment %}
+                    <h1 class="mt-3 text-3xl font-bold text-slate-900">Danışman ataması bekleniyor</h1>
+                    <p class="mt-4 text-slate-600">Akademisyen sizi danışmanlığına aldığında proje bilgilerinizi tamamlayabileceksiniz.</p>
                 {% else %}
-                    <h1 class="mt-3 text-2xl font-bold text-slate-900">Aktif bitirme projesi kaydı bulunmuyor</h1>
-                    <p class="mt-4 text-slate-600">Bu dönem için aktif bitirme projesi kaydınız bulunmuyor.</p>
+                    <h1 class="mt-3 text-2xl font-bold text-slate-900">Bu dönem Bitirme Projesi öğrenci listesinde bulunmuyorsunuz.</h1>
+                    <p class="mt-4 text-slate-600">Resmi listeyi Bitirme Projesi yönetimi oluşturur.</p>
                 {% endif %}
             </section>
         {% endif %}

@@ -173,9 +173,14 @@ def complete_capstone_project(*, capstone_project, actor):
         raise ValidationError('Projeyi tamamlama yetkiniz yok.')
     if capstone_project.completed_at:
         return capstone_project
-    overview = capstone_overview(capstone_project)
-    if not overview['completion_ready']:
-        raise ValidationError('Tüm resmi kontrol noktaları, görev kabulleri ve akademik puanlamalar tamamlanmalıdır.')
+    if capstone_project.checkpoints.exists():
+        overview = capstone_overview(capstone_project)
+        if not overview['completion_ready']:
+            raise ValidationError('Eski akademik kontrol noktaları tamamlanmalıdır.')
+    else:
+        from .academic_services import academic_overview
+        if not academic_overview(capstone_project)['completion_ready']:
+            raise ValidationError('Tüm aktif kontrol noktaları danışman tarafından onaylanmalıdır.')
     capstone_project.completed_at = timezone.now()
     capstone_project.completed_by = actor
     capstone_project.save(update_fields=['completed_at', 'completed_by', 'updated_at'])
@@ -219,7 +224,7 @@ def create_capstone_checkpoints(capstone_project):
 
 
 @transaction.atomic
-def create_capstone_project(*, student, advisor, title, description='', term=None):
+def create_capstone_project(*, student, advisor, title, description='', term=None, create_checkpoints=True):
     """Create a complete CAPSTONE project aggregate for one enrolled student."""
 
     if term is None:
@@ -290,7 +295,8 @@ def create_capstone_project(*, student, advisor, title, description='', term=Non
     project.team.add(student)
 
     capstone_project = CapstoneProject.objects.create(project=project, term=term)
-    create_capstone_checkpoints(capstone_project)
+    if create_checkpoints:
+        create_capstone_checkpoints(capstone_project)
     record_audit_event(
         actor=student,
         action='capstone.project_created',

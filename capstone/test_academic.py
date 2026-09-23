@@ -19,6 +19,7 @@ from .services import (
     approve_capstone_proposal, complete_capstone_project, evaluate_capstone_checkpoint,
     reject_capstone_proposal, submit_capstone_proposal, withdraw_capstone_proposal,
 )
+from .academic_services import claim_student
 from .workflow import capstone_overview
 
 
@@ -150,21 +151,24 @@ class CapstoneAcademicTests(TestCase):
         self.assertEqual(complete_capstone_project(capstone_project=project, actor=self.advisor).pk, project.pk)
         self.assertEqual(AuditLog.objects.filter(action='capstone.project_completed', target_id=str(project.pk)).count(), 1)
 
-    def test_student_start_waits_for_advisor_and_admin_can_approve(self):
+    def test_student_start_uses_assigned_advisor_without_proposal(self):
         self.client.force_login(self.student)
         response = self.client.post(reverse('capstone:student_start'), {
             'title': 'Onaylı fikir', 'description': 'Açıklama', 'advisor': self.advisor.pk,
         })
         self.assertEqual(response.status_code, 302)
         self.assertFalse(CapstoneProject.objects.exists())
-        proposal = CapstoneProposal.objects.get(student=self.student)
-        self.assertContains(self.client.get(reverse('capstone:student_home')), 'Danışman onayı bekleniyor')
-        self.client.force_login(self.admin)
-        response = self.client.post(reverse('capstone:advisor_proposal_decide', args=[proposal.pk]), {'decision': 'approve'})
+        self.assertContains(self.client.get(reverse('capstone:student_home')), 'Danışman ataması bekleniyor')
+        claim_student(enrollment=CapstoneEnrollment.objects.get(term=self.term, student=self.student), advisor=self.advisor)
+        response = self.client.post(reverse('capstone:student_start'), {
+            'title': 'Onaylı fikir', 'description': 'Açıklama', 'advisor': self.other_teacher.pk,
+        })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(CapstoneProject.objects.count(), 1)
+        self.assertEqual(CapstoneProject.objects.get().project.advisor_id, self.advisor.pk)
+        self.assertFalse(CapstoneProposal.objects.exists())
 
-    def test_advisor_proposals_are_paginated_without_hiding_queue_count(self):
+    def test_legacy_proposals_do_not_reappear_in_new_advisor_center(self):
         for index in range(21):
             student = User.objects.create(username=f'queue-student-{index}')
             student.profile.user_type = 'student'
@@ -175,11 +179,10 @@ class CapstoneAcademicTests(TestCase):
                                      title=f'Teklif {index:02d}')
         self.client.force_login(self.advisor)
         first = self.client.get(reverse('capstone:advisor_home'))
-        second = self.client.get(reverse('capstone:advisor_home') + '?proposal_page=2')
-        self.assertEqual(first.context['proposal_count'], 21)
-        self.assertEqual(len(first.context['proposals']), 20)
-        self.assertEqual(len(second.context['proposals']), 1)
-        self.assertContains(second, 'Teklif 20')
+        self.assertEqual(first.status_code, 200)
+        self.assertNotContains(first, 'Teklif 20')
+        self.assertNotContains(first, 'Kabul Et')
+        self.assertEqual(CapstoneProposal.objects.filter(status='PENDING').count(), 21)
 
     def test_evaluation_and_completion_post_cannot_be_bypassed(self):
         project = self.project()

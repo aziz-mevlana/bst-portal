@@ -142,7 +142,7 @@ class CapstoneAdvisorViewTests(TestCase):
         self.assertContains(response, self.capstone_project.project.title)
         self.assertNotContains(response, self.other_project.project.title)
         self.assertContains(response, '1 değerlendirme bekliyor')
-        self.assertContains(response, 'Geciken görev')
+        self.assertContains(response, 'Geciken kontrol noktası')
 
     def test_unrelated_teacher_sees_empty_advisor_home(self):
         self.login(self.unrelated_teacher)
@@ -150,7 +150,7 @@ class CapstoneAdvisorViewTests(TestCase):
         response = self.client.get(self.home_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Size atanmış bir bitirme projesi bulunmuyor.')
+        self.assertContains(response, 'Bu dönem danışmanlığınızda proje bulunmuyor.')
         self.assertNotContains(response, self.capstone_project.project.title)
 
     def test_student_and_inactive_teacher_cannot_access_advisor_home(self):

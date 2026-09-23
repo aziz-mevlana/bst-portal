@@ -139,9 +139,10 @@ class MilestoneWorkflowTests(TestCase):
     def test_milestone_form_labels_are_turkish(self):
         form = ProjectMilestoneForm()
         self.assertEqual({name: form.fields[name].label for name in (
-            'title', 'description', 'order', 'due_at', 'max_score', 'is_required'
+            'title', 'description', 'order', 'due_at', 'is_required'
         )}, {'title': 'Başlık', 'description': 'Açıklama', 'order': 'Sıra',
-             'due_at': 'Son Teslim Tarihi', 'max_score': 'Azami Puan', 'is_required': 'Zorunlu'})
+             'due_at': 'Son Teslim Tarihi', 'is_required': 'Zorunlu'})
+        self.assertNotIn('max_score', form.fields)
 
     def test_empty_milestone_delete_requires_permission_and_audits(self):
         url = reverse('projects:milestone_delete', args=[self.project.pk, self.milestone.pk])
@@ -313,6 +314,7 @@ class MilestoneWorkflowTests(TestCase):
         })
         self.assertEqual(created.status_code, 302)
         milestone = ProjectMilestone.objects.get(project=self.project, order=2)
+        self.assertEqual(milestone.max_score, 1)
         self.client.force_login(self.member)
         submitted = self.client.post(reverse('projects:milestone_submit', args=[milestone.pk]), {
             'completion_note': 'Done', 'evidence_links': 'https://example.com/report',
@@ -321,8 +323,13 @@ class MilestoneWorkflowTests(TestCase):
         submission = milestone.submissions.get()
         self.assertEqual(submission.links.count(), 1)
         self.client.force_login(self.instructor)
+        pending_detail = self.client.get(reverse('projects:project_detail', args=[self.project.pk]))
+        self.assertNotContains(pending_detail, 'name="score"')
         reviewed = self.client.post(reverse('projects:milestone_review', args=[submission.pk]), {
             'outcome': 'APPROVED', 'score': '45', 'feedback': 'Good',
         })
         self.assertEqual(reviewed.status_code, 302)
-        self.assertEqual(submission.review.score, 45)
+        self.assertIsNone(submission.review.score)
+        detail = self.client.get(reverse('projects:project_detail', args=[self.project.pk]))
+        self.assertNotContains(detail, 'Toplam puan')
+        self.assertNotContains(detail, 'Azami Puan')

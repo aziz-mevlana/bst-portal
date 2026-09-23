@@ -131,12 +131,18 @@ class CapstoneStudentViewTests(TestCase):
         response = self.client.get(self.home_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Bitirme projenizi başlatın')
+        self.assertContains(response, 'Danışman ataması bekleniyor')
+        self.assertNotContains(response, self.start_url)
+        enrollment = CapstoneEnrollment.objects.get(term=self.term, student=self.owner)
+        enrollment.advisor = self.advisor
+        enrollment.save(update_fields=['advisor'])
+        response = self.client.get(self.home_url)
+        self.assertContains(response, 'Proje Bilgilerini Tamamla')
         self.assertContains(response, self.start_url)
 
         self.login(self.ineligible)
         response = self.client.get(self.home_url)
-        self.assertContains(response, 'aktif bitirme projesi kaydınız bulunmuyor')
+        self.assertContains(response, 'Bu dönem Bitirme Projesi öğrenci listesinde bulunmuyorsunuz')
         self.assertNotContains(response, self.start_url)
 
     def test_existing_project_renders_owner_dashboard(self):
@@ -156,26 +162,28 @@ class CapstoneStudentViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn('login', response.url)
 
-    def test_start_get_limits_advisors_to_active_non_admin_teachers(self):
+    def test_start_get_shows_assigned_advisor_read_only(self):
         admin_teacher = self.create_user(
             'student-ui-admin-teacher', 'teacher', is_staff=True
         )
         self.login()
+        enrollment = CapstoneEnrollment.objects.get(term=self.term, student=self.owner)
+        enrollment.advisor = self.advisor
+        enrollment.save(update_fields=['advisor'])
 
         response = self.client.get(self.start_url)
 
         self.assertEqual(response.status_code, 200)
-        advisor_ids = set(
-            response.context['form'].fields['advisor'].queryset.values_list('pk', flat=True)
-        )
-        self.assertIn(self.advisor.pk, advisor_ids)
-        self.assertIn(self.other_teacher.pk, advisor_ids)
-        self.assertNotIn(self.owner.pk, advisor_ids)
-        self.assertNotIn(self.inactive_teacher.pk, advisor_ids)
-        self.assertNotIn(admin_teacher.pk, advisor_ids)
+        self.assertNotIn('advisor', response.context['form'].fields)
+        self.assertContains(response, self.advisor.username)
+        self.assertNotContains(response, self.other_teacher.username)
+        self.assertNotContains(response, admin_teacher.username)
 
-    def test_valid_start_submits_proposal_before_project_creation(self):
+    def test_valid_start_creates_project_from_assigned_advisor(self):
         self.login()
+        enrollment = CapstoneEnrollment.objects.get(term=self.term, student=self.owner)
+        enrollment.advisor = self.advisor
+        enrollment.save(update_fields=['advisor'])
 
         response = self.client.post(self.start_url, {
             'title': 'Yeni Bitirme Projesi',
@@ -184,13 +192,16 @@ class CapstoneStudentViewTests(TestCase):
         })
 
         self.assertRedirects(response, self.home_url)
-        proposal = CapstoneProposal.objects.get(student=self.owner)
-        self.assertEqual(proposal.requested_advisor, self.advisor)
-        self.assertEqual(proposal.status, CapstoneProposal.Status.PENDING)
-        self.assertFalse(CapstoneProject.objects.filter(project__created_by=self.owner).exists())
+        project = CapstoneProject.objects.get(project__created_by=self.owner)
+        self.assertEqual(project.project.advisor, self.advisor)
+        self.assertEqual(project.checkpoints.count(), 0)
+        self.assertFalse(CapstoneProposal.objects.filter(student=self.owner).exists())
 
-    def test_manipulated_invalid_advisor_is_rejected_as_form_error(self):
+    def test_manipulated_advisor_is_ignored(self):
         self.login()
+        enrollment = CapstoneEnrollment.objects.get(term=self.term, student=self.owner)
+        enrollment.advisor = self.advisor
+        enrollment.save(update_fields=['advisor'])
 
         response = self.client.post(self.start_url, {
             'title': 'Manipüle Proje',
@@ -198,9 +209,8 @@ class CapstoneStudentViewTests(TestCase):
             'advisor': self.other_student.pk,
         })
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['form'].errors)
-        self.assertFalse(CapstoneProject.objects.filter(project__created_by=self.owner).exists())
+        self.assertRedirects(response, self.home_url)
+        self.assertEqual(CapstoneProject.objects.get(project__created_by=self.owner).project.advisor, self.advisor)
 
     def test_duplicate_and_noneligible_start_are_blocked(self):
         self.create_project()
@@ -226,7 +236,7 @@ class CapstoneStudentViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, capstone_project.project.title)
-        self.assertContains(response, 'Bitirme projenizi başlatın')
+        self.assertContains(response, 'Danışman ataması bekleniyor')
 
     def test_dashboard_renders_checkpoint_task_state_overdue_and_history(self):
         task = self.create_task()
@@ -372,5 +382,5 @@ class CapstoneStudentViewTests(TestCase):
         response = self.client.get(self.home_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'aktif bitirme projesi kaydınız bulunmuyor')
+        self.assertContains(response, 'Bu dönem Bitirme Projesi öğrenci listesinde bulunmuyorsunuz')
         self.assertNotContains(response, self.start_url)

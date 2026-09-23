@@ -102,7 +102,7 @@ class NavigationPermissionTests(TestCase):
     def test_teacher_and_authorized_student_receive_distinct_panels(self):
         teacher = self.make_user('nav-teacher', 'teacher')
         self.client.force_login(teacher)
-        self.assertContains(self.client.get(reverse('portal:index')), 'Yönetim Paneli')
+        self.assertContains(self.client.get(reverse('portal:index')), 'Akademisyen Paneli')
         self.client.logout()
 
         authority = self.make_user('nav-staff-student', 'staff_student')

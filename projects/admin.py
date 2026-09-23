@@ -75,7 +75,8 @@ class CourseInstructorAdmin(admin.ModelAdmin):
 
 @admin.register(ProjectMilestone)
 class ProjectMilestoneAdmin(admin.ModelAdmin):
-    list_display = ('project', 'order', 'title', 'due_at', 'max_score')
+    list_display = ('project', 'order', 'title', 'due_at')
+    exclude = ('max_score',)
 
     def save_model(self, request, obj, form, change):
         old_deadline = type(obj).objects.filter(pk=obj.pk).values_list('due_at', flat=True).first() if change else None
@@ -102,8 +103,13 @@ class ImmutableMilestoneAdmin(admin.ModelAdmin):
         return False
 
 
-for milestone_model in (ProjectMilestoneSubmission, ProjectMilestoneReview,
-                        ProjectMilestoneSubmissionFile, ProjectMilestoneSubmissionLink):
+class LegacyMilestoneReviewAdmin(ImmutableMilestoneAdmin):
+    exclude = ('score',)
+
+
+admin.site.register(ProjectMilestoneReview, LegacyMilestoneReviewAdmin)
+for milestone_model in (ProjectMilestoneSubmission, ProjectMilestoneSubmissionFile,
+                        ProjectMilestoneSubmissionLink):
     admin.site.register(milestone_model, ImmutableMilestoneAdmin)
 
 

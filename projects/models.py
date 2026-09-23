@@ -535,7 +535,8 @@ class Project(models.Model):
         for milestone in self.milestones.all():
             latest = milestone.latest_submission
             if latest and hasattr(latest, 'review') and latest.review.outcome == 'APPROVED':
-                approved.append((latest.review.score, milestone.max_score))
+                if latest.review.score is not None:
+                    approved.append((latest.review.score, milestone.max_score))
         if not approved:
             return None
         earned = sum(score for score, _ in approved)
@@ -549,7 +550,8 @@ class ProjectMilestone(models.Model):
     description = models.TextField(blank=True)
     order = models.PositiveSmallIntegerField()
     due_at = models.DateTimeField(blank=True, null=True)
-    max_score = models.PositiveSmallIntegerField()
+    # Legacy grade metadata; new control points do not ask for or create grades.
+    max_score = models.PositiveSmallIntegerField(default=1)
     is_required = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -663,8 +665,6 @@ class ProjectMilestoneReview(models.Model):
                 raise ValidationError('Eski teslim değerlendirilemez.')
             if self.score is not None and self.score > milestone.max_score:
                 raise ValidationError({'score': 'Puan üst sınırı aşamaz.'})
-        if self.outcome == self.Outcome.APPROVED and self.score is None:
-            raise ValidationError({'score': 'Onay için puan zorunludur.'})
         if self.outcome == self.Outcome.REVISION_REQUIRED and not self.feedback.strip():
             raise ValidationError({'feedback': 'Revizyon için geri bildirim zorunludur.'})
 

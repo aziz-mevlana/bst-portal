@@ -47,10 +47,10 @@ MAX_PROJECT_ASSET_BATCH_SIZE = 100 * 1024 * 1024
 class ProjectMilestoneForm(forms.ModelForm):
     class Meta:
         model = ProjectMilestone
-        fields = ('title', 'description', 'order', 'due_at', 'max_score', 'is_required')
+        fields = ('title', 'description', 'order', 'due_at', 'is_required')
         labels = {
             'title': 'Başlık', 'description': 'Açıklama', 'order': 'Sıra',
-            'due_at': 'Son Teslim Tarihi', 'max_score': 'Azami Puan',
+            'due_at': 'Son Teslim Tarihi',
             'is_required': 'Zorunlu',
         }
         widgets = {'due_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')}
@@ -59,8 +59,8 @@ class ProjectMilestoneForm(forms.ModelForm):
 class ProjectMilestoneReviewForm(forms.ModelForm):
     class Meta:
         model = ProjectMilestoneReview
-        fields = ('outcome', 'score', 'feedback')
-        labels = {'outcome': 'Karar', 'score': 'Puan', 'feedback': 'Geri bildirim'}
+        fields = ('outcome', 'feedback')
+        labels = {'outcome': 'Karar', 'feedback': 'Geri bildirim'}
 
 
 class ProjectMilestoneSubmissionForm(forms.Form):

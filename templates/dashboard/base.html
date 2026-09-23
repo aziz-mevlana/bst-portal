@@ -45,7 +45,7 @@
     </div>
 
     <nav class="dashboard-nav flex-1 space-y-5 overflow-y-auto px-2 pb-4" aria-label="Panel navigasyonu">
-      <div><p class="dashboard-nav-heading">Panel</p><a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg><span>Genel Bakış</span></a></div>
+      <div><p class="dashboard-nav-heading">Panel</p><a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.view_name == 'dashboard:home' %}active{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg><span>Genel Bakış</span></a>{% if user_type == 'teacher' or is_admin_account %}<a href="{% url 'capstone:advisor_home' %}" class="nav-link {% if request.resolver_match.app_name == 'capstone' %}active{% endif %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM8 9h8M8 13h8M8 17h5"/></svg><span>Bitirme Projesi</span></a>{% endif %}</div>
 
       {% if is_admin_account or user_type == 'teacher' or can_manage_news_content or can_manage_event_content or can_review_project_requests %}
       <div><p class="dashboard-nav-heading">İçerik</p>

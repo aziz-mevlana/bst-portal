@@ -8,8 +8,10 @@ def user_type(request):
         from accounts.permissions import can_share_content
         management_access = can_access_management(request.user)
         admin_account = is_admin(request.user)
-        if admin_account or role == 'teacher':
+        if admin_account:
             panel_label = 'Yönetim Paneli'
+        elif role == 'teacher':
+            panel_label = 'Akademisyen Paneli'
         elif role == 'staff_student':
             panel_label = 'BST Yetkilisi Paneli'
         elif role == 'student':
