@@ -1,0 +1,23 @@
+{% extends 'dashboard/base.html' %}
+{% block dashboard_content %}
+<div class="capstone-teacher space-y-6">
+  {% block capstone_content %}{% endblock %}
+</div>
+<style>
+  .capstone-teacher main{min-height:0;background:transparent;padding:0;color:var(--text-primary)}
+  .capstone-teacher main>div{max-width:none;padding:0}
+  .capstone-teacher .bg-white,.capstone-teacher .bg-slate-50,.capstone-teacher .bg-cyan-50,.capstone-teacher .bg-indigo-50,.capstone-teacher .bg-amber-50,.capstone-teacher .bg-emerald-50,.capstone-teacher .bg-red-50,.capstone-teacher .bg-rose-50{background:var(--surface)!important;color:var(--text-primary)}
+  .capstone-teacher .bg-slate-100,.capstone-teacher .bg-amber-100,.capstone-teacher .bg-red-100{background:var(--surface-elevated)!important;color:var(--text-primary)}
+  .capstone-teacher .text-slate-900,.capstone-teacher .text-slate-800,.capstone-teacher .text-slate-700,.capstone-teacher .text-slate-600{color:var(--text-primary)!important}
+  .capstone-teacher .text-slate-500,.capstone-teacher .text-gray-500{color:var(--text-secondary)!important}
+  .capstone-teacher .text-cyan-700,.capstone-teacher .text-cyan-800,.capstone-teacher .text-cyan-900,.capstone-teacher .text-emerald-700,.capstone-teacher .text-emerald-800,.capstone-teacher .text-emerald-900{color:#8bdcf1!important}
+  .capstone-teacher .text-rose-700,.capstone-teacher .text-rose-800,.capstone-teacher .text-red-700,.capstone-teacher .text-red-800{color:#fda4af!important}
+  .capstone-teacher .text-amber-800,.capstone-teacher .text-amber-900{color:#fcd34d!important}
+  .capstone-teacher .text-indigo-900,.capstone-teacher .text-indigo-950{color:#c7d2fe!important}
+  .capstone-teacher .border-slate-200,.capstone-teacher .border-cyan-200,.capstone-teacher .border-indigo-200,.capstone-teacher .border-t,.capstone-teacher .border-b{border-color:var(--border)!important}
+  .capstone-teacher .bg-white,.capstone-teacher .bg-slate-50,.capstone-teacher .bg-cyan-50,.capstone-teacher .bg-indigo-50,.capstone-teacher .bg-amber-50,.capstone-teacher .bg-emerald-50,.capstone-teacher .bg-red-50,.capstone-teacher .bg-rose-50{border:1px solid var(--border)}
+  .capstone-teacher a:focus-visible,.capstone-teacher button:focus-visible,.capstone-teacher summary:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+  .capstone-teacher a:hover{color:#bfdbfe}
+  .capstone-teacher nav a[aria-current="page"]{background:rgba(47,111,237,.25)!important;border-color:#60a5fa!important;color:#eff6ff!important}
+</style>
+{% endblock %}

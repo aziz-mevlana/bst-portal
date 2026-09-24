@@ -155,7 +155,9 @@ class RequestForm(forms.ModelForm):
             ).exclude(code='CAPSTONE')
         self.fields['project_type'].queryset = active_types
         self.course_required_type_ids = list(active_types.filter(requires_course=True).values_list('pk', flat=True))
-        self.fields['course'].queryset = Course.objects.filter(Q(is_active=True) | Q(pk=self.instance.course_id)).distinct()
+        self.fields['course'].queryset = Course.objects.filter(
+            Q(is_active=True) & ~Q(code__in=('BST 401', 'BST 402')) | Q(pk=self.instance.course_id)
+        ).distinct()
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')
         configure_optional_choice(self.fields['semester'], 'Dönem seçiniz (isteğe bağlı)')
         configure_required_choice(self.fields['status'], 'İlan durumunu seçiniz')
@@ -529,17 +531,14 @@ class ProjectForm(forms.ModelForm):
             project_types = ProjectType.objects.filter(
                 Q(is_active=True) | Q(pk=self.instance.project_type_id)
             ).exclude(code='CAPSTONE')
-        elif current_user and current_user.is_authenticated:
-            profile = getattr(current_user, 'profile', None)
-            if profile and profile.user_type in {'student', 'staff_student'} and profile.class_level == '4':
-                project_types = ProjectType.objects.filter(is_active=True)
         self.fields['project_type'].queryset = project_types
         self.fields['project_type'].label_from_instance = lambda project_type: (
             'Bitirme Projesi' if project_type.code == 'CAPSTONE' else project_type.name
         )
-        self.capstone_type_id = project_types.filter(code='CAPSTONE').values_list('pk', flat=True).first()
         self.course_required_type_ids = list(project_types.filter(requires_course=True).values_list('pk', flat=True))
-        self.fields['course'].queryset = Course.objects.filter(Q(is_active=True) | Q(pk=self.instance.course_id)).distinct()
+        self.fields['course'].queryset = Course.objects.filter(
+            Q(is_active=True) & ~Q(code__in=('BST 401', 'BST 402')) | Q(pk=self.instance.course_id)
+        ).distinct()
         if self.instance and self.instance.pk and self._original_project_type_code == 'CAPSTONE':
             self.fields['project_type'].disabled = True
         configure_required_choice(self.fields['project_type'], 'Proje türünü seçiniz')

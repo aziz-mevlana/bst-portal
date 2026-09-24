@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
 ]
 
+TEST_RUNNER = 'bst_portal.test_runner.PortalTestRunner'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'core.middleware.SecurityHeadersMiddleware',

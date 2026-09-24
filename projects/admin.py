@@ -27,7 +27,7 @@ from .models import (
     ProjectWritingSuggestion,
     Technology,
     Team, TeamInvitation, TeamMembership, TeamOpenRole,
-    Course, CourseInstructor, ProjectMilestone, ProjectMilestoneSubmission,
+    Course, CourseCatalogEntry, CourseInstructor, ProjectMilestone, ProjectMilestoneSubmission,
     ProjectMilestoneReview, ProjectMilestoneSubmissionFile, ProjectMilestoneSubmissionLink,
 )
 from core.audit import record_audit_event
@@ -50,6 +50,13 @@ class CourseAdmin(admin.ModelAdmin):
     def delete_queryset(self, request, queryset):
         for course in queryset:
             self.delete_model(request, course)
+
+
+@admin.register(CourseCatalogEntry)
+class CourseCatalogEntryAdmin(admin.ModelAdmin):
+    list_display = ('academic_year', 'semester', 'class_level', 'course', 'display_name', 'is_active')
+    list_filter = ('academic_year', 'semester', 'class_level', 'is_active')
+    search_fields = ('course__code', 'course__name')
 
 
 @admin.register(CourseInstructor)

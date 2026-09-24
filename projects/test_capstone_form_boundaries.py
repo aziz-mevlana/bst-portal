@@ -44,23 +44,22 @@ class GenericProjectCapstoneBoundaryTests(TestCase):
         self.assertContains(response, 'yalnızca özel Bitirme Projesi talep akışıyla')
         self.assertFalse(Project.objects.filter(title='Kaçak CAPSTONE').exists())
 
-    def test_only_fourth_year_students_see_bitirme_projesi_option(self):
-        for level in ('1', '2', '3'):
+    def test_create_query_parameters_cannot_offer_capstone(self):
+        for params in ({'type': self.capstone_type.pk}, {'project_type': self.capstone_type.pk}):
+            with self.subTest(params=params):
+                response = self.client.get(reverse('projects:project_create'), params)
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn(self.capstone_type, response.context['form'].fields['project_type'].queryset)
+
+    def test_no_student_sees_bitirme_projesi_in_generic_create(self):
+        for level in ('1', '2', '3', '4'):
             self.owner.profile.class_level = level
             self.owner.profile.save(update_fields=['class_level'])
             response = self.client.get(reverse('projects:project_create'))
-            self.assertNotContains(response, f'<option value="{self.capstone_type.pk}"')
-        self.owner.profile.class_level = '4'
-        self.owner.profile.save(update_fields=['class_level'])
-        response = self.client.get(reverse('projects:project_create'))
-        self.assertContains(response, f'<option value="{self.capstone_type.pk}"')
-        self.assertContains(response, 'Bitirme Projesi')
-        self.assertNotContains(response, '>CAPSTONE</option>')
-        self.assertContains(response, reverse('capstone:student_home'))
+            self.assertNotIn(self.capstone_type, response.context['form'].fields['project_type'].queryset)
         self.owner.profile.user_type = 'staff_student'
         self.owner.profile.save(update_fields=['user_type'])
-        self.assertContains(self.client.get(reverse('projects:project_create')),
-                            f'<option value="{self.capstone_type.pk}"')
+        self.assertNotIn(self.capstone_type, self.client.get(reverse('projects:project_create')).context['form'].fields['project_type'].queryset)
         response = self.client.post(reverse('projects:project_create'),
                                     self.project_data(project_type=self.capstone_type, title='Doğrudan bitirme'))
         self.assertEqual(response.status_code, 200)

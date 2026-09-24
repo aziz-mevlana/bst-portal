@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'capstone/teacher_base.html' %}
 
 {% block title %}{{ capstone_project.project.title }} | Bitirme Projesi Danışmanlığı{% endblock %}
 
-{% block content %}
-<main class="min-h-screen bg-slate-50 py-8 sm:py-12">
+{% block capstone_content %}
+<main class="py-2 sm:py-4">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <a class="text-sm font-semibold text-cyan-700 hover:text-cyan-900" href="{% url 'capstone:advisor_home' %}">← Bitirme projelerine dön</a>
         <header class="mt-5 rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-9">

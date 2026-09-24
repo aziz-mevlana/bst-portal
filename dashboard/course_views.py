@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from accounts.policies import is_admin, is_bst_authority, is_teacher
 from core.audit import record_audit_event
-from projects.models import Course, CourseInstructor
+from projects.models import Course, CourseCatalogEntry, CourseInstructor
 
 
 def can_manage_courses(user):
@@ -26,11 +26,16 @@ class CourseForm(forms.ModelForm):
 def course_list(request):
     if not (can_manage_courses(request.user) or is_teacher(request.user)):
         raise PermissionDenied
-    courses = Course.objects.all() if can_manage_courses(request.user) else Course.objects.filter(
-        instructor_assignments__instructor=request.user, instructor_assignments__is_active=True)
-    courses = courses.distinct().prefetch_related('instructor_assignments__instructor').annotate(project_count=Count('projects', distinct=True))
+    entries = CourseCatalogEntry.objects.filter(academic_year='2026-2027', is_active=True)
+    if not can_manage_courses(request.user):
+        entries = entries.filter(course__instructor_assignments__instructor=request.user,
+                                 course__instructor_assignments__is_active=True)
+    entries = entries.select_related('course').prefetch_related(
+        'course__instructor_assignments__instructor').annotate(
+            project_count=Count('course__projects', distinct=True)).distinct().order_by(
+                'semester', 'class_level', 'course__code')
     teachers = get_user_model().objects.filter(profile__user_type='teacher', is_active=True).order_by('first_name', 'last_name', 'username') if can_manage_courses(request.user) else []
-    return render(request, 'dashboard/courses.html', {'courses': courses, 'teachers': teachers,
+    return render(request, 'dashboard/courses.html', {'entries': entries, 'teachers': teachers,
                                                        'can_manage_courses': can_manage_courses(request.user)})
 
 

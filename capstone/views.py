@@ -468,7 +468,7 @@ def advisor_project_detail(request, project_id):
     _advisor_access_or_404(request.user)
     project = _advisor_project_or_404(request.user, project_id)
     if not project.checkpoints.exists():
-        return render(request, 'capstone/academic_workspace.html', workspace_context(project, request.user))
+        return render(request, 'capstone/academic_workspace_teacher.html', workspace_context(project, request.user))
     return _render_advisor_project(
         request,
         project,

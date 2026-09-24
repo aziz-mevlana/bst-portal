@@ -16,8 +16,11 @@ class LegacyCourseMigrationTests(TransactionTestCase):
         ProjectRequest = apps.get_model('projects', 'ProjectRequest')
         Project = apps.get_model('projects', 'Project')
         owner = User.objects.create_user('migration-owner', password='password')
-        course_type = ProjectType.objects.get(code='COURSE')
-        research_type = ProjectType.objects.get(code='RESEARCH')
+        # Transactional migration tests may have flushed data seeded by older migrations.
+        course_type, _ = ProjectType.objects.get_or_create(
+            code='COURSE', defaults={'name': 'Ders Projesi', 'slug': 'ders-projesi', 'requires_course': True})
+        research_type, _ = ProjectType.objects.get_or_create(
+            code='RESEARCH', defaults={'name': 'Araştırma Projesi', 'slug': 'arastirma-projesi'})
         first = ProjectRequest.objects.create(project_type=course_type, title='First', course='  Software Engineering  ')
         second = ProjectRequest.objects.create(project_type=course_type, title='Second', course='software engineering')
         empty = ProjectRequest.objects.create(project_type=course_type, title='Empty', course='   ')

@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'capstone/teacher_base.html' %}
 {% block title %}Öğrenci Havuzu | BST Portal{% endblock %}
-{% block content %}
-<main class="min-h-screen bg-slate-50 py-8"><div class="mx-auto max-w-5xl space-y-6 px-4">
+{% block capstone_content %}
+<main class="py-2"><div class="mx-auto max-w-5xl space-y-6 px-4">
   <header class="rounded-3xl bg-slate-900 p-6 text-white"><a class="text-sm text-cyan-300" href="{% url 'capstone:advisor_home' %}">← Bitirme Projesi</a><h1 class="mt-3 text-3xl font-bold">Öğrenci Havuzu</h1><p class="mt-2">{{ term|default:'Aktif dönem bulunmuyor' }}</p></header>
   {% if is_admin and term %}<section class="rounded-2xl bg-white p-5"><h2 class="font-bold">Resmi listeye öğrenci ekle</h2><form class="mt-3 flex flex-wrap gap-3" method="post" action="{% url 'capstone:student_enroll' %}">{% csrf_token %}<label>4. sınıf öğrencisi <select class="rounded-lg border p-2" name="student_id" required><option value="">Öğrenci seçin</option>{% for student in eligible %}<option value="{{ student.pk }}">{{ student.get_full_name|default:student.username }}</option>{% endfor %}</select></label><button class="rounded-lg bg-cyan-700 px-4 py-2 text-white" type="submit">Listeye Ekle</button></form></section>{% endif %}
   <section class="rounded-2xl bg-white p-5"><h2 class="text-xl font-bold">Danışman atanmamış öğrenciler</h2><div class="mt-4 grid gap-3 sm:grid-cols-2">{% for enrollment in pool %}<article class="rounded-xl border p-4"><p class="font-semibold">{{ enrollment.student.get_full_name|default:enrollment.student.username }}</p><p class="text-sm text-slate-500">{{ enrollment.student.profile.class_level }}. sınıf</p>{% if not is_admin %}<form class="mt-3" method="post" action="{% url 'capstone:advisor_claim' enrollment.pk %}">{% csrf_token %}<button class="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white" type="submit">Danışmanlığıma Ekle</button></form>{% endif %}</article>{% empty %}<p class="text-slate-500">Atama bekleyen öğrenci yok.</p>{% endfor %}</div></section>

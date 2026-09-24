@@ -103,7 +103,6 @@
   </div>
 {{ form.course_required_type_ids|json_script:'course-required-types' }}
 <script nonce="{{ csp_nonce }}">(function(){const required=JSON.parse(document.getElementById('course-required-types').textContent).map(String);const type=document.getElementById('id_project_type');const field=document.querySelector('[data-course-field]');const course=document.getElementById('id_course');function update(){const show=required.includes(type.value);field.hidden=!show;if(!show)course.value='';}type.addEventListener('change',update);update();})();</script>
-{% if not form.instance.pk and form.capstone_type_id %}<script nonce="{{ csp_nonce }}">(function(){const type=document.getElementById('id_project_type');type.addEventListener('change',function(){if(type.value==='{{ form.capstone_type_id }}')window.location.assign("{% url 'capstone:student_home' %}");});})();</script>{% endif %}
 {% endblock %}
 
 {% block extra_js %}

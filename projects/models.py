@@ -324,11 +324,38 @@ class CourseInstructor(models.Model):
         super().save(*args, **kwargs)
 
 
-def validate_course_requirement(project_type, course_id):
+class CourseCatalogEntry(models.Model):
+    """A course's place in a specific academic year without changing old courses."""
+
+    class Semester(models.TextChoices):
+        FALL = 'FALL', 'Güz'
+        SPRING = 'SPRING', 'Bahar'
+
+    course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name='catalog_entries')
+    academic_year = models.CharField(max_length=9)
+    semester = models.CharField(max_length=6, choices=Semester.choices)
+    class_level = models.PositiveSmallIntegerField()
+    display_name = models.CharField(max_length=200)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['semester', 'class_level', 'course__code']
+        constraints = [
+            models.UniqueConstraint(fields=['course', 'academic_year', 'semester'], name='course_catalog_year_sem_unique'),
+            models.CheckConstraint(condition=Q(class_level__gte=1) & Q(class_level__lte=4), name='course_catalog_class_1_4'),
+        ]
+
+    def __str__(self):
+        return f'{self.academic_year} {self.get_semester_display()} · {self.course.code} {self.display_name}'
+
+
+def validate_course_requirement(project_type, course_id, *, creating=False):
     if project_type and project_type.requires_course and not course_id:
         raise ValidationError({'course': 'Bu proje türü için ders zorunludur.'})
     if project_type and not project_type.requires_course and course_id:
         raise ValidationError({'course': 'Bu proje türünde ders seçilemez.'})
+    if creating and course_id and Course.objects.filter(pk=course_id, code__in=('BST 401', 'BST 402')).exists():
+        raise ValidationError({'course': 'Bitirme Projesi dersleri normal Ders Projesi akışında kullanılamaz.'})
 
 
 class ProjectRequest(models.Model):
@@ -395,7 +422,7 @@ class ProjectRequest(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        validate_course_requirement(self.project_type, self.course_id)
+        validate_course_requirement(self.project_type, self.course_id, creating=self._state.adding)
         super().save(*args, **kwargs)
 
     def get_semester_display_full(self):
@@ -504,7 +531,7 @@ class Project(models.Model):
         return reverse('projects:project_public_detail', kwargs={'slug': self.slug})
 
     def save(self, *args, **kwargs):
-        validate_course_requirement(self.project_type, self.course_id)
+        validate_course_requirement(self.project_type, self.course_id, creating=self._state.adding)
         if self.pk:
             previous_course_id = type(self).objects.filter(pk=self.pk).values_list('course_id', flat=True).first()
             if previous_course_id != self.course_id and self.milestones.filter(submissions__isnull=False).exists():
