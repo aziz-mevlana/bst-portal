@@ -167,8 +167,10 @@ class CapstoneProject(models.Model):
             return
         if self.project.project_type.code != 'CAPSTONE':
             raise ValidationError({'project': 'Yalnızca CAPSTONE türündeki projeler bağlanabilir.'})
-        if self.project.advisor_id is None:
-            raise ValidationError({'project': 'Bitirme projesinin bir danışmanı olmalıdır.'})
+        if self.project.advisor_id is None and not CapstoneEnrollment.objects.filter(
+            term_id=self.term_id, student_id=self.project.created_by_id, advisor__isnull=True
+        ).exists():
+            raise ValidationError({'project': 'Bitirme projesinin danışman ataması tutarsız.'})
 
     def save(self, *args, **kwargs):
         self.full_clean()

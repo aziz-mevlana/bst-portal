@@ -577,7 +577,7 @@ def advisor_project_complete(request, project_id):
 
 
 def _can_download_submission_file(user, capstone_project):
-    if not can_view_capstone(user, capstone_project):
+    if not user.is_active or not can_view_capstone(user, capstone_project):
         return False
     project = capstone_project.project
     return bool(

@@ -1,11 +1,12 @@
 from datetime import timedelta
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import connection
+from django.db import connection, transaction
 from django.test import RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -21,6 +22,7 @@ from .academic_services import (academic_overview, archive_checkpoint, claim_stu
     decide_meeting, extend_deadline, record_meeting, reply_help_request, request_meeting,
     review_checkpoint, review_literature, save_plan_checkpoint, submit_checkpoint, help_state,
     tick_expectation, unassign_student, upload_literature)
+from .academic_services import claim_students, purge_capstone_project
 from .models import (CapstoneEnrollment, CapstoneProject, CapstoneSubmissionAttempt,
     CapstoneSubmissionReview, CapstoneTask, CapstoneTerm)
 from .services import approve_capstone_proposal, complete_capstone_project, submit_capstone_proposal
@@ -66,6 +68,143 @@ class AcademicV3Tests(TestCase):
         claim_student(enrollment=self.enrollment, advisor=self.teacher)
         return initialize_project(enrollment=self.enrollment, student=self.student,
                                   title='Yeni Çalışma', description='Amaç')
+
+    def test_bulk_claim_partial_success_and_permission(self):
+        other_enrollment = CapstoneEnrollment.objects.get(term=self.term, student=self.other)
+        claim_student(enrollment=other_enrollment, advisor=self.other_teacher)
+        added, skipped = claim_students(enrollment_ids=[self.enrollment.pk, other_enrollment.pk], advisor=self.teacher)
+        self.assertEqual((added, skipped), (1, 1))
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.enrollment.advisor_id, self.teacher.pk)
+        self.assertEqual(Notification.objects.filter(recipient=self.student,
+            title='Bitirme Projesi danışmanınız atandı.').count(), 1)
+        self.assertEqual(claim_students(enrollment_ids=[self.enrollment.pk, self.enrollment.pk],
+            advisor=self.teacher), (0, 1))
+        self.assertEqual(AuditLog.objects.filter(action='capstone.advisor_assigned',
+            target_id=str(self.enrollment.pk)).count(), 1)
+        with self.assertRaises(PermissionDenied):
+            claim_students(enrollment_ids=[other_enrollment.pk], advisor=self.student)
+
+    def test_admin_unassign_active_project_and_teacher_is_blocked(self):
+        project = self.create_project()
+        with self.assertRaises(ValidationError):
+            unassign_student(enrollment=self.enrollment, actor=self.teacher)
+        with self.assertRaises(ValidationError):
+            unassign_student(enrollment=self.enrollment, actor=self.admin)
+        unassign_student(enrollment=self.enrollment, actor=self.admin, reason='Yanlış atama')
+        self.enrollment.refresh_from_db()
+        project.project.refresh_from_db()
+        self.assertIsNone(self.enrollment.advisor_id)
+        self.assertIsNone(project.project.advisor_id)
+        self.client.force_login(self.student)
+        self.assertContains(self.client.get(reverse('capstone:student_home')), 'Danışman ataması bekleniyor')
+        with self.assertRaises(PermissionDenied):
+            submit_checkpoint(project=project, checkpoint=save_plan_checkpoint(
+                plan=self.teacher.capstone_plans.get(term=self.term), actor=self.teacher,
+                title='Kontrol', description='', order=1, due_at=timezone.now() + timedelta(days=3)),
+                student=self.student, note='Teslim')
+        self.assertTrue(AuditLog.objects.filter(action='capstone.advisor_unassigned',
+            metadata__reason='Yanlış atama').exists())
+
+    def test_admin_purge_keeps_enrollment_and_other_project(self):
+        project = self.create_project()
+        plan = self.teacher.capstone_plans.get(term=self.term)
+        checkpoint = save_plan_checkpoint(plan=plan, actor=self.teacher, title='Rapor',
+            description='', order=1, due_at=timezone.now() + timedelta(days=3))
+        submit_checkpoint(project=project, checkpoint=checkpoint, student=self.student, note='Teslim')
+        other_type = ProjectType.objects.get(code='COURSE')
+        from projects.models import Course, Project
+        unrelated = Project.objects.create(project_type=other_type, course=Course.objects.get(code='BST 207'),
+            title='Ayrı proje', created_by=self.other)
+        with self.assertRaises(PermissionDenied):
+            purge_capstone_project(capstone_project=project, actor=self.teacher,
+                                   reason='Test', keep_advisor=True)
+        purge_capstone_project(capstone_project=project, actor=self.admin,
+                               reason='Test verisi', keep_advisor=True)
+        self.assertFalse(CapstoneProject.objects.filter(pk=project.pk).exists())
+        self.assertTrue(CapstoneEnrollment.objects.filter(pk=self.enrollment.pk).exists())
+        self.assertTrue(Project.objects.filter(pk=unrelated.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action='capstone.project_purged',
+            metadata__project_id=project.project_id).exists())
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.enrollment.advisor_id, self.teacher.pk)
+        self.client.force_login(self.student)
+        self.assertContains(self.client.get(reverse('capstone:student_home')), 'Proje Bilgilerini Tamamla')
+        self.client.post(reverse('capstone:student_start'), {'title': 'Yeniden Başladı', 'description': 'Amaç'})
+        self.assertEqual(CapstoneProject.objects.filter(term=self.term,
+            project__created_by=self.student).count(), 1)
+
+    def test_admin_purge_clears_assignment_and_private_file_after_commit(self):
+        project = self.create_project()
+        checkpoint = save_plan_checkpoint(plan=self.teacher.capstone_plans.get(term=self.term),
+            actor=self.teacher, title='Dosya', description='', order=1,
+            due_at=timezone.now() + timedelta(days=3))
+        upload = SimpleUploadedFile('report.pdf', b'%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF',
+            content_type='application/pdf')
+        submission = submit_checkpoint(project=project, checkpoint=checkpoint,
+            student=self.student, files=[upload])
+        evidence = submission.files.get()
+        storage, path = evidence.file.storage, evidence.file.name
+        self.assertTrue(storage.exists(path))
+        with self.captureOnCommitCallbacks(execute=True):
+            purge_capstone_project(capstone_project=project, actor=self.admin,
+                reason='Yanlış test kaydı', keep_advisor=False)
+        self.enrollment.refresh_from_db()
+        self.assertIsNone(self.enrollment.advisor_id)
+        self.assertFalse(storage.exists(path))
+        self.client.force_login(self.student)
+        self.assertContains(self.client.get(reverse('capstone:student_home')), 'Danışman ataması bekleniyor')
+        claim_student(enrollment=self.enrollment, advisor=self.other_teacher)
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.enrollment.advisor_id, self.other_teacher.pk)
+
+    def test_purge_endpoint_requires_admin_confirmation_and_reason(self):
+        project = self.create_project()
+        url = reverse('capstone:advisor_project_purge', args=[project.pk])
+        for actor in (self.student, self.teacher, self.other_teacher):
+            self.client.force_login(actor)
+            self.assertEqual(self.client.get(url).status_code, 404)
+            self.assertEqual(self.client.post(url, {'confirmation': 'KALICI OLARAK SİL',
+                'advisor_action': 'keep', 'reason': 'Test'}).status_code, 404)
+        self.client.force_login(self.admin)
+        self.client.post(url, {'confirmation': 'SİL', 'advisor_action': 'keep', 'reason': 'Test'})
+        self.client.post(url, {'confirmation': 'KALICI OLARAK SİL', 'advisor_action': 'keep'})
+        self.assertTrue(CapstoneProject.objects.filter(pk=project.pk).exists())
+
+    def test_admin_purge_keeps_files_on_rollback_and_tolerates_storage_error(self):
+        project = self.create_project()
+        checkpoint = save_plan_checkpoint(plan=self.teacher.capstone_plans.get(term=self.term),
+            actor=self.teacher, title='Dosya', description='', order=1,
+            due_at=timezone.now() + timedelta(days=3))
+        upload = SimpleUploadedFile('report.pdf', b'%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF',
+            content_type='application/pdf')
+        evidence = submit_checkpoint(project=project, checkpoint=checkpoint,
+            student=self.student, files=[upload]).files.get()
+        storage, path = evidence.file.storage, evidence.file.name
+        with self.assertRaises(RuntimeError):
+            with transaction.atomic():
+                purge_capstone_project(capstone_project=project, actor=self.admin,
+                    reason='Geri alınacak', keep_advisor=True)
+                raise RuntimeError('rollback')
+        self.assertTrue(CapstoneProject.objects.filter(pk=project.pk).exists())
+        self.assertTrue(storage.exists(path))
+        with patch.object(storage, 'delete', side_effect=OSError('storage unavailable')):
+            with patch('capstone.academic_services.logger.exception'):
+                with self.captureOnCommitCallbacks(execute=True):
+                    purge_capstone_project(capstone_project=project, actor=self.admin,
+                        reason='Test kaydı', keep_advisor=True)
+        self.assertFalse(CapstoneProject.objects.filter(pk=project.pk).exists())
+        self.assertTrue(storage.exists(path))
+
+    def test_student_workspace_uses_dark_sections_and_plan_empty_state(self):
+        self.create_project()
+        self.client.force_login(self.student)
+        response = self.client.get(reverse('capstone:student_home'))
+        self.assertContains(response, 'capstone-student')
+        self.assertContains(response, 'data-capstone-panel')
+        self.assertContains(response, 'Kontrol planı henüz oluşturulmadı')
+        self.assertNotContains(response, '0 / 0')
+        self.assertNotContains(response, '%0 tamamlandı')
 
     def test_claim_and_student_initialization(self):
         self.client.force_login(self.student)

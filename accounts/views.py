@@ -14,7 +14,8 @@ from django.db.models.deletion import ProtectedError
 from django.db.models import Q
 from django.utils import timezone
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods, require_POST
+from django.http import Http404
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from .forms import (
     AccountSettingsForm, ApprovedMemberApplicationForm, EmailChangeForm, PrivacySettingsForm, UserReportForm,
     AccountDeletionForm, CommunicationPreferenceForm, DataSubjectRequestForm,
@@ -40,6 +41,7 @@ from projects.models import Project, ProjectCategory, Team, TeamInvitation, Tech
 from core.rate_limit import is_rate_limited
 from core.audit import record_audit_event
 from core.notifications import create_notification
+from .policies import can_review_website
 
 
 logger = logging.getLogger(__name__)
@@ -1237,12 +1239,75 @@ def portfolio_certificate_add(request):
         certificate = form.save(commit=False)
         certificate.profile = request.user.profile
         certificate.save()
-        messages.success(request, 'Sertifika portfolyonuza eklendi.')
+        record_audit_event(actor=request.user, action='certificate.submitted', target=certificate)
+        messages.success(request, 'Sertifika onaya gönderildi.')
     else:
         for errors in form.errors.values():
             for error in errors:
                 messages.error(request, error)
     return redirect('accounts:portfolio_settings')
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def portfolio_certificate_edit(request, certificate_id):
+    if request.method == 'POST':
+        with transaction.atomic():
+            certificate = get_object_or_404(PortfolioCertificate.objects.select_for_update(),
+                                            pk=certificate_id, profile=request.user.profile)
+            form = PortfolioCertificateForm(request.POST, instance=certificate)
+            if form.is_valid():
+                previous_status = certificate.verification_status
+                form.save()
+                if previous_status == PortfolioCertificate.VerificationStatus.APPROVED and certificate.verification_status == PortfolioCertificate.VerificationStatus.PENDING:
+                    record_audit_event(actor=request.user, action='certificate.approval_reset', target=certificate)
+                record_audit_event(actor=request.user, action='certificate.updated', target=certificate)
+                messages.success(request, 'Sertifika bilgileriniz kaydedildi.')
+                return redirect('accounts:portfolio_settings')
+    else:
+        certificate = get_object_or_404(PortfolioCertificate, pk=certificate_id, profile=request.user.profile)
+        form = PortfolioCertificateForm(instance=certificate)
+    return render(request, 'accounts/portfolio_certificate_edit.html', {'form': form, 'certificate': certificate})
+
+
+@login_required
+@require_GET
+def portfolio_certificate_reviews(request):
+    if not can_review_website(request.user):
+        raise Http404
+    certificates = PortfolioCertificate.objects.filter(
+        verification_status=PortfolioCertificate.VerificationStatus.PENDING
+    ).select_related('profile__user').order_by('created_at', 'pk')
+    return render(request, 'accounts/portfolio_certificate_reviews.html', {'certificates': certificates})
+
+
+@login_required
+@require_POST
+def portfolio_certificate_review(request, certificate_id):
+    if not can_review_website(request.user):
+        raise Http404
+    decision = request.POST.get('decision')
+    note = request.POST.get('review_note', '').strip()
+    if decision not in {'approve', 'reject'} or decision == 'reject' and not note:
+        messages.error(request, 'Geçerli karar ve ret gerekçesi zorunludur.')
+        return redirect('accounts:portfolio_certificate_reviews')
+    with transaction.atomic():
+        certificate = get_object_or_404(PortfolioCertificate.objects.select_for_update().select_related('profile__user'),
+                                        pk=certificate_id, verification_status='PENDING')
+        if certificate.profile.user_id == request.user.pk:
+            raise Http404
+        certificate.verification_status = ('APPROVED' if decision == 'approve' else 'REJECTED')
+        certificate.reviewed_by = request.user
+        certificate.reviewed_at = timezone.now()
+        certificate.review_note = note
+        certificate.save(update_fields=['verification_status', 'reviewed_by', 'reviewed_at', 'review_note', 'updated_at'])
+        record_audit_event(actor=request.user, action='certificate.approved' if decision == 'approve' else 'certificate.rejected', target=certificate,
+                           metadata={'owner_id': certificate.profile.user_id})
+        create_notification(recipient=certificate.profile.user, actor=request.user, notification_type='pending_task',
+                            message=f'{certificate.title} sertifikanız {"onaylandı" if decision == "approve" else "reddedildi"}.',
+                            target_url=reverse('accounts:portfolio_settings'), dedupe_key=f'certificate-review-{certificate.pk}-{certificate.reviewed_at.timestamp()}')
+    messages.success(request, 'Sertifika kararı kaydedildi.')
+    return redirect('accounts:portfolio_certificate_reviews')
 
 
 @login_required

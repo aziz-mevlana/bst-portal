@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.urls import reverse
 from django.utils import timezone
 from core.audit import record_audit_event
 from core.notifications import create_notification
@@ -25,6 +26,8 @@ def save_milestone(*, project, actor, values, milestone=None):
         raise PermissionDenied
     if milestone:
         milestone = ProjectMilestone.objects.select_for_update().get(pk=milestone.pk, project=project)
+        if milestone.assignment_checkpoint_id:
+            raise ValidationError('Ortak kontrol noktası çalışma planından düzenlenir.')
         previous_deadline = milestone.due_at
         for field, value in values.items():
             setattr(milestone, field, value)
@@ -49,6 +52,8 @@ def delete_milestone(*, milestone, actor):
     ).get(pk=milestone.pk)
     if not can_manage_project_milestones(actor, milestone.project):
         raise PermissionDenied
+    if milestone.assignment_checkpoint_id:
+        raise ValidationError('Ortak kontrol noktası çalışma planından yönetilir.')
     if milestone.submissions.exists():
         raise ValidationError('Teslim veya değerlendirme geçmişi bulunan proje aşaması silinemez.')
     project_id, milestone_id = milestone.project_id, milestone.pk
@@ -107,12 +112,15 @@ def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_file
         record_audit_event(actor=actor, action='project.milestone.submitted', target=submission,
                            metadata={'milestone_id': milestone.pk, 'attempt': submission.attempt_number})
         project = milestone.project
-        instructors = [item.instructor for item in CourseInstructor.objects.filter(
+        work = getattr(project, 'course_project_work', None)
+        instructors = ([work.assignment.instructor] if work else [item.instructor for item in CourseInstructor.objects.filter(
             course_id=project.course_id, is_active=True, instructor__profile__user_type='teacher'
-        ).select_related('instructor')] if project.course_id else []
+        ).select_related('instructor')] if project.course_id else [])
+        target_url = (reverse('projects:course_work_detail', args=[work.pk]) if work else project.get_absolute_url())
         _notify([project.advisor, *instructors], actor=actor,
-                message=f'{project.title}: {milestone.title} aşaması teslim edildi.',
-                url=f'{project.get_absolute_url()}#milestone-{milestone.pk}', key=f'milestone-submission-{submission.pk}')
+                message=f'{project.title}: {milestone.effective_title} aşaması teslim edildi.',
+                url=f'{target_url}#checkpoint-{milestone.pk}' if work else f'{target_url}#milestone-{milestone.pk}',
+                key=f'milestone-submission-{submission.pk}')
         submission._accepting_evidence = False
         return submission
     except Exception:
@@ -134,7 +142,10 @@ def review_milestone(*, submission, actor, outcome, score=None, feedback=''):
     record_audit_event(actor=actor, action='project.milestone.reviewed', target=review,
                        metadata={'milestone_id': milestone.pk, 'outcome': outcome})
     project = milestone.project
+    work = getattr(project, 'course_project_work', None)
+    target_url = (reverse('projects:course_work_detail', args=[work.pk]) if work else project.get_absolute_url())
     _notify([project.created_by, *project.team.all()], actor=actor,
-            message=f'{project.title}: {milestone.title} değerlendirmesi tamamlandı.',
-            url=f'{project.get_absolute_url()}#milestone-{milestone.pk}', key=f'milestone-review-{review.pk}')
+            message=f'{project.title}: {milestone.effective_title} değerlendirmesi tamamlandı.',
+            url=f'{target_url}#checkpoint-{milestone.pk}' if work else f'{target_url}#milestone-{milestone.pk}',
+            key=f'milestone-review-{review.pk}')
     return review

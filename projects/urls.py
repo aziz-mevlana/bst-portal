@@ -1,9 +1,25 @@
 from django.urls import path
-from . import views, milestone_views
+from . import views, milestone_views, course_work_views
 
 app_name = 'projects'
 
 urlpatterns = [
+    path('ders-calismalari/', course_work_views.assignment_list, name='course_assignment_list'),
+    path('ders-calismalari/benim/', course_work_views.my_assignments, name='course_my_assignments'),
+    path('ders-calismalari/yeni/', course_work_views.assignment_create, name='course_assignment_create'),
+    path('ders-calismalari/katil/<str:token>/', course_work_views.invitation, name='course_invitation'),
+    path('ders-calismalari/<int:assignment_id>/', course_work_views.assignment_detail, name='course_assignment_detail'),
+    path('ders-calismalari/<int:assignment_id>/baglanti/', course_work_views.invitation_update, name='course_invitation_update'),
+    path('ders-calismalari/<int:assignment_id>/takim/yeni/', course_work_views.team_create, name='course_team_create'),
+    path('ders-calismalari/<int:assignment_id>/takim/<int:team_id>/katil/', course_work_views.team_join, name='course_team_join'),
+    path('ders-calismalari/<int:assignment_id>/uyeler/<int:student_id>/takim/', course_work_views.team_override, name='course_team_override'),
+    path('ders-calismalari/<int:assignment_id>/proje/yeni/', course_work_views.work_create, name='course_work_create'),
+    path('ders-calismalari/<int:assignment_id>/kontrol/yeni/', course_work_views.checkpoint_save, name='course_checkpoint_create'),
+    path('ders-calismalari/<int:assignment_id>/kontrol/<int:checkpoint_id>/duzenle/', course_work_views.checkpoint_save, name='course_checkpoint_edit'),
+    path('ders-calismalari/kontrol/<int:checkpoint_id>/beklenen/', course_work_views.expectation_add, name='course_expectation_add'),
+    path('ders-calismalari/proje/<int:work_id>/', course_work_views.work_detail, name='course_work_detail'),
+    path('ders-calismalari/proje/<int:work_id>/kontrol/<int:milestone_id>/teslim/', course_work_views.work_submit, name='course_work_submit'),
+    path('ders-calismalari/proje/<int:work_id>/teslim/<int:submission_id>/degerlendir/', course_work_views.work_review, name='course_work_review'),
     path('<int:project_id>/milestones/new/', milestone_views.milestone_edit, name='milestone_create'),
     path('<int:project_id>/milestones/<int:milestone_id>/edit/', milestone_views.milestone_edit, name='milestone_edit'),
     path('<int:project_id>/milestones/<int:milestone_id>/delete/', milestone_views.milestone_delete, name='milestone_delete'),

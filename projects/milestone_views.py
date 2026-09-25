@@ -19,6 +19,8 @@ def milestone_edit(request, project_id, milestone_id=None):
     if not can_manage_project_milestones(request.user, project):
         raise Http404
     milestone = get_object_or_404(ProjectMilestone, pk=milestone_id, project=project) if milestone_id else None
+    if milestone and milestone.assignment_checkpoint_id or getattr(project, 'course_project_work', None):
+        raise Http404
     if milestone:
         milestone._acting_user = request.user
     form = ProjectMilestoneForm(request.POST or None, instance=milestone)
@@ -38,6 +40,8 @@ def milestone_delete(request, project_id, milestone_id):
     milestone = get_object_or_404(ProjectMilestone.objects.select_related('project', 'project__project_type'),
                                   pk=milestone_id, project_id=project_id)
     if not can_manage_project_milestones(request.user, milestone.project):
+        raise Http404
+    if milestone.assignment_checkpoint_id:
         raise Http404
     if request.POST.get('confirm_delete') != 'yes':
         messages.error(request, 'Aşamayı silmek için onay gereklidir.')

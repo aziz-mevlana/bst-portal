@@ -13,12 +13,7 @@
     </p>
     <p class="mb-8 break-all rounded-lg bg-slate-950 p-3 font-mono text-sm text-slate-200">{{ target_host }}</p>
     <div class="flex flex-wrap gap-3">
-      <form method="post" action="{% url 'portal:portfolio_certificate_continue' slug=certificate.profile.public_slug certificate_id=certificate.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="rounded-lg bg-amber-500 px-5 py-3 font-semibold text-slate-950 hover:bg-amber-400">
-          Devam et
-        </button>
-      </form>
+      <a href="{% url 'portal:portfolio_certificate_continue' slug=certificate.profile.public_slug certificate_id=certificate.pk %}" class="rounded-lg bg-amber-500 px-5 py-3 font-semibold text-slate-950 hover:bg-amber-400">Devam et</a>
       <a href="{% url 'portal:portfolio_detail' slug=certificate.profile.public_slug %}"
          class="rounded-lg border border-slate-600 px-5 py-3 font-semibold text-white hover:bg-slate-800">
         Portfolyoya dön

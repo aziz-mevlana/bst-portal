@@ -1,5 +1,7 @@
 """CAPSTONE V3 operations; V2 academic records stay read-only and untouched."""
 
+import logging
+
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Max
@@ -25,6 +27,9 @@ from .policies import can_review_capstone, can_submit_capstone, is_capstone_elig
 from .services import create_capstone_project
 
 
+logger = logging.getLogger(__name__)
+
+
 def _teacher(user):
     return bool(user and user.is_authenticated and user.is_active and role_of(user) == 'teacher'
                 and not user.is_staff and not user.is_superuser)
@@ -43,6 +48,19 @@ def _project_for(enrollment):
     return CapstoneProject.objects.select_related('project').filter(term=enrollment.term, project__created_by=enrollment.student).exclude(
         project__development_status='cancelled'
     ).first()
+
+
+def _lock_current_project(project):
+    """Serialize academic writes with advisor changes and admin purges."""
+    from projects.models import Project
+
+    current = CapstoneProject.objects.select_for_update(of=('self',)).get(pk=project.pk)
+    student_id = Project.objects.filter(pk=current.project_id).values_list('created_by_id', flat=True).get()
+    CapstoneEnrollment.objects.select_for_update(of=('self',)).filter(
+        term_id=current.term_id, student_id=student_id,
+    ).first()
+    current.project = Project.objects.select_for_update().get(pk=current.project_id)
+    return current
 
 
 @transaction.atomic
@@ -67,6 +85,8 @@ def claim_student(*, enrollment, advisor):
     if not enrollment.term.is_active or not enrollment.is_active or not is_capstone_eligible_student(enrollment.student, enrollment.term):
         raise ValidationError('Öğrenci aktif dönem danışmanlığına uygun değil.')
     if enrollment.advisor_id:
+        if enrollment.advisor_id == advisor.pk:
+            raise ValidationError('Bu öğrenci zaten danışmanlığınızda.')
         raise ValidationError('Bu öğrenci başka bir akademisyen tarafından danışmanlığa alınmış.')
     if CapstoneProject.objects.filter(project__created_by=enrollment.student).exclude(
         project__development_status__in=['cancelled', 'completed']
@@ -85,23 +105,141 @@ def claim_student(*, enrollment, advisor):
     return enrollment
 
 
+def claim_students(*, enrollment_ids, advisor):
+    """Claim each enrollment independently so one concurrent claim cannot undo the batch."""
+    if not _teacher(advisor):
+        raise PermissionDenied
+    ids = list(dict.fromkeys(enrollment_ids))
+    if not ids or len(ids) > 200 or any(not str(value).isascii() or not str(value).isdigit() for value in ids):
+        raise ValidationError('En fazla 200 geçerli öğrenci seçin.')
+    added = 0
+    skipped = 0
+    for enrollment_id in sorted(map(int, ids)):
+        try:
+            enrollment = CapstoneEnrollment.objects.get(pk=enrollment_id)
+            claim_student(enrollment=enrollment, advisor=advisor)
+            added += 1
+        except (CapstoneEnrollment.DoesNotExist, ValidationError):
+            skipped += 1
+    return added, skipped
+
+
 @transaction.atomic
-def unassign_student(*, enrollment, actor):
+def unassign_student(*, enrollment, actor, reason=''):
     enrollment = CapstoneEnrollment.objects.select_for_update().select_related('term', 'student').get(pk=enrollment.pk)
     if not (is_admin(actor) or (_teacher(actor) and enrollment.advisor_id == actor.pk)):
         raise PermissionDenied
-    if not enrollment.advisor_id or _project_for(enrollment):
+    project = _project_for(enrollment)
+    if not enrollment.advisor_id or (project and not is_admin(actor)):
         raise ValidationError('Proje başladıktan sonra danışmanlık yalnızca yönetici değişiklik akışıyla düzenlenebilir.')
+    if project and not (reason or '').strip():
+        raise ValidationError('Aktif proje danışmanlığını kaldırmak için gerekçe zorunludur.')
     old_id = enrollment.advisor_id
+    if project:
+        project.project.advisor = None
+        project.project.save(update_fields=['advisor'])
     enrollment.advisor = None
     enrollment.advisor_assigned_at = None
     enrollment.advisor_assigned_by = None
     enrollment.save(update_fields=['advisor', 'advisor_assigned_at', 'advisor_assigned_by', 'updated_at'])
     _audit(actor, 'capstone.advisor_unassigned', enrollment, term_id=enrollment.term_id,
-           student_id=enrollment.student_id, old_advisor_id=old_id)
+           student_id=enrollment.student_id, old_advisor_id=old_id, project_id=project.pk if project else None,
+           reason=(reason or '').strip())
     _notice(enrollment.student, actor, 'Bitirme Projesi danışman atamanız kaldırıldı.',
             f'capstone-advisor-unassigned-{enrollment.pk}-{timezone.now().timestamp()}')
     return enrollment
+
+
+@transaction.atomic
+def purge_capstone_project(*, capstone_project, actor, reason, keep_advisor):
+    """Explicit admin purge. All file removals happen only after the DB commits."""
+    if not is_admin(actor) or not (reason or '').strip():
+        raise PermissionDenied
+    from .academic_models import (
+        CapstoneAcademicReview, CapstoneAcademicSubmission, CapstoneAcademicSubmissionFile,
+        CapstoneAcademicSubmissionLink, CapstoneAdvisorPrivateNote, CapstoneChecklistTick,
+        CapstoneHelpAttachment, CapstoneHelpMessage, CapstoneLiteratureReview,
+        CapstoneMeetingNote,
+    )
+    from .models import (CapstoneCheckpoint, CapstoneCheckpointEvaluation, CapstoneProposal,
+                         CapstoneSubmissionAttempt, CapstoneSubmissionFile, CapstoneSubmissionReview,
+                         CapstoneTask)
+    capstone_project = CapstoneProject.objects.select_for_update().select_related('project').get(pk=capstone_project.pk)
+    project = capstone_project.project
+    enrollment = CapstoneEnrollment.objects.select_for_update().filter(
+        term=capstone_project.term, student_id=project.created_by_id).first()
+    if project.project_type.code != 'CAPSTONE':
+        raise ValidationError('Yalnız Bitirme Projesi kaydı kalıcı silinebilir.')
+    snapshot = {'capstone_project_id': capstone_project.pk, 'project_id': project.pk,
+                'student_id': project.created_by_id, 'title': project.title,
+                'reason': reason.strip(), 'keep_advisor': keep_advisor}
+    progress = list(capstone_project.academic_progress.values_list('pk', flat=True))
+    submissions = CapstoneAcademicSubmission.objects.filter(progress_id__in=progress)
+    files = []
+    for queryset in (
+        CapstoneAcademicSubmissionFile.objects.filter(submission__in=submissions),
+        capstone_project.literature_versions.all(),
+        CapstoneHelpAttachment.objects.filter(request__capstone_project=capstone_project),
+        CapstoneSubmissionFile.objects.filter(submission_attempt__task__capstone_project=capstone_project),
+    ):
+        files.extend((item.file.storage, item.file.name) for item in queryset if item.file)
+    files.extend((item.file.storage, item.file.name) for item in project.media.all() if item.file)
+    files.extend((item.evidence_file.storage, item.evidence_file.name)
+                 for item in project.achievements.all() if item.evidence_file)
+    CapstoneAcademicReview.objects.filter(submission__in=submissions).delete()
+    CapstoneAcademicSubmissionFile.objects.filter(submission__in=submissions).delete()
+    CapstoneAcademicSubmissionLink.objects.filter(submission__in=submissions).delete()
+    submissions.delete()
+    CapstoneChecklistTick.objects.filter(progress_id__in=progress).delete()
+    capstone_project.academic_progress.all().delete()
+    CapstoneLiteratureReview.objects.filter(version__capstone_project=capstone_project).delete()
+    capstone_project.literature_versions.all().delete()
+    CapstoneHelpMessage.objects.filter(request__capstone_project=capstone_project).delete()
+    CapstoneHelpAttachment.objects.filter(request__capstone_project=capstone_project).delete()
+    capstone_project.help_requests.all().delete()
+    CapstoneMeetingNote.objects.filter(meeting__capstone_project=capstone_project).delete()
+    capstone_project.meetings.all().delete()
+    CapstoneAdvisorPrivateNote.objects.filter(capstone_project=capstone_project).delete()
+    CapstoneCheckpointEvaluation.objects.filter(checkpoint__capstone_project=capstone_project).delete()
+    CapstoneSubmissionReview.objects.filter(submission_attempt__task__capstone_project=capstone_project).delete()
+    CapstoneSubmissionFile.objects.filter(submission_attempt__task__capstone_project=capstone_project).delete()
+    CapstoneSubmissionAttempt.objects.filter(task__capstone_project=capstone_project).delete()
+    CapstoneTask.objects.filter(capstone_project=capstone_project).delete()
+    CapstoneCheckpoint.objects.filter(capstone_project=capstone_project).delete()
+    CapstoneProposal.objects.filter(resulting_capstone_project=capstone_project).update(resulting_capstone_project=None)
+    capstone_project.delete()
+    project.delete()
+    if enrollment and not keep_advisor:
+        enrollment.advisor = None
+        enrollment.advisor_assigned_at = None
+        enrollment.advisor_assigned_by = None
+        enrollment.save(update_fields=['advisor', 'advisor_assigned_at', 'advisor_assigned_by', 'updated_at'])
+    _audit(actor, 'capstone.project_purged', target=None, **snapshot)
+    def remove_unreferenced_files():
+        from projects.models import ProjectAchievement, ProjectMedia
+
+        file_models = (
+            (CapstoneAcademicSubmissionFile, 'file'),
+            (CapstoneLiteratureVersion, 'file'),
+            (CapstoneHelpAttachment, 'file'),
+            (CapstoneSubmissionFile, 'file'),
+            (ProjectMedia, 'file'),
+            (ProjectAchievement, 'evidence_file'),
+        )
+        seen = set()
+        for storage, name in files:
+            if not name or (id(storage), name) in seen:
+                continue
+            seen.add((id(storage), name))
+            try:
+                if any(model.objects.filter(**{field: name}).exists() for model, field in file_models):
+                    continue
+                storage.delete(name)
+            except Exception:
+                logger.exception('Bitirme Projesi silme sonrası dosya temizlenemedi: %s', name)
+
+    transaction.on_commit(remove_unreferenced_files)
+    return snapshot
 
 
 @transaction.atomic
@@ -241,6 +379,7 @@ def add_expectation(*, checkpoint, actor, title, order):
 
 @transaction.atomic
 def _progress(project, checkpoint):
+    project = _lock_current_project(project)
     checkpoint = CapstonePlanCheckpoint.objects.select_for_update(of=('self',)).select_related('plan').get(pk=checkpoint.pk)
     if not checkpoint.is_active or checkpoint.plan.term_id != project.term_id or checkpoint.plan.advisor_id != project.project.advisor_id:
         raise PermissionDenied
@@ -324,6 +463,8 @@ def academic_overview(project, *, preloaded=None):
     completed = bool(project.completed_at or project.project.development_status == 'completed')
     if completed:
         action = 'Bitirme projeniz tamamlandı. Proje vitrininizi güncelleyebilirsiniz.'
+    elif not project.project.advisor_id:
+        action = 'Yeni danışman atamasını bekleyin. Akademik işlemler bu süre boyunca durduruldu.'
     current_stage = ('Tamamlandı' if completed else next(
         (row['checkpoint'].title for row in rows if row['state'] != 'APPROVED'),
         'Danışman onayı bekleniyor' if rows else 'Kontrol planı bekleniyor'))
@@ -401,6 +542,7 @@ def _validate_file(upload, *, literature=False):
 
 @transaction.atomic
 def submit_checkpoint(*, project, checkpoint, student, note='', files=(), links=()):
+    project = _lock_current_project(project)
     if not can_submit_capstone(student, project) or project.completed_at:
         raise PermissionDenied
     progress = _progress(project, checkpoint)
@@ -432,6 +574,7 @@ def submit_checkpoint(*, project, checkpoint, student, note='', files=(), links=
 @transaction.atomic
 def review_checkpoint(*, submission, actor, decision, feedback):
     progress = CapstoneStudentCheckpoint.objects.select_related('capstone_project__project', 'checkpoint').get(pk=submission.progress_id)
+    progress.capstone_project = _lock_current_project(progress.capstone_project)
     progress = _progress(progress.capstone_project, progress.checkpoint)
     if not can_review_capstone(actor, progress.capstone_project) or progress.capstone_project.completed_at:
         raise PermissionDenied
@@ -450,10 +593,10 @@ def review_checkpoint(*, submission, actor, decision, feedback):
 
 @transaction.atomic
 def upload_literature(*, project, student, upload, note='', checkpoint=None):
+    project = _lock_current_project(project)
     if not can_submit_capstone(student, project):
         raise PermissionDenied
     _validate_file(upload, literature=True)
-    project = CapstoneProject.objects.select_for_update().get(pk=project.pk)
     if checkpoint and (not checkpoint.is_active or checkpoint.plan.term_id != project.term_id or checkpoint.plan.advisor_id != project.project.advisor_id):
         raise PermissionDenied
     version = CapstoneLiteratureVersion.objects.create(capstone_project=project, checkpoint=checkpoint,
@@ -480,6 +623,7 @@ def review_literature(*, version, actor, decision, feedback):
 
 @transaction.atomic
 def create_help_request(*, project, student, subject, description, checkpoint=None, upload=None):
+    project = _lock_current_project(project)
     if not can_submit_capstone(student, project):
         raise PermissionDenied
     if checkpoint and (not checkpoint.is_active or checkpoint.plan.term_id != project.term_id or checkpoint.plan.advisor_id != project.project.advisor_id):
@@ -543,6 +687,7 @@ def help_state(item):
 
 @transaction.atomic
 def request_meeting(*, project, student, subject, description, availability_note, checkpoint=None):
+    project = _lock_current_project(project)
     if not can_submit_capstone(student, project):
         raise PermissionDenied
     if checkpoint and (not checkpoint.is_active or checkpoint.plan.term_id != project.term_id or checkpoint.plan.advisor_id != project.project.advisor_id):

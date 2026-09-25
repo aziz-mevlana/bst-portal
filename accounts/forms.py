@@ -130,6 +130,12 @@ class PortfolioSettingsForm(forms.ModelForm):
 
 
 class PortfolioCertificateForm(forms.ModelForm):
+    def clean_title(self):
+        title = self.cleaned_data['title'].strip()
+        if len(title) < 3:
+            raise forms.ValidationError('Sertifika adını en az üç karakterle açıklayın.')
+        return title
+
     class Meta:
         model = PortfolioCertificate
         fields = ['title', 'issuer', 'issued_at', 'credential_url', 'credential_id', 'is_public']

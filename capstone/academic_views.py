@@ -17,11 +17,11 @@ from .academic_models import (CapstoneAcademicSubmission, CapstoneAcademicSubmis
     CapstoneLiteratureVersion, CapstoneMeetingRequest, CapstonePlan, CapstonePlanCheckpoint,
     CapstonePlanTemplate, CapstoneStudentCheckpoint)
 from .academic_services import (academic_overview, add_expectation, add_private_note,
-    apply_plan_template, archive_checkpoint, change_advisor, claim_student, create_help_request,
+    apply_plan_template, archive_checkpoint, change_advisor, claim_student, claim_students, create_help_request,
     decide_meeting, enroll_student, extend_deadline, help_state, initialize_project,
     record_meeting, reply_help_request, request_meeting, resolve_help_request,
     review_checkpoint, review_literature, save_plan_checkpoint, save_plan_template,
-    submit_checkpoint, tick_expectation, unassign_student, upload_literature)
+    submit_checkpoint, tick_expectation, unassign_student, upload_literature, purge_capstone_project)
 from .models import CapstoneEnrollment, CapstoneProject, CapstoneTerm
 from .policies import can_review_capstone, can_submit_capstone, can_view_capstone
 from .services import complete_capstone_project
@@ -78,6 +78,7 @@ def workspace_context(project, user):
         'literature': project.literature_versions.select_related('review').order_by('-version'),
         'repository': repository,
         'is_advisor': can_review_capstone(user, project),
+        'can_student_work': can_submit_capstone(user, project),
         'private_notes': project.private_advisor_notes.filter(advisor=user).order_by('-created_at')
                          if can_review_capstone(user, project) else (),
         'submission_form': AcademicSubmissionForm(), 'review_form': AcademicReviewForm(),
@@ -151,6 +152,11 @@ def student_pool(request):
                                                capstone_enrollments__is_active=True).distinct().order_by('last_name', 'first_name', 'pk') if is_admin(request.user) and term else ()
     advisors = get_user_model().objects.filter(is_active=True, is_staff=False, is_superuser=False,
                                                profile__user_type='teacher').order_by('last_name', 'first_name', 'pk') if is_admin(request.user) else ()
+    mine = list(mine)
+    project_ids = dict(CapstoneProject.objects.filter(term=term, project__created_by_id__in=[item.student_id for item in mine])
+                       .values_list('project__created_by_id', 'pk')) if term else {}
+    for item in mine:
+        item.active_project_id = project_ids.get(item.student_id)
     return render(request, 'capstone/student_pool.html', {'term': term, 'pool': pool, 'mine': mine,
                    'is_admin': is_admin(request.user), 'eligible': eligible, 'advisors': advisors})
 
@@ -186,6 +192,18 @@ def advisor_claim(request, enrollment_id):
 
 @login_required
 @require_POST
+def advisor_claim_bulk(request):
+    _advisor(request.user)
+    try:
+        added, skipped = claim_students(enrollment_ids=request.POST.getlist('enrollment_ids'), advisor=request.user)
+        messages.success(request, f'{added} öğrenci danışmanlığınıza eklendi. {skipped} öğrenci eklenemedi.')
+    except (ValidationError, PermissionDenied) as exc:
+        messages.error(request, _error(exc))
+    return redirect('capstone:student_pool')
+
+
+@login_required
+@require_POST
 def advisor_unassign(request, enrollment_id):
     enrollment = get_object_or_404(CapstoneEnrollment, pk=enrollment_id)
     if not (is_admin(request.user) or enrollment.advisor_id == request.user.pk):
@@ -194,11 +212,31 @@ def advisor_unassign(request, enrollment_id):
         messages.error(request, 'Danışmanlıktan çıkarma onayı gereklidir.')
     else:
         try:
-            unassign_student(enrollment=enrollment, actor=request.user)
+            unassign_student(enrollment=enrollment, actor=request.user,
+                             reason=request.POST.get('reason', ''))
             messages.success(request, 'Danışmanlık kaldırıldı.')
         except (ValidationError, PermissionDenied) as exc:
             messages.error(request, _error(exc))
     return redirect('capstone:student_pool')
+
+
+@login_required
+def advisor_project_purge(request, project_id):
+    if not is_admin(request.user):
+        raise Http404
+    project = get_object_or_404(CapstoneProject.objects.select_related('project__created_by'), pk=project_id)
+    if request.method == 'POST':
+        if request.POST.get('confirmation') != 'KALICI OLARAK SİL' or request.POST.get('advisor_action') not in {'keep', 'clear'}:
+            messages.error(request, 'Kalıcı silme onayı ve danışmanlık seçimi gereklidir.')
+        else:
+            try:
+                purge_capstone_project(capstone_project=project, actor=request.user,
+                    reason=request.POST.get('reason', ''), keep_advisor=request.POST['advisor_action'] == 'keep')
+                messages.success(request, 'Bitirme Projesi kalıcı olarak silindi.')
+                return redirect('capstone:student_pool')
+            except (ValidationError, PermissionDenied) as exc:
+                messages.error(request, _error(exc))
+    return render(request, 'capstone/advisor_project_purge.html', {'capstone_project': project})
 
 
 @login_required
@@ -533,7 +571,7 @@ def academic_file(request, kind, file_id):
         project = item.request.capstone_project
     else:
         raise Http404
-    if not can_view_capstone(request.user, project):
+    if not request.user.is_active or not can_view_capstone(request.user, project):
         raise Http404
     try:
         handle = item.file.open('rb')

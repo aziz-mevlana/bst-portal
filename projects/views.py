@@ -91,17 +91,23 @@ def _is_capstone_project(project):
     return getattr(getattr(project, 'project_type', None), 'code', None) == 'CAPSTONE'
 
 
-def _reject_generic_capstone_workflow(request, project):
-    if not _is_capstone_project(project):
+def _reject_dedicated_academic_workflow(request, project):
+    if not _is_capstone_project(project) and not hasattr(project, 'course_project_work'):
         return False
     messages.error(
         request,
-        'Bitirme Projesi akademik işlemleri yalnızca özel bitirme projesi akışından yönetilebilir.',
+        'Bitirme Projesi akademik işlemleri yalnızca özel bitirme projesi akışından yönetilebilir.'
+        if _is_capstone_project(project) else
+        'Ders Projesi akademik işlemleri yalnızca Ders Projesi Çalışma Alanından yönetilebilir.',
     )
     return True
 
 
 def _can_view_project(user, project):
+    work = getattr(project, 'course_project_work', None)
+    if work:
+        from .course_work_services import can_view_work
+        return can_view_work(user, work)
     if project.visibility in {'public', 'unlisted'} and project.approval_status == 'approved':
         return True
     if not user.is_authenticated:
@@ -839,8 +845,12 @@ def project_detail(request, project_id):
     )
     user = request.user
     if not _can_view_project(user, project):
+        if hasattr(project, 'course_project_work'):
+            raise Http404
         messages.error(request, 'Bu projeyi görüntüleme yetkiniz bulunmuyor.')
         return redirect('projects:project_list')
+    if hasattr(project, 'course_project_work'):
+        return redirect('projects:course_work_detail', work_id=project.course_project_work.pk)
     _record_project_view(request, project)
     milestone_items = []
     if not _is_capstone_project(project):
@@ -1194,6 +1204,8 @@ def project_create(request):
 @login_required
 def project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    if hasattr(project, 'course_project_work'):
+        raise Http404
     original_project_type_code = project.project_type.code
     original_development_status = project.development_status
     if request.user != project.created_by and request.user != project.advisor and not _is_platform_staff(request.user):
@@ -1291,7 +1303,9 @@ def project_delete(request, project_id):
     )
     if request.user != project.created_by and not _is_platform_staff(request.user):
         raise PermissionDenied
-    if _reject_generic_capstone_workflow(request, project):
+    if hasattr(project, 'course_project_work'):
+        raise Http404
+    if _reject_dedicated_academic_workflow(request, project):
         return redirect('projects:project_detail', project_id=project.pk)
 
     if request.POST.get('confirm_delete') != 'yes':
@@ -1910,7 +1924,7 @@ def approve_project(request, project_id):
     if request.user != project.advisor and not request.user.is_staff:
         messages.error(request, 'Bu projeyi onaylama yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
-    if _reject_generic_capstone_workflow(request, project):
+    if _reject_dedicated_academic_workflow(request, project):
         return redirect('projects:project_detail', project_id=project.id)
     
     if project.approval_status not in {'pending', 'revision_requested'}:
@@ -1942,7 +1956,7 @@ def send_feedback(request, project_id):
             return JsonResponse({'success': False, 'error': 'Geri bildirim gönderme yetkiniz yok.'})
         messages.error(request, 'Geri bildirim gönderme yetkiniz yok.')
         return redirect('projects:project_detail', project_id=project.id)
-    if _reject_generic_capstone_workflow(request, project):
+    if _reject_dedicated_academic_workflow(request, project):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -1988,7 +2002,7 @@ def send_feedback(request, project_id):
 def start_project(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
 
-    if _reject_generic_capstone_workflow(request, project):
+    if _reject_dedicated_academic_workflow(request, project):
         return redirect('projects:project_detail', project_id=project.id)
 
     # Prevent alumni from changing project status
@@ -2018,7 +2032,7 @@ def start_project(request, project_id):
 def complete_project(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
 
-    if _reject_generic_capstone_workflow(request, project):
+    if _reject_dedicated_academic_workflow(request, project):
         return redirect('projects:project_detail', project_id=project.id)
 
     # Prevent alumni from changing project status

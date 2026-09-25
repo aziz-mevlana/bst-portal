@@ -384,7 +384,7 @@ def portfolio_detail(request, slug):
         'portfolio': profile,
         'portfolio_projects': public_projects if profile.show_projects else Project.objects.none(),
         'contributions': contributions if profile.show_contributions else ProjectContribution.objects.none(),
-        'certificates': profile.certificates.filter(is_public=True),
+        'certificates': profile.certificates.filter(is_public=True, verification_status='APPROVED'),
         'canonical_url': request.build_absolute_uri(profile.get_absolute_url()),
         'meta_title': f'{profile.user.get_full_name() or profile.user.username} | BST Portal',
         'meta_description': (
@@ -406,6 +406,7 @@ def _get_visible_portfolio_certificate(request, slug, certificate_id):
         profile__user__is_staff=False,
         profile__user__is_superuser=False,
         is_public=True,
+        verification_status='APPROVED',
     )
     if not certificate.profile.is_portfolio_public and request.user != certificate.profile.user:
         raise Http404
@@ -434,7 +435,7 @@ def portfolio_certificate_warning(request, slug, certificate_id):
 
 
 @never_cache
-@require_POST
+@require_GET
 def portfolio_certificate_continue(request, slug, certificate_id):
     certificate = _get_visible_portfolio_certificate(request, slug, certificate_id)
     target = _validated_certificate_target(certificate)

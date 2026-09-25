@@ -345,6 +345,11 @@ class CommunityRegistration(models.Model):
 
 
 class PortfolioCertificate(models.Model):
+    class VerificationStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Onay Bekliyor'
+        APPROVED = 'APPROVED', 'Onaylandı'
+        REJECTED = 'REJECTED', 'Reddedildi'
+
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='certificates')
     title = models.CharField(max_length=200)
     issuer = models.CharField(max_length=180)
@@ -352,11 +357,35 @@ class PortfolioCertificate(models.Model):
     credential_url = models.URLField(blank=True, validators=[validate_public_website])
     credential_id = models.CharField(max_length=120, blank=True)
     is_public = models.BooleanField(default=True)
+    verification_status = models.CharField(max_length=8, choices=VerificationStatus.choices, default=VerificationStatus.PENDING)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_certificates')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-issued_at', '-created_at']
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).values(
+                'title', 'issuer', 'issued_at', 'credential_url', 'credential_id', 'is_public',
+                'verification_status').first()
+            meaningful = ('title', 'issuer', 'issued_at', 'credential_url', 'credential_id', 'is_public')
+            persisted_fields = set(kwargs['update_fields']) if kwargs.get('update_fields') is not None else set(meaningful)
+            if previous and previous['verification_status'] == self.VerificationStatus.APPROVED and any(
+                field in persisted_fields and previous[field] != getattr(self, field) for field in meaningful
+            ):
+                self.verification_status = self.VerificationStatus.PENDING
+                self.reviewed_by = None
+                self.reviewed_at = None
+                self.review_note = ''
+                if kwargs.get('update_fields') is not None:
+                    kwargs['update_fields'] = set(kwargs['update_fields']) | {
+                        'verification_status', 'reviewed_by', 'reviewed_at', 'review_note'
+                    }
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title} - {self.profile.user.get_full_name() or self.profile.user.username}'

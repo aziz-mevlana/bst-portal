@@ -4,6 +4,7 @@ from threading import Barrier, Thread
 from unittest import skipUnless
 
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.contrib.auth.models import User
 from django.db import close_old_connections, connection, connections
 from django.test import TransactionTestCase
 from django.utils import timezone
@@ -12,6 +13,8 @@ from projects.models import ProjectType
 from .academic_models import CapstoneAcademicReview, CapstoneAcademicSubmission
 from .academic_services import (claim_student, initialize_project, review_checkpoint,
     save_plan_checkpoint, submit_checkpoint, unassign_student)
+from .academic_services import claim_students
+from .academic_services import purge_capstone_project
 from .models import CapstoneEnrollment, CapstoneProject, CapstoneTerm
 from .test_academic_v3 import user
 
@@ -66,6 +69,17 @@ class AcademicV3ConcurrencyTests(TransactionTestCase):
         self.assertEqual([status for status, _ in results].count('rejected'), 1)
         self.assertIn(CapstoneEnrollment.objects.get(pk=self.enrollment.pk).advisor_id,
                       {self.teacher.pk, self.other_teacher.pk})
+
+    def test_bulk_claim_races_single_claim_without_duplicate_assignment(self):
+        second = user('v3-race-second-student', 'student', '4')
+        second_enrollment = CapstoneEnrollment.objects.create(term=self.term, student=second)
+        self.race(
+            lambda: claim_students(enrollment_ids=[self.enrollment.pk, second_enrollment.pk], advisor=self.teacher),
+            lambda: claim_student(enrollment=self.enrollment, advisor=self.other_teacher).pk,
+        )
+        self.assertIn(CapstoneEnrollment.objects.get(pk=self.enrollment.pk).advisor_id,
+                      {self.teacher.pk, self.other_teacher.pk})
+        self.assertEqual(CapstoneEnrollment.objects.get(pk=second_enrollment.pk).advisor_id, self.teacher.pk)
 
     def test_double_project_initialization(self):
         claim_student(enrollment=self.enrollment, advisor=self.teacher)
@@ -127,3 +141,29 @@ class AcademicV3ConcurrencyTests(TransactionTestCase):
         self.assertEqual(CapstoneAcademicSubmission.objects.count(), 1)
         checkpoint.refresh_from_db()
         self.assertEqual(checkpoint.due_at, updated_due)
+
+    def test_admin_unassign_races_checkpoint_submission(self):
+        project, _, checkpoint = self.project_and_checkpoint()
+        admin = User.objects.create_superuser('v3-race-admin', 'admin@example.test', 'password')
+        results = self.race(
+            lambda: unassign_student(enrollment=self.enrollment, actor=admin, reason='Düzeltme').pk,
+            lambda: submit_checkpoint(project=project, checkpoint=checkpoint, student=self.student, note='Rapor').pk,
+        )
+        self.assertIn([status for status, _ in results].count('ok'), {1, 2}, results)
+        self.assertTrue(all(status in {'ok', 'rejected'} for status, _ in results), results)
+        self.assertIsNone(CapstoneEnrollment.objects.get(pk=self.enrollment.pk).advisor_id)
+        project.project.refresh_from_db()
+        self.assertIsNone(project.project.advisor_id)
+
+    def test_admin_purge_races_checkpoint_submission(self):
+        project, _, checkpoint = self.project_and_checkpoint()
+        admin = User.objects.create_superuser('v3-purge-admin', 'admin@example.test', 'password')
+        results = self.race(
+            lambda: purge_capstone_project(capstone_project=project, actor=admin,
+                reason='Test kaydı', keep_advisor=True)['project_id'],
+            lambda: submit_checkpoint(project=project, checkpoint=checkpoint, student=self.student, note='Rapor').pk,
+        )
+        self.assertIn([status for status, _ in results].count('ok'), {1, 2}, results)
+        self.assertTrue(all(status in {'ok', 'DoesNotExist'} for status, _ in results), results)
+        self.assertFalse(CapstoneProject.objects.filter(pk=project.pk).exists())
+        self.assertFalse(CapstoneAcademicSubmission.objects.exists())

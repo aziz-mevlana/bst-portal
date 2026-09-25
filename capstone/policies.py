@@ -71,12 +71,13 @@ def can_submit_capstone(user, capstone_project):
     return bool(
         user.pk == project.created_by_id
         and role_of(user) in {'student', 'staff_student'}
+        and project.advisor_id is not None
     )
 
 
 def can_review_capstone(user, capstone_project):
     project = _capstone_project_base(capstone_project)
-    if project is None or not _authenticated_user(user):
+    if project is None or not project.advisor_id or not _authenticated_user(user):
         return False
     if is_admin(user):
         return True

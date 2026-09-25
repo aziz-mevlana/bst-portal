@@ -3,9 +3,11 @@
 {% block title %}Bitirme Projesi | BST Portal{% endblock %}
 
 {% block content %}
-<main class="min-h-screen bg-slate-50 py-8 sm:py-12">
+{% include 'capstone/student_theme.html' %}
+<main class="capstone-student min-h-screen py-8 sm:py-12">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {% if capstone_project %}
+            {% if not capstone_project.project.advisor %}<div class="mb-6 rounded-2xl border border-amber-500/40 bg-amber-950/40 p-5 text-amber-100" role="status"><h2 class="font-bold">Danışman ataması bekleniyor</h2><p class="mt-2 text-sm">Akademik işlemler yeni danışman atanıncaya kadar beklemede. Önceki çalışmalarınız korunuyor.</p></div>{% endif %}
             <section class="overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl sm:p-9">
                 <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div class="max-w-3xl">
@@ -120,7 +122,7 @@
                                         </details>
                                     {% endif %}
 
-                                    {% if task.dashboard_can_submit %}
+                    {% if task.dashboard_can_submit and capstone_project.project.advisor %}
                                         <form class="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 p-4" method="post" enctype="multipart/form-data" action="{% url 'capstone:student_task_submit' task.pk %}">
                                             {% csrf_token %}
                                             <label class="block text-sm font-semibold text-slate-900" for="files-{{ task.pk }}">Yeni teslim</label>

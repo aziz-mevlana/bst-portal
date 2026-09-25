@@ -37,12 +37,14 @@ class PortfolioCertificateSecurityTests(TestCase):
             title='Güvenli Yazılım',
             issuer='Example University',
             credential_url='https://certs.example.edu/verify/ABC-123?source=portfolio',
+            verification_status='APPROVED',
         )
         self.other_certificate = PortfolioCertificate.objects.create(
             profile=self.other_user.profile,
             title='Başka Sertifika',
             issuer='Other University',
             credential_url='https://credentials.example.org/other',
+            verification_status='APPROVED',
         )
 
     def certificate_form(self, credential_url):
@@ -125,7 +127,7 @@ class PortfolioCertificateSecurityTests(TestCase):
             args=[self.owner.profile.public_slug, self.other_certificate.pk],
         )
         self.assertEqual(self.client.get(mismatched_url).status_code, 404)
-        self.assertEqual(self.client.post(mismatched_continue_url).status_code, 404)
+        self.assertEqual(self.client.get(mismatched_continue_url).status_code, 404)
 
     def test_warning_does_not_accept_an_arbitrary_redirect_target(self):
         attacker_url = 'https://attacker.example/phishing'
@@ -140,7 +142,7 @@ class PortfolioCertificateSecurityTests(TestCase):
         warning = self.client.get(warning_url, {'next': attacker_url, 'url': attacker_url})
         self.assertEqual(warning.status_code, 200)
         self.assertNotContains(warning, attacker_url)
-        response = self.client.post(continue_url, {'next': attacker_url})
+        response = self.client.get(continue_url, {'next': attacker_url})
         self.assertEqual(response['Location'], self.certificate.credential_url)
 
     def test_valid_certificate_warning_then_continue_flow(self):
@@ -156,13 +158,13 @@ class PortfolioCertificateSecurityTests(TestCase):
         self.assertEqual(warning.status_code, 200)
         self.assertContains(warning, 'BST Portal\'dan ayrılıyorsunuz')
         self.assertContains(warning, 'certs.example.edu')
-        self.assertContains(warning, f'action="{continue_url}"')
+        self.assertContains(warning, f'href="{continue_url}"')
         self.assertNotContains(warning, self.certificate.credential_url)
 
-        response = self.client.post(continue_url)
+        response = self.client.get(continue_url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], self.certificate.credential_url)
-        self.assertEqual(self.client.get(continue_url).status_code, 405)
+        self.assertEqual(self.client.post(continue_url).status_code, 405)
 
     def test_continue_revalidates_stored_credential_url(self):
         PortfolioCertificate.objects.filter(pk=self.certificate.pk).update(
@@ -177,7 +179,7 @@ class PortfolioCertificateSecurityTests(TestCase):
             args=[self.owner.profile.public_slug, self.certificate.pk],
         )
         self.assertEqual(self.client.get(warning_url).status_code, 404)
-        self.assertEqual(self.client.post(continue_url).status_code, 404)
+        self.assertEqual(self.client.get(continue_url).status_code, 404)
 
 
 class AcademicProfileTests(TestCase):

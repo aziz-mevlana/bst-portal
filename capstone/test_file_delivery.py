@@ -111,6 +111,11 @@ class CapstoneSubmissionFileDeliveryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         response.close()
 
+    def test_inactive_owner_cannot_download_file(self):
+        self.owner.is_active = False
+        self.owner.save(update_fields=['is_active'])
+        self.assertEqual(self.get_as(self.owner).status_code, 404)
+
     def test_assigned_active_teacher_advisor_can_download_file(self):
         response = self.get_as(self.advisor)
 

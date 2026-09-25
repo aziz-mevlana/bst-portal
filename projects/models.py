@@ -533,6 +533,12 @@ class Project(models.Model):
     def save(self, *args, **kwargs):
         validate_course_requirement(self.project_type, self.course_id, creating=self._state.adding)
         if self.pk:
+            if hasattr(self, 'course_project_work'):
+                old = type(self).objects.filter(pk=self.pk).values(
+                    'project_type_id', 'course_id', 'advisor_id', 'created_by_id', 'visibility',
+                    'development_status', 'approval_status').first()
+                if old and any(old[field] != getattr(self, field) for field in old):
+                    raise ValidationError('Aktif Ders Projesi akademik alanları çalışma alanından yönetilir.')
             previous_course_id = type(self).objects.filter(pk=self.pk).values_list('course_id', flat=True).first()
             if previous_course_id != self.course_id and self.milestones.filter(submissions__isnull=False).exists():
                 raise ValidationError({'course': 'Teslim geçmişi başladıktan sonra ders değiştirilemez.'})
@@ -573,7 +579,9 @@ class Project(models.Model):
 
 class ProjectMilestone(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='milestones')
-    title = models.CharField(max_length=200)
+    assignment_checkpoint = models.ForeignKey('projects.CourseAssignmentCheckpoint', on_delete=models.PROTECT,
+        related_name='project_progress', null=True, blank=True)
+    title = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     order = models.PositiveSmallIntegerField()
     due_at = models.DateTimeField(blank=True, null=True)
@@ -589,6 +597,16 @@ class ProjectMilestone(models.Model):
         constraints = [models.UniqueConstraint(fields=['project', 'order'], name='unique_project_milestone_order'), models.CheckConstraint(condition=Q(max_score__gt=0), name='positive_project_milestone_score')]
 
     def clean(self):
+        if not self.assignment_checkpoint_id and not self.title.strip():
+            raise ValidationError({'title': 'Kontrol noktası başlığı zorunludur.'})
+        if self.assignment_checkpoint_id:
+            work = getattr(self.project, 'course_project_work', None)
+            if not work or work.assignment_id != self.assignment_checkpoint.assignment_id:
+                raise ValidationError('Kontrol noktası bu ders projesi çalışmasına ait değil.')
+            if self.title or self.description or self.due_at:
+                raise ValidationError('Ortak kontrol noktası tanımı proje ilerlemesinde tekrar tutulamaz.')
+            if self.order != self.assignment_checkpoint.order:
+                raise ValidationError('Kontrol noktası sırası ortak planla eşleşmelidir.')
         if self.project_id and self.project.project_type.code == 'CAPSTONE':
             raise ValidationError('CAPSTONE projelerinde generic aşama kullanılamaz.')
         if self.project_id and (getattr(self, '_acting_user', None) or self.created_by_id):
@@ -598,7 +616,7 @@ class ProjectMilestone(models.Model):
                 raise ValidationError('Bu aşamayı yönetme yetkisi yok.')
         if self.pk and self.submissions.exists():
             old = type(self).objects.get(pk=self.pk)
-            for field in ('project_id', 'created_by_id', 'title', 'description', 'order', 'max_score', 'is_required'):
+            for field in ('project_id', 'assignment_checkpoint_id', 'created_by_id', 'title', 'description', 'order', 'max_score', 'is_required'):
                 if getattr(old, field) != getattr(self, field):
                     raise ValidationError('Teslimden sonra aşamanın akademik tanımı değiştirilemez.')
 
@@ -617,6 +635,14 @@ class ProjectMilestone(models.Model):
         if cached is not None:
             return max(cached, key=lambda item: item.attempt_number, default=None)
         return self.submissions.order_by('-attempt_number').first()
+
+    @property
+    def effective_title(self):
+        return self.assignment_checkpoint.title if self.assignment_checkpoint_id else self.title
+
+    @property
+    def effective_due_at(self):
+        return self.assignment_checkpoint.due_at if self.assignment_checkpoint_id else self.due_at
 
     @property
     def state(self):
@@ -659,7 +685,8 @@ class ProjectMilestoneSubmission(models.Model):
         if self.pk:
             raise ValidationError('Teslim değiştirilemez.')
         self.submitted_at = timezone.now()
-        self.is_late = bool(self.milestone.due_at and self.submitted_at > self.milestone.due_at)
+        due_at = self.milestone.effective_due_at
+        self.is_late = bool(due_at and self.submitted_at > due_at)
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -1305,3 +1332,9 @@ class ProjectComment(models.Model):
                 raise ValidationError({'parent': 'Yanıtlar doğrudan ana yoruma eklenmelidir.'})
             if self.parent.project_id != self.project_id:
                 raise ValidationError({'parent': 'Başka bir projenin yorumuna yanıt verilemez.'})
+
+
+from .course_work_models import (  # noqa: E402,F401
+    CourseProjectAssignment, CourseProjectTeam, CourseProjectParticipation,
+    CourseProjectWork, CourseAssignmentCheckpoint, CourseAssignmentExpectation,
+)
