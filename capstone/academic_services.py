@@ -779,3 +779,22 @@ def apply_plan_template(*, plan, template, actor, due_dates):
             CapstoneChecklistItem.objects.create(checkpoint=checkpoint, title=expectation.title, order=expectation.order)
     _audit(actor, 'capstone.plan_template_applied', plan, template_id=template.pk)
     return plan
+
+
+@transaction.atomic
+def remove_enrollment(*, enrollment, actor, reason):
+    if not actor.is_active or not is_admin(actor):
+        raise PermissionDenied
+    reason = (reason or '').strip()
+    if not reason or len(reason) > 2000:
+        raise ValidationError('Gerekçe zorunludur ve en fazla 2000 karakter olabilir.')
+    enrollment = CapstoneEnrollment.objects.select_for_update(of=('self',)).select_related('student').get(pk=enrollment.pk)
+    if _project_for(enrollment):
+        raise ValidationError('Aktif Bitirme Projesi var. Önce Bitirme Projesini Kalıcı Olarak Sil akışını kullanın; ardından resmi listeden çıkarın.')
+    snapshot = {'enrollment_id': enrollment.pk, 'term_id': enrollment.term_id,
+                'student_id': enrollment.student_id, 'advisor_id': enrollment.advisor_id, 'reason': reason}
+    _audit(actor, 'capstone.enrollment_removed', enrollment, **snapshot)
+    _notice(enrollment.student, actor, f'Bitirme Projesi resmi listesinden çıkarıldınız. Gerekçe: {reason}',
+            f'capstone-enrollment-removed-{enrollment.pk}-{enrollment.created_at.timestamp()}')
+    enrollment.delete()
+    return snapshot

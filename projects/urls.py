@@ -4,6 +4,8 @@ from . import views, milestone_views, course_work_views
 app_name = 'projects'
 
 urlpatterns = [
+    path('course-work/assignments/<int:assignment_id>/edit/', course_work_views.assignment_edit, name='course_assignment_edit'),
+    path('course-work/assignments/<int:assignment_id>/<str:action>/confirm/', course_work_views.assignment_action, name='course_assignment_action'),
     path('ders-calismalari/', course_work_views.assignment_list, name='course_assignment_list'),
     path('ders-calismalari/benim/', course_work_views.my_assignments, name='course_my_assignments'),
     path('ders-calismalari/yeni/', course_work_views.assignment_create, name='course_assignment_create'),

@@ -5,7 +5,7 @@ import secrets
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from accounts.policies import is_teacher
@@ -35,6 +35,11 @@ class CourseProjectAssignment(models.Model):
     invitation_token = models.CharField(max_length=64, unique=True, default=invitation_token, editable=False)
     invitation_enabled = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True, editable=False)
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cancelled_course_assignments', editable=False)
+    cancellation_reason = models.TextField(blank=True, editable=False)
+    lifecycle_version = models.PositiveIntegerField(default=0, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,8 +48,15 @@ class CourseProjectAssignment(models.Model):
         if self.pk and self.participants.exists():
             old = type(self).objects.get(pk=self.pk)
             if any(getattr(old, field) != getattr(self, field) for field in
-                   ('course_id', 'instructor_id', 'mode', 'min_team_size', 'max_team_size')):
-                raise ValidationError('Katılım başladıktan sonra ders, akademisyen ve takım yapısı değiştirilemez.')
+                   ('course_id', 'instructor_id', 'mode')):
+                raise ValidationError('Katılım başladıktan sonra ders, akademisyen ve çalışma tipi değiştirilemez.')
+            if self.mode == self.Mode.GROUP and self.min_team_size and self.max_team_size:
+                for team in self.teams.annotate(member_count=Count('participants')):
+                    size = team.member_count
+                    if size > self.max_team_size or (
+                        old.min_team_size != self.min_team_size and size and size < self.min_team_size
+                    ):
+                        raise ValidationError('Takım büyüklüğü mevcut takımları geçersiz hale getiremez.')
         if not any((self.topic.strip(), self.purpose.strip(), self.expectations.strip())):
             raise ValidationError('Proje konusu, amacı veya beklentilerinden en az birini doldurun.')
         if self.course_id and self.course.code.replace(' ', '').upper() in {'BST401', 'BST402'}:
@@ -75,6 +87,11 @@ class CourseProjectAssignment(models.Model):
 
     def __str__(self):
         return f'{self.course.code} · {self.topic or self.purpose[:50] or "Ders Projesi Çalışması"}'
+
+    @property
+    def is_cancelled(self):
+        # Last cancellation details remain available after admin reactivation.
+        return not self.is_active and self.cancelled_at is not None
 
 
 class CourseProjectTeam(models.Model):

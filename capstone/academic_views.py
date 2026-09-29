@@ -5,7 +5,7 @@ from django.db.models import Prefetch, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 
@@ -143,7 +143,7 @@ def student_pool(request):
     _advisor(request.user)
     term = CapstoneTerm.objects.filter(is_active=True).first()
     pool = CapstoneEnrollment.objects.filter(term=term, is_active=True, advisor__isnull=True).select_related('student', 'student__profile') if term else ()
-    mine = CapstoneEnrollment.objects.filter(term=term, is_active=True).select_related('student', 'advisor') if term else CapstoneEnrollment.objects.none()
+    mine = CapstoneEnrollment.objects.filter(term=term, is_active=True).select_related('student', 'student__profile', 'advisor') if term else CapstoneEnrollment.objects.none()
     if not is_admin(request.user):
         mine = mine.filter(advisor=request.user)
     from django.contrib.auth import get_user_model
@@ -659,3 +659,28 @@ def process_report(request, project_id):
     return render(request, 'capstone/process_report.html', {'capstone_project': project, 'events': events,
                    'overview': academic_overview(project),
                    'historical_progress': project.academic_progress.select_related('checkpoint').all()})
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def enrollment_remove(request, enrollment_id):
+    if not request.user.is_active or not is_admin(request.user):
+        raise Http404
+    from .academic_services import remove_enrollment, _project_for
+    enrollment = get_object_or_404(CapstoneEnrollment.objects.select_related('student', 'term'),
+                                   pk=enrollment_id, term__is_active=True)
+    if request.method == 'POST':
+        if request.POST.get('confirm') != 'yes':
+            messages.error(request, 'Resmi listeden çıkarma onayı gereklidir.')
+        else:
+            try:
+                remove_enrollment(enrollment=enrollment, actor=request.user, reason=request.POST.get('reason', ''))
+            except ValidationError as exc:
+                messages.error(request, _error(exc))
+            except CapstoneEnrollment.DoesNotExist:
+                raise Http404
+            else:
+                messages.success(request, 'Öğrenci resmi Bitirme Projesi listesinden çıkarıldı.')
+                return redirect('capstone:student_pool')
+    return render(request, 'capstone/enrollment_remove.html',
+                  {'enrollment': enrollment, 'active_project': _project_for(enrollment)})

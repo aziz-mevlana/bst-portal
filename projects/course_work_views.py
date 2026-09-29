@@ -3,7 +3,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
+from django.db.models.deletion import ProtectedError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -16,7 +17,7 @@ from .course_work_models import (CourseAssignmentCheckpoint, CourseProjectAssign
     CourseProjectParticipation, CourseProjectTeam, CourseProjectWork)
 from .course_work_services import (add_expectation, can_manage_assignment, can_view_work,
     create_assignment, create_team, create_work, join_assignment, join_team,
-    override_team_member, rotate_invitation, save_checkpoint)
+    override_team_member, rotate_invitation, save_checkpoint, assignment_has_history)
 from .forms import ProjectMilestoneReviewForm, ProjectMilestoneSubmissionForm
 from .milestone_policies import can_review_project_milestone, can_submit_project_milestone
 from .milestone_services import review_milestone, submit_milestone
@@ -129,6 +130,8 @@ def assignment_detail(request, assignment_id):
         'teams': assignment.teams.prefetch_related('participants__student'), 'rows': rows,
         'pending': pending, 'checkpoint_form': CourseAssignmentCheckpointForm(),
         'joined_count': len(participants),
+        'is_admin': is_admin(request.user),
+        'can_delete_empty': not assignment_has_history(assignment),
     })
 
 
@@ -139,7 +142,11 @@ def invitation_update(request, assignment_id):
     action = request.POST.get('action')
     if action not in {'rotate', 'disable', 'enable'}:
         raise Http404
-    rotate_invitation(assignment=assignment, actor=request.user, enabled=action != 'disable')
+    try:
+        rotate_invitation(assignment=assignment, actor=request.user, enabled=action != 'disable')
+    except ValidationError as exc:
+        messages.error(request, _message(exc))
+        return redirect('projects:course_assignment_detail', assignment.pk)
     messages.success(request, 'Katılım bağlantısı güncellendi. Eski bağlantı geçersizdir.')
     return redirect('projects:course_assignment_detail', assignment.pk)
 
@@ -158,6 +165,8 @@ def invitation(request, token):
             messages.success(request, 'Ders Projesi Çalışmasına katıldınız.')
         except (ValidationError, PermissionDenied) as exc:
             messages.error(request, _message(exc))
+        except CourseProjectAssignment.DoesNotExist:
+            raise Http404
         return redirect('projects:course_invitation', token=token)
     team = participation.team if participation else None
     work = (CourseProjectWork.objects.filter(team=team).first() if team else
@@ -201,7 +210,7 @@ def team_join(request, assignment_id, team_id):
 def team_override(request, assignment_id, student_id):
     assignment = _assignment(request.user, assignment_id)
     raw_team_id = request.POST.get('team_id', '')
-    if raw_team_id and not raw_team_id.isdigit():
+    if raw_team_id and (not raw_team_id.isascii() or not raw_team_id.isdigit() or len(raw_team_id) > 19):
         raise Http404
     try:
         override_team_member(assignment=assignment, actor=request.user, student_id=student_id,
@@ -236,8 +245,12 @@ def work_create(request, assignment_id):
 @require_GET
 def work_detail(request, work_id):
     work = _work(request.user, work_id)
-    milestones = list(work.project.milestones.filter(assignment_checkpoint__is_active=True)
+    progress = work.project.milestones.all()
+    if work.assignment.is_active:
+        progress = progress.filter(assignment_checkpoint__is_active=True)
+    milestones = list(progress
                       .select_related('assignment_checkpoint').prefetch_related(
+                          'assignment_checkpoint__expected_items',
                           'submissions__review', 'submissions__files', 'submissions__links'))
     approved = sum(item.state == 'APPROVED' for item in milestones)
     can_submit = can_submit_project_milestone(request.user, milestones[0]) if milestones else False
@@ -247,7 +260,31 @@ def work_detail(request, work_id):
         milestone.can_review = can_review
     template = ('projects/course_work_detail_teacher.html' if can_manage_assignment(request.user, work.assignment)
                 else 'projects/course_work_detail.html')
+    from core.models import AuditLog
+    submission_ids = [str(item.pk) for milestone in milestones for item in milestone.submissions.all()]
+    scope = Q(target_type='projects.courseprojectassignment', target_id=str(work.assignment_id))
+    scope |= Q(target_type='projects.courseprojectwork', target_id=str(work.pk))
+    scope |= Q(target_type='projects.project', target_id=str(work.project_id))
+    scope |= Q(target_type='projects.projectmilestone', target_id__in=[str(item.pk) for item in milestones])
+    scope |= Q(target_type='projects.projectmilestonesubmission', target_id__in=submission_ids)
+    scope |= Q(metadata__project_id=work.project_id, action__startswith='project.')
+    review_ids = [str(item.review.pk) for milestone in milestones for item in milestone.submissions.all() if hasattr(item, 'review')]
+    scope |= Q(target_type='projects.projectmilestonereview', target_id__in=review_ids)
+    history = list(AuditLog.objects.filter(scope).select_related('actor').order_by('-created_at'))
+    labels = {
+        'course.assignment_created': 'Çalışma oluşturuldu',
+        'course.assignment_updated': 'Çalışma düzenlendi',
+        'course.assignment_cancelled': 'Çalışma iptal edildi',
+        'course.assignment_reactivated': 'Çalışma yeniden aktifleştirildi',
+        'course.work_created': 'Proje bilgileri tamamlandı',
+        'project.milestone.submitted': 'Kontrol noktası teslim edildi',
+        'project.milestone.reviewed': 'Teslim değerlendirildi',
+    }
+    for event in history:
+        event.display_action = labels.get(event.action, 'Akademik işlem kaydedildi')
     return render(request, template, {
+        'history': history,
+        'members': work.team.participants.select_related('student') if work.team_id else (),
         'work': work, 'milestones': milestones, 'approved': approved,
         'total': len(milestones), 'submission_form': ProjectMilestoneSubmissionForm(),
         'review_form': ProjectMilestoneReviewForm(),
@@ -323,3 +360,69 @@ def work_review(request, work_id, submission_id):
         except ValidationError as exc:
             messages.error(request, _message(exc))
     return redirect(f'{reverse("projects:course_work_detail", args=[work.pk])}#checkpoint-{submission.milestone_id}')
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def assignment_edit(request, assignment_id):
+    from .course_work_services import edit_assignment
+    assignment = _assignment(request.user, assignment_id)
+    if not assignment.is_active:
+        raise Http404
+    form = CourseProjectAssignmentForm(request.POST or None, instance=assignment, instructor=assignment.instructor)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            edit_assignment(assignment=assignment, actor=request.user,
+                            values={key: value for key, value in form.cleaned_data.items() if key != 'course'})
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        except CourseProjectAssignment.DoesNotExist:
+            raise Http404
+        else:
+            messages.success(request, 'Ders Projesi Çalışması güncellendi.')
+            return redirect('projects:course_assignment_detail', assignment.pk)
+    return render(request, 'projects/course_assignment_form.html', {'form': form, 'assignment': assignment})
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def assignment_action(request, assignment_id, action):
+    from .course_work_services import (cancel_assignment, reactivate_assignment,
+                                      delete_empty_assignment, purge_assignment)
+    if action not in {'cancel', 'delete', 'purge', 'reactivate'}:
+        raise Http404
+    if action in {'purge', 'reactivate'} and not is_admin(request.user):
+        raise Http404
+    assignment = _assignment(request.user, assignment_id)
+    labels = {'cancel': 'İptal Et', 'delete': 'Sil', 'purge': 'Kalıcı Sil', 'reactivate': 'Yeniden Aktifleştir'}
+    if request.method == 'POST':
+        if request.POST.get('confirm') != 'yes' or (action == 'purge' and request.POST.get('confirmation') != 'KALICI OLARAK SİL'):
+            messages.error(request, 'İşlem onayı gereklidir.')
+        else:
+            try:
+                reason = request.POST.get('reason', '')
+                if action in {'cancel', 'reactivate'}:
+                    raw_version = request.POST.get('version', '')
+                    if not raw_version.isascii() or not raw_version.isdigit() or len(raw_version) > 10:
+                        raise ValidationError('İşlem sürümü geçersiz. Sayfayı yenileyin.')
+                    operation = cancel_assignment if action == 'cancel' else reactivate_assignment
+                    _, changed = operation(assignment=assignment, actor=request.user,
+                        reason=reason, expected_version=int(raw_version))
+                    messages.success(request, 'İşlem tamamlandı.' if changed else 'Çalışma zaten bu durumda; işlem tekrarlanmadı.')
+                    return redirect('projects:course_assignment_detail', assignment.pk)
+                operation = purge_assignment if action == 'purge' else delete_empty_assignment
+                operation(assignment=assignment, actor=request.user, reason=reason)
+                messages.success(request, 'Ders Projesi Çalışması silindi.')
+                return redirect('projects:course_assignment_list')
+            except ProtectedError:
+                messages.error(request, 'Başka kayıtlara bağlı veri bulundu; güvenli silme yapılamadı. Çalışma korundu.')
+            except (ValidationError, PermissionDenied) as exc:
+                messages.error(request, _message(exc))
+            except CourseProjectAssignment.DoesNotExist:
+                raise Http404
+        try:
+            assignment.refresh_from_db()
+        except CourseProjectAssignment.DoesNotExist:
+            raise Http404
+    return render(request, 'projects/course_assignment_action.html',
+        {'assignment': assignment, 'action': action, 'action_label': labels[action]})

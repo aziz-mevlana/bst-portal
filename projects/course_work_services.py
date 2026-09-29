@@ -23,6 +23,27 @@ def can_manage_assignment(user, assignment):
     ))
 
 
+def locked_assignment(assignment_id):
+    try:
+        return CourseProjectAssignment.objects.select_for_update(of=("self",)).get(pk=assignment_id)
+    except CourseProjectAssignment.DoesNotExist:
+        raise ValidationError("Çalışma kalıcı olarak silindi.")
+
+
+def require_active_assignment(assignment):
+    if not assignment.is_active:
+        raise ValidationError("Bu çalışma iptal edildi veya kapalı; geçmiş salt okunurdur.")
+
+
+def lock_assignment_for_project(project_id):
+    """All academic writes take assignment before project/milestone locks."""
+    assignment_id = CourseProjectWork.objects.filter(project_id=project_id).values_list("assignment_id", flat=True).first()
+    if assignment_id:
+        assignment = locked_assignment(assignment_id)
+        require_active_assignment(assignment)
+        return assignment
+
+
 def can_view_work(user, work):
     if can_manage_assignment(user, work.assignment):
         return True
@@ -45,9 +66,10 @@ def create_assignment(*, instructor, course, **values):
 
 @transaction.atomic
 def rotate_invitation(*, assignment, actor, enabled=True):
-    assignment = CourseProjectAssignment.objects.select_for_update().get(pk=assignment.pk)
+    assignment = locked_assignment(assignment.pk)
     if not can_manage_assignment(actor, assignment):
         raise PermissionDenied
+    require_active_assignment(assignment)
     assignment.invitation_token = invitation_token()
     assignment.invitation_enabled = enabled
     assignment.save(update_fields=['invitation_token', 'invitation_enabled', 'updated_at'])
@@ -57,7 +79,7 @@ def rotate_invitation(*, assignment, actor, enabled=True):
 
 @transaction.atomic
 def join_assignment(*, token, student):
-    assignment = CourseProjectAssignment.objects.select_for_update().select_related('course', 'instructor').get(invitation_token=token)
+    assignment = CourseProjectAssignment.objects.select_for_update(of=('self',)).select_related('course', 'instructor').get(invitation_token=token)
     if not student.is_authenticated or not student.is_active or role_of(student) not in {'student', 'staff_student'}:
         raise PermissionDenied
     if not assignment.course.is_active or not can_manage_assignment(assignment.instructor, assignment):
@@ -69,7 +91,7 @@ def join_assignment(*, token, student):
 
 
 def _open_participation(*, assignment, student, require_join_open=True):
-    assignment = CourseProjectAssignment.objects.select_for_update().get(pk=assignment.pk)
+    assignment = locked_assignment(assignment.pk)
     if not assignment.is_active or require_join_open and timezone.now() > assignment.join_deadline:
         raise ValidationError('Katılım süresi sona erdi.')
     return CourseProjectParticipation.objects.select_for_update().get(assignment=assignment, student=student), assignment
@@ -111,9 +133,10 @@ def join_team(*, assignment, student, team_id):
 @transaction.atomic
 def override_team_member(*, assignment, actor, student_id, team_id, reason):
     """A course instructor may correct team membership after enrollment closes."""
-    assignment = CourseProjectAssignment.objects.select_for_update().get(pk=assignment.pk)
+    assignment = locked_assignment(assignment.pk)
     if not can_manage_assignment(actor, assignment):
         raise PermissionDenied
+    require_active_assignment(assignment)
     if assignment.mode != assignment.Mode.GROUP or not reason.strip():
         raise ValidationError('Takım değişikliği için gerekçe zorunludur.')
     participation = CourseProjectParticipation.objects.select_for_update().select_related('student').get(
@@ -195,9 +218,10 @@ def create_work(*, assignment, student, title, idea, repository_path=''):
 
 @transaction.atomic
 def save_checkpoint(*, assignment, actor, values, checkpoint=None):
-    assignment = CourseProjectAssignment.objects.select_for_update().get(pk=assignment.pk)
+    assignment = locked_assignment(assignment.pk)
     if not can_manage_assignment(actor, assignment):
         raise PermissionDenied
+    require_active_assignment(assignment)
     if checkpoint:
         checkpoint = CourseAssignmentCheckpoint.objects.select_for_update().get(pk=checkpoint.pk, assignment=assignment)
         previous_due = checkpoint.due_at
@@ -233,10 +257,238 @@ def save_checkpoint(*, assignment, actor, values, checkpoint=None):
 
 @transaction.atomic
 def add_expectation(*, checkpoint, actor, title):
-    checkpoint = CourseAssignmentCheckpoint.objects.select_for_update().select_related('assignment').get(pk=checkpoint.pk)
+    assignment = locked_assignment(checkpoint.assignment_id)
+    require_active_assignment(assignment)
+    checkpoint = CourseAssignmentCheckpoint.objects.select_for_update().get(pk=checkpoint.pk, assignment=assignment)
+    checkpoint.assignment = assignment
     if not can_manage_assignment(actor, checkpoint.assignment) or not title.strip():
         raise PermissionDenied
     order = (checkpoint.expected_items.order_by('-order').values_list('order', flat=True).first() or 0) + 1
     item = CourseAssignmentExpectation.objects.create(checkpoint=checkpoint, title=title.strip(), order=order)
     record_audit_event(actor=actor, action='course.expectation_created', target=item)
     return item
+
+
+EDIT_FIELDS = {'topic', 'purpose', 'expectations', 'mode', 'min_team_size', 'max_team_size',
+               'join_deadline', 'starts_at', 'ends_at', 'repository_required'}
+
+
+def _notify_participants(assignment, actor, message, key):
+    for participation in assignment.participants.select_related(
+        'student', 'student__communication_preferences'
+    ).order_by('student_id'):
+        create_notification(recipient=participation.student, actor=actor, notification_type='project_update',
+            title=f'{assignment.course.code} Ders Projesi Çalışması', message=message,
+            target_url=reverse('projects:course_invitation', args=[assignment.invitation_token]),
+            dedupe_key=key, force=True)
+
+
+def _lifecycle_message(assignment, actor, reason, action):
+    """Keep every required notification field within the infrastructure's 300 characters."""
+    name = actor.get_full_name() or actor.username
+    message = (f'{assignment.course.code} Ders Projesi Çalışması {action}. '
+               f'{assignment.course.name} · {name} · Gerekçe: {reason}')
+    if len(message) <= 300:
+        return message
+
+    def shorten(value, limit):
+        return value if len(value) <= limit else value[:limit - 1] + '…'
+
+    prefix = (f'{assignment.course.code} Ders Projesi Çalışması {action}. '
+              f'{shorten(assignment.course.name, 60)} · {shorten(name, 60)} · Gerekçe: ')
+    return prefix + shorten(reason, 300 - len(prefix))
+
+
+@transaction.atomic
+def edit_assignment(*, assignment, actor, values):
+    assignment = locked_assignment(assignment.pk)
+    if not can_manage_assignment(actor, assignment):
+        raise PermissionDenied
+    require_active_assignment(assignment)
+    if set(values) - EDIT_FIELDS:
+        raise ValidationError('Bu alanlar düzenlenemez.')
+    changes = {key: {'before': str(getattr(assignment, key)), 'after': str(value)}
+               for key, value in values.items() if getattr(assignment, key) != value}
+    if not changes:
+        return assignment
+    for key, value in values.items():
+        setattr(assignment, key, value)
+    assignment.save()
+    audit = record_audit_event(actor=actor, action='course.assignment_updated', target=assignment,
+        metadata={'course_id': assignment.course_id, 'changes': changes})
+    if set(changes) & {'join_deadline', 'starts_at', 'ends_at', 'repository_required', 'topic', 'purpose', 'expectations'}:
+        _notify_participants(assignment, actor,
+            f'{assignment.course.code} Ders Projesi Çalışmasının kapsamı veya tarihleri güncellendi. Çalışma ayrıntılarını inceleyin.',
+            f'course-assignment-edited-{audit.pk}')
+    return assignment
+
+
+def _reason(reason):
+    reason = (reason or '').strip()
+    if not reason:
+        raise ValidationError('Gerekçe zorunludur.')
+    if len(reason) > 2000:
+        raise ValidationError('Gerekçe en fazla 2000 karakter olabilir.')
+    return reason
+
+
+def _version(current, expected):
+    if current.lifecycle_version != expected:
+        raise ValidationError('Çalışmanın durumu değişti. Sayfayı yenileyip tekrar deneyin.')
+
+
+@transaction.atomic
+def cancel_assignment(*, assignment, actor, reason, expected_version=None):
+    expected_version = assignment.lifecycle_version if expected_version is None else expected_version
+    assignment = locked_assignment(assignment.pk)
+    if not can_manage_assignment(actor, assignment):
+        raise PermissionDenied
+    reason = _reason(reason)
+    if assignment.is_cancelled:
+        return assignment, False
+    require_active_assignment(assignment)
+    _version(assignment, expected_version)
+    assignment.is_active = False
+    assignment.cancelled_at = timezone.now()
+    assignment.cancelled_by = actor
+    assignment.cancellation_reason = reason
+    assignment.lifecycle_version += 1
+    assignment.save()
+    record_audit_event(actor=actor, action='course.assignment_cancelled', target=assignment,
+        metadata={'course_id': assignment.course_id, 'reason': reason, 'version': assignment.lifecycle_version})
+    _notify_participants(assignment, actor,
+        _lifecycle_message(assignment, actor, reason, 'iptal edildi'),
+        f'course-assignment-cancelled-{assignment.pk}-{assignment.lifecycle_version}')
+    return assignment, True
+
+
+@transaction.atomic
+def reactivate_assignment(*, assignment, actor, reason, expected_version=None):
+    expected_version = assignment.lifecycle_version if expected_version is None else expected_version
+    assignment = locked_assignment(assignment.pk)
+    if not actor.is_active or not is_admin(actor):
+        raise PermissionDenied
+    reason = _reason(reason)
+    if assignment.is_active:
+        return assignment, False
+    if not assignment.is_cancelled:
+        raise ValidationError('Yalnız iptal edilmiş çalışma yeniden aktifleştirilebilir.')
+    _version(assignment, expected_version)
+    assignment.is_active = True
+    assignment.lifecycle_version += 1
+    assignment.save()  # Full chronology, instructor and existing team validation.
+    record_audit_event(actor=actor, action='course.assignment_reactivated', target=assignment,
+        metadata={'course_id': assignment.course_id, 'reason': reason, 'version': assignment.lifecycle_version})
+    _notify_participants(assignment, actor,
+        _lifecycle_message(assignment, actor, reason, 'yeniden aktifleştirildi'),
+        f'course-assignment-reactivated-{assignment.pk}-{assignment.lifecycle_version}')
+    return assignment, True
+
+
+def assignment_has_history(assignment):
+    if any((assignment.participants.exists(), assignment.teams.exists(), assignment.works.exists(),
+            assignment.checkpoints.exists(), assignment.cancelled_at is not None)):
+        return True
+    # Administrative corrections can remove rows while immutable academic audit remains.
+    from core.models import AuditLog
+    return AuditLog.objects.filter(metadata__assignment_id=assignment.pk, action__in=(
+        'course.team_created', 'course.team_joined', 'course.team_membership_overridden',
+        'course.work_created', 'course.checkpoint_created', 'course.checkpoint_updated',
+        'course.checkpoint_deadline_changed',
+    )).exists()
+
+
+@transaction.atomic
+def delete_empty_assignment(*, assignment, actor, reason):
+    assignment = locked_assignment(assignment.pk)
+    if not can_manage_assignment(actor, assignment):
+        raise PermissionDenied
+    reason = _reason(reason)
+    if assignment_has_history(assignment):
+        raise ValidationError('Katılım veya akademik geçmiş bulunan çalışma silinemez. İptal Et aksiyonunu kullanın.')
+    snapshot = {'assignment_id': assignment.pk, 'course_id': assignment.course_id,
+                'course_code': assignment.course.code, 'topic': assignment.topic, 'reason': reason}
+    record_audit_event(actor=actor, action='course.assignment_deleted', target=assignment, metadata=snapshot)
+    assignment.delete()
+    return snapshot
+
+
+@transaction.atomic
+def purge_assignment(*, assignment, actor, reason):
+    """Admin-only graph purge; lock root first, retain audit snapshots, clean files after commit."""
+    if not actor.is_active or not is_admin(actor):
+        raise PermissionDenied
+    reason = _reason(reason)
+    assignment = locked_assignment(assignment.pk)
+    from django.apps import apps
+    from django.db import models
+    from django.db.models import Q
+    from django.db.models.deletion import Collector
+    from core.models import Notification
+    from .models import (ProjectMilestoneReview, ProjectMilestoneSubmission,
+                         ProjectMilestoneSubmissionFile, ProjectMilestoneSubmissionLink)
+    import logging
+
+    project_ids = list(assignment.works.values_list('project_id', flat=True))
+    work_ids = list(assignment.works.values_list('pk', flat=True))
+    # A malformed cross-assignment reference must never expand deletion scope.
+    if ProjectMilestone.objects.filter(assignment_checkpoint__assignment=assignment).exclude(project_id__in=project_ids).exists():
+        raise ValidationError('Başka projeye bağlı kontrol noktası bulundu; kalıcı silme durduruldu.')
+    snapshot = {'assignment_id': assignment.pk, 'course_id': assignment.course_id,
+        'course_code': assignment.course.code, 'course_name': assignment.course.name,
+        'instructor_id': assignment.instructor_id, 'topic': assignment.topic, 'reason': reason,
+        'participant_count': assignment.participants.count(), 'team_count': assignment.teams.count(),
+        'work_count': len(work_ids), 'project_ids': project_ids}
+    submissions = ProjectMilestoneSubmission.objects.filter(milestone__project_id__in=project_ids)
+    files = [(item.file.storage, item.file.name) for item in
+             ProjectMilestoneSubmissionFile.objects.filter(submission__in=submissions) if item.file]
+    ProjectMilestoneReview.objects.filter(submission__in=submissions).delete()
+    ProjectMilestoneSubmissionLink.objects.filter(submission__in=submissions).delete()
+    ProjectMilestoneSubmissionFile.objects.filter(submission__in=submissions).delete()
+    submissions.delete()
+    # Collector follows the real Project graph, including media, repositories and workflow history.
+    collector = Collector(using='default')
+    collector.collect(Project.objects.filter(pk__in=project_ids))
+    for model, instances in collector.data.items():
+        for field in model._meta.fields:
+            if isinstance(field, models.FileField):
+                files.extend((value.storage, value.name) for obj in instances
+                             if (value := getattr(obj, field.name)))
+    for queryset in collector.fast_deletes:
+        for field in queryset.model._meta.fields:
+            if isinstance(field, models.FileField):
+                files.extend((value.storage, value.name) for obj in queryset
+                             if (value := getattr(obj, field.name)))
+    collector.delete()
+    assignment.participants.all().delete()
+    assignment.teams.all().delete()
+    CourseAssignmentExpectation.objects.filter(checkpoint__assignment=assignment).delete()
+    assignment.checkpoints.all().delete()
+    urls = [reverse('projects:course_invitation', args=[assignment.invitation_token]),
+            reverse('projects:course_assignment_detail', args=[assignment.pk])]
+    urls += [reverse('projects:course_work_detail', args=[pk]) for pk in work_ids]
+    urls += [reverse('projects:project_detail', args=[pk]) for pk in project_ids]
+    scope = Q(pk__in=[])
+    for url in urls:
+        scope |= Q(target_url=url) | Q(target_url__startswith=url + '#')
+    Notification.objects.filter(scope).delete()
+    record_audit_event(actor=actor, action='course.assignment_purged', target=assignment, metadata=snapshot)
+    assignment.delete()
+
+    def cleanup():
+        file_fields = [(model, field) for model in apps.get_models() for field in model._meta.fields
+                       if isinstance(field, models.FileField)]
+        seen = set()
+        for storage, name in files:
+            if not name or (id(storage), name) in seen:
+                continue
+            seen.add((id(storage), name))
+            try:
+                # Conservatively preserve any still referenced name, including other assignments/apps.
+                if any(model.objects.filter(**{field.name: name}).exists() for model, field in file_fields):
+                    continue
+                storage.delete(name)
+            except Exception:
+                logging.getLogger(__name__).exception('Ders çalışması sonrası dosya temizlenemedi: %s', name)
+    transaction.on_commit(cleanup)
+    return snapshot

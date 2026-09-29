@@ -9,6 +9,8 @@ def _generic(project):
 def can_manage_project_milestones(user, project):
     work = getattr(project, 'course_project_work', None)
     if work:
+        if not work.assignment.is_active:
+            return False
         return bool(user.is_authenticated and user.is_active and _generic(project) and (
             is_admin(user) or is_teacher(user) and work.assignment.instructor_id == user.pk and
             CourseInstructor.objects.filter(course_id=work.assignment.course_id, instructor=user, is_active=True).exists()
@@ -26,6 +28,8 @@ def can_submit_project_milestone(user, milestone):
     project = milestone.project
     work = getattr(project, 'course_project_work', None)
     if work:
+        if not work.assignment.is_active:
+            return False
         from .course_work_models import CourseProjectParticipation
         if not milestone.assignment_checkpoint_id or not milestone.assignment_checkpoint.is_active:
             return False
@@ -50,11 +54,12 @@ def can_view_project_milestone_evidence(user, submission):
     project = submission.milestone.project
     work = getattr(project, 'course_project_work', None)
     if work:
+        from .course_work_services import can_manage_assignment
         from .course_work_models import CourseProjectParticipation
         participant = CourseProjectParticipation.objects.filter(assignment=work.assignment, student=user)
         participant = participant.filter(student_id=work.owner_id) if work.owner_id else participant.filter(team_id=work.team_id)
         return bool(user.is_authenticated and user.is_active and _generic(project) and (
-            can_manage_project_milestones(user, project) or participant.exists()
+            can_manage_assignment(user, work.assignment) or participant.exists()
         ))
     return bool(user.is_authenticated and user.is_active and _generic(project) and (
         can_manage_project_milestones(user, project)

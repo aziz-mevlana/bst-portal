@@ -10,7 +10,15 @@ from .models import (
     ProjectMilestoneSubmission, ProjectMilestoneSubmissionFile,
     ProjectMilestoneSubmissionLink, validate_project_upload_content,
 )
+from .course_work_services import lock_assignment_for_project
 from .milestone_policies import can_manage_project_milestones, can_submit_project_milestone, can_review_project_milestone
+
+
+def _locked_milestone(pk, **filters):
+    milestone = ProjectMilestone.objects.select_for_update(of=("self",)).select_related("project", "project__project_type").filter(pk=pk, **filters).first()
+    if milestone is None:
+        raise ValidationError("Kontrol noktası artık mevcut değil.")
+    return milestone
 
 
 def _notify(users, *, actor, message, url, key):
@@ -21,11 +29,12 @@ def _notify(users, *, actor, message, url, key):
 
 @transaction.atomic
 def save_milestone(*, project, actor, values, milestone=None):
+    lock_assignment_for_project(project.pk)
     project = type(project).objects.select_for_update().select_related('project_type').get(pk=project.pk)
     if not can_manage_project_milestones(actor, project):
         raise PermissionDenied
     if milestone:
-        milestone = ProjectMilestone.objects.select_for_update().get(pk=milestone.pk, project=project)
+        milestone = _locked_milestone(milestone.pk, project=project)
         if milestone.assignment_checkpoint_id:
             raise ValidationError('Ortak kontrol noktası çalışma planından düzenlenir.')
         previous_deadline = milestone.due_at
@@ -47,9 +56,11 @@ def save_milestone(*, project, actor, values, milestone=None):
 
 @transaction.atomic
 def delete_milestone(*, milestone, actor):
-    milestone = ProjectMilestone.objects.select_for_update().select_related(
-        'project', 'project__project_type'
-    ).get(pk=milestone.pk)
+    project_id = ProjectMilestone.objects.filter(pk=milestone.pk).values_list('project_id', flat=True).first()
+    if project_id is None:
+        raise ValidationError('Kontrol noktası artık mevcut değil.')
+    lock_assignment_for_project(project_id)
+    milestone = _locked_milestone(milestone.pk)
     if not can_manage_project_milestones(actor, milestone.project):
         raise PermissionDenied
     if milestone.assignment_checkpoint_id:
@@ -78,7 +89,11 @@ def submit_milestone(*, milestone, actor, note='', links=(), files=()):
 
 @transaction.atomic
 def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_files):
-    milestone = ProjectMilestone.objects.select_for_update().select_related('project', 'project__project_type').get(pk=milestone.pk)
+    project_id = ProjectMilestone.objects.filter(pk=milestone.pk).values_list('project_id', flat=True).first()
+    if project_id is None:
+        raise ValidationError('Kontrol noktası artık mevcut değil.')
+    lock_assignment_for_project(project_id)
+    milestone = _locked_milestone(milestone.pk)
     if not can_submit_project_milestone(actor, milestone):
         raise PermissionDenied
     previous = milestone.latest_submission
@@ -130,7 +145,11 @@ def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_file
 
 @transaction.atomic
 def review_milestone(*, submission, actor, outcome, score=None, feedback=''):
-    milestone = ProjectMilestone.objects.select_for_update().select_related('project', 'project__project_type').get(pk=submission.milestone_id)
+    project_id = ProjectMilestone.objects.filter(pk=submission.milestone_id).values_list('project_id', flat=True).first()
+    if project_id is None:
+        raise ValidationError('Kontrol noktası artık mevcut değil.')
+    lock_assignment_for_project(project_id)
+    milestone = _locked_milestone(submission.milestone_id)
     submission = ProjectMilestoneSubmission.objects.select_for_update().get(pk=submission.pk, milestone=milestone)
     if not can_review_project_milestone(actor, milestone):
         raise PermissionDenied

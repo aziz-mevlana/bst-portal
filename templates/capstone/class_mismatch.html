@@ -1,0 +1,1 @@
+{% if enrollment.student.profile.class_level != '4' %}<small class="block text-amber-600">Mevcut sınıf bilgisi: {{ enrollment.student.profile.class_level|default:'Belirtilmedi' }}{% if enrollment.student.profile.class_level %}. sınıf{% endif %} — Bitirme Projesi resmi listesiyle uyuşmuyor.</small>{% endif %}

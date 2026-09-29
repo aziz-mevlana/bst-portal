@@ -1,0 +1,12 @@
+{% extends 'dashboard/base.html' %}
+{% block dashboard_content %}<section class="dashboard-card max-w-2xl space-y-4 rounded-2xl p-6">
+<h1 class="text-2xl font-bold">{{ action_label }}</h1>
+<p>{{ assignment.course.code }} · {{ assignment.course.name }} · {{ assignment.topic }}</p>
+{% if action == 'purge' %}<p>Çalışma, katılımlar, takımlar, projeler ve tüm teslim geçmişi kalıcı olarak silinecek.</p>{% elif action == 'cancel' %}<p>Yeni katılım ve akademik işlemler kapanacak. Geçmiş salt okunur olarak erişilebilir kalacak.</p>{% elif action == 'reactivate' %}<p>Akademik işlemler tekrar açılacak. Katılım son tarihi geçmişse yeni öğrenci kabul edilmeyecek.</p>{% else %}<p>Yalnız katılım ve akademik geçmiş içermeyen çalışmalar silinebilir.</p>{% endif %}
+<form method="post" class="space-y-4">{% csrf_token %}<input type="hidden" name="version" value="{{ assignment.lifecycle_version }}">
+<label class="block">Gerekçe<textarea class="block w-full rounded-lg border border-slate-600 bg-slate-900 p-3" name="reason" required maxlength="2000"></textarea></label>
+{% if action == 'purge' %}<label class="block">Onay için KALICI OLARAK SİL yazın<input class="block w-full rounded-lg border border-slate-600 bg-slate-900 p-3" name="confirmation" required autocomplete="off"></label>{% endif %}
+<label class="block"><input type="checkbox" name="confirm" value="yes" required> Bu işlemi onaylıyorum.</label>
+<button class="rounded-lg bg-rose-700 px-4 py-2" type="submit">{{ action_label }}</button></form>
+<a class="block text-cyan-300" href="{% url 'projects:course_assignment_detail' assignment.pk %}">Çalışmaya Dön</a>
+</section>{% endblock %}

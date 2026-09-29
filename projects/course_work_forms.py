@@ -26,6 +26,11 @@ class CourseProjectAssignmentForm(forms.ModelForm):
             is_active=True, instructor_assignments__instructor=instructor,
             instructor_assignments__is_active=True
         ).exclude(code__in=['BST 401', 'BST 402']).distinct()
+        if self.instance.pk:
+            self.fields['course'].queryset = Course.objects.filter(pk=self.instance.course_id)
+            self.fields['course'].disabled = True
+            if self.instance.participants.exists():
+                self.fields['mode'].disabled = True
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', FIELD_CLASS)
 

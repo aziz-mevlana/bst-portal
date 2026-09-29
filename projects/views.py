@@ -1,3 +1,4 @@
+from .course_work_guards import course_project_mutation
 import hashlib
 import hmac
 import logging
@@ -1202,6 +1203,7 @@ def project_create(request):
     })
 
 @login_required
+@course_project_mutation
 def project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     if hasattr(project, 'course_project_work'):
@@ -1296,6 +1298,7 @@ def project_update(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_delete(request, project_id):
     project = get_object_or_404(
         Project.objects.select_related('created_by', 'project_type'),
@@ -1355,6 +1358,7 @@ def saved_projects(request):
 
 
 @login_required
+@course_project_mutation
 def project_showcase_manage(request, project_id):
     project = get_object_or_404(Project.objects.select_related('created_by', 'advisor'), pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1397,6 +1401,7 @@ def project_showcase_manage(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_writing_generate(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1436,6 +1441,7 @@ def project_writing_generate(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_writing_apply(request, suggestion_id):
     with transaction.atomic():
         suggestion = get_object_or_404(
@@ -1472,6 +1478,7 @@ def project_writing_apply(request, suggestion_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_writing_reject(request, suggestion_id):
     suggestion = get_object_or_404(ProjectWritingSuggestion.objects.select_related('project'), pk=suggestion_id, status='preview')
     if not _can_manage_project(request.user, suggestion.project):
@@ -1496,6 +1503,7 @@ def project_matches(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_repository_save(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1516,6 +1524,7 @@ def project_repository_save(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_repository_delete(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1527,6 +1536,7 @@ def project_repository_delete(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_media_add(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1546,6 +1556,7 @@ def project_media_add(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_media_delete(request, media_id):
     media = get_object_or_404(ProjectMedia.objects.select_related('project'), pk=media_id)
     if not _can_manage_project(request.user, media.project):
@@ -1575,6 +1586,7 @@ def project_media_delete(request, media_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_images_add(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1603,6 +1615,7 @@ def project_images_add(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_media_set_cover(request, media_id):
     media = get_object_or_404(ProjectMedia.objects.select_related('project'), pk=media_id, media_type='image')
     if not _can_manage_project(request.user, media.project):
@@ -1646,6 +1659,7 @@ def toggle_project_like(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_feature_toggle(request, project_id):
     if not (request.user.is_staff or request.user.is_superuser or _user_type(request.user) == 'teacher'):
         raise PermissionDenied
@@ -1675,6 +1689,7 @@ def project_feature_toggle(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_contribution_add(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1699,6 +1714,7 @@ def project_contribution_add(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_contribution_verify(request, contribution_id):
     contribution = get_object_or_404(
         ProjectContribution.objects.select_related('project'),
@@ -1722,6 +1738,7 @@ def project_contribution_verify(request, contribution_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_contribution_delete(request, contribution_id):
     contribution = get_object_or_404(
         ProjectContribution.objects.select_related('project'),
@@ -1737,6 +1754,7 @@ def project_contribution_delete(request, contribution_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_achievement_add(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     if not _can_manage_project(request.user, project):
@@ -1756,6 +1774,7 @@ def project_achievement_add(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def project_achievement_delete(request, achievement_id):
     achievement = get_object_or_404(ProjectAchievement.objects.select_related('project'), pk=achievement_id)
     if not _can_manage_project(request.user, achievement.project):
@@ -1767,6 +1786,7 @@ def project_achievement_delete(request, achievement_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def add_project_update(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     # Check if user is creator, advisor, or team member
@@ -1810,6 +1830,7 @@ def add_project_update(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def add_comment(request, project_id):
     ensure_interactive_account(request.user)
     project = get_object_or_404(Project, id=project_id)
@@ -1855,6 +1876,7 @@ def add_comment(request, project_id):
 
 
 @login_required
+@course_project_mutation
 def edit_comment(request, comment_id):
     comment = get_object_or_404(ProjectComment, id=comment_id)
     
@@ -1889,6 +1911,7 @@ def edit_comment(request, comment_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def delete_comment(request, comment_id):
     comment = get_object_or_404(ProjectComment, id=comment_id)
     project_id = comment.project.id
@@ -1918,6 +1941,7 @@ def delete_comment(request, comment_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def approve_project(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
     
@@ -1948,6 +1972,7 @@ def approve_project(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def send_feedback(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
     
@@ -1999,6 +2024,7 @@ def send_feedback(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def start_project(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
 
@@ -2029,6 +2055,7 @@ def start_project(request, project_id):
 
 @login_required
 @require_POST
+@course_project_mutation
 def complete_project(request, project_id):
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)
 
@@ -2094,6 +2121,7 @@ def get_feedback(request, project_id):
         return JsonResponse({'success': False, 'error': 'Henüz geri bildirim yok.'})
 @login_required
 @require_POST
+@course_project_mutation
 def change_project_status(request, project_id):
     import json
     project = get_object_or_404(Project.objects.select_related('project_type'), id=project_id)

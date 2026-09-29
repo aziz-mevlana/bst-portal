@@ -1,0 +1,14 @@
+{% extends 'capstone/teacher_base.html' %}
+{% block capstone_content %}
+<section class="dashboard-card mx-auto max-w-2xl space-y-4 rounded-2xl p-6">
+<h1 class="text-2xl font-bold">Resmi Listeden Çıkar</h1>
+<p>{{ enrollment.student.get_full_name|default:enrollment.student.username }} · {{ enrollment.term }}</p>
+{% if active_project %}<p>Aktif Bitirme Projesi var. Önce proje kalıcı olarak silinmelidir.</p>
+<a class="text-rose-400" href="{% url 'capstone:advisor_project_purge' active_project.pk %}">Bitirme Projesini Kalıcı Olarak Sil</a>
+{% else %}<p>Bu dönem kaydı ve danışman ataması kaldırılacak. Öğrencinin diğer kayıtları korunacak.</p>
+<form method="post" class="space-y-4">{% csrf_token %}
+<label class="block">Gerekçe<textarea name="reason" required maxlength="2000" class="block w-full rounded-lg border bg-slate-900 p-3"></textarea></label>
+<label class="block"><input type="checkbox" name="confirm" value="yes" required> Öğrenciyi bu dönemin resmi listesinden çıkarmayı onaylıyorum.</label>
+<button class="rounded-lg bg-rose-700 px-4 py-2" type="submit">Resmi Listeden Çıkar</button></form>{% endif %}
+<a class="block text-cyan-300" href="{% url 'capstone:student_pool' %}">Listeye Dön</a>
+</section>{% endblock %}

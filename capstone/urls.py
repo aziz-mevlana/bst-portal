@@ -6,6 +6,7 @@ from . import views, academic_views
 app_name = 'capstone'
 
 urlpatterns = [
+    path('advisor/students/<int:enrollment_id>/remove/', academic_views.enrollment_remove, name='enrollment_remove'),
     path('', views.student_home, name='student_home'),
     path('start/', views.student_start, name='student_start'),
     path('advisor/students/', academic_views.student_pool, name='student_pool'),
