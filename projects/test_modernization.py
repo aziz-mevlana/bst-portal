@@ -521,12 +521,12 @@ class ProjectDocumentAccessTests(TestCase):
         self.assertEqual(view_response.status_code, 200)
         self.assertEqual(view_response['Content-Type'], 'application/pdf')
         self.assertIn('inline', view_response['Content-Disposition'])
-        view_response.close()
+        b"".join(view_response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
         download_response = self.client.get(self.media_url(self.documentation, 'download'))
         self.assertEqual(download_response.status_code, 200)
         self.assertIn('attachment', download_response['Content-Disposition'])
-        download_response.close()
+        b"".join(download_response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_private_pitch_requires_project_management_permission(self):
         self.assertEqual(self.client.get(self.media_url(self.pitch)).status_code, 403)
@@ -537,10 +537,10 @@ class ProjectDocumentAccessTests(TestCase):
         self.client.force_login(self.owner)
         response = self.client.get(self.media_url(self.pitch))
         self.assertEqual(response.status_code, 200)
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
         direct_response = self.client.get(self.pitch.file.url)
         self.assertEqual(direct_response.status_code, 200)
-        direct_response.close()
+        b"".join(direct_response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
         detail = self.client.get(reverse('projects:project_detail', args=[self.project.pk]))
         self.assertContains(detail, 'Yatırımcı Sunumu')
 

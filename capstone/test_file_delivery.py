@@ -103,13 +103,13 @@ class CapstoneSubmissionFileDeliveryTests(TestCase):
         try:
             return b''.join(response.streaming_content)
         finally:
-            response.close()
+            b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_owner_can_download_file(self):
         response = self.get_as(self.owner)
 
         self.assertEqual(response.status_code, 200)
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_inactive_owner_cannot_download_file(self):
         self.owner.is_active = False
@@ -120,14 +120,14 @@ class CapstoneSubmissionFileDeliveryTests(TestCase):
         response = self.get_as(self.advisor)
 
         self.assertEqual(response.status_code, 200)
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_django_staff_and_superuser_can_download_file(self):
         for user in (self.staff, self.superuser):
             with self.subTest(user=user.username):
                 response = self.get_as(user)
                 self.assertEqual(response.status_code, 200)
-                response.close()
+                b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_team_only_user_gets_not_found(self):
         self.assertEqual(self.get_as(self.team_member).status_code, 404)
@@ -186,7 +186,7 @@ class CapstoneSubmissionFileDeliveryTests(TestCase):
         self.assertIn("filename*=utf-8''", disposition.lower())
         self.assertNotIn('\r', disposition)
         self.assertNotIn('\n', disposition)
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_security_and_private_cache_headers_are_set(self):
         response = self.get_as(self.owner)
@@ -194,14 +194,14 @@ class CapstoneSubmissionFileDeliveryTests(TestCase):
         self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
         self.assertEqual(response['Cache-Control'], 'private, no-store')
         self.assertEqual(response['Content-Security-Policy'], "sandbox; default-src 'none'")
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_response_does_not_redirect_to_public_media(self):
         response = self.get_as(self.owner)
 
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('Location', response)
-        response.close()
+        b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
     def test_post_is_not_allowed(self):
         self.client.force_login(self.owner)

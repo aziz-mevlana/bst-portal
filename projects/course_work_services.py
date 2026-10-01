@@ -82,6 +82,9 @@ def join_assignment(*, token, student):
     assignment = CourseProjectAssignment.objects.select_for_update(of=('self',)).select_related('course', 'instructor').get(invitation_token=token)
     if not student.is_authenticated or not student.is_active or role_of(student) not in {'student', 'staff_student'}:
         raise PermissionDenied
+    existing = CourseProjectParticipation.objects.filter(assignment=assignment, student=student).first()
+    if existing:
+        return existing
     if not assignment.course.is_active or not can_manage_assignment(assignment.instructor, assignment):
         raise ValidationError('Bu çalışma artık öğrenci kabul etmiyor.')
     if not assignment.is_active or not assignment.invitation_enabled or timezone.now() > assignment.join_deadline:
@@ -101,7 +104,7 @@ def _open_participation(*, assignment, student, require_join_open=True):
 def create_team(*, assignment, student, name):
     participation, assignment = _open_participation(assignment=assignment, student=student)
     if assignment.mode != assignment.Mode.GROUP or participation.team_id or not name.strip():
-        raise ValidationError('Takım oluşturulamıyor.')
+        raise ValidationError('Ekip oluşturulamıyor.')
     team = CourseProjectTeam.objects.create(assignment=assignment, name=name.strip(), created_by=student)
     participation.team = team
     participation.save(update_fields=['team'])
@@ -115,11 +118,11 @@ def join_team(*, assignment, student, team_id):
     participation, assignment = _open_participation(assignment=assignment, student=student)
     team = CourseProjectTeam.objects.select_for_update().get(pk=team_id, assignment=assignment)
     if assignment.mode != assignment.Mode.GROUP or participation.team_id and participation.team_id != team.pk:
-        raise ValidationError('Bu takıma katılamazsınız.')
+        raise ValidationError('Bu ekibe katılamazsınız.')
     if participation.team_id == team.pk:
         return team
     if team.participants.count() >= assignment.max_team_size:
-        raise ValidationError('Takım kapasitesi doldu.')
+        raise ValidationError('Ekip kapasitesi doldu.')
     participation.team = team
     participation.save(update_fields=['team'])
     work = CourseProjectWork.objects.filter(team=team).select_related('project').first()
@@ -138,7 +141,7 @@ def override_team_member(*, assignment, actor, student_id, team_id, reason):
         raise PermissionDenied
     require_active_assignment(assignment)
     if assignment.mode != assignment.Mode.GROUP or not reason.strip():
-        raise ValidationError('Takım değişikliği için gerekçe zorunludur.')
+        raise ValidationError('Ekip değişikliği için gerekçe zorunludur.')
     participation = CourseProjectParticipation.objects.select_for_update().select_related('student').get(
         assignment=assignment, student_id=student_id)
     target = (CourseProjectTeam.objects.select_for_update().get(assignment=assignment, pk=team_id)
@@ -148,11 +151,11 @@ def override_team_member(*, assignment, actor, student_id, team_id, reason):
         return participation
     old_work = CourseProjectWork.objects.select_related('project').filter(team_id=old_team_id).first() if old_team_id else None
     if old_work and old_work.project.created_by_id == student_id:
-        raise ValidationError('Proje kurucusu aktif takım projesinden çıkarılamaz.')
+        raise ValidationError('Proje kurucusu aktif ekip projesinden çıkarılamaz.')
     if old_work and old_work.team.participants.count() <= assignment.min_team_size:
-        raise ValidationError('Aktif takım projesi asgari üye sayısının altına düşürülemez.')
+        raise ValidationError('Aktif ekip projesi asgari üye sayısının altına düşürülemez.')
     if target and target.participants.count() >= assignment.max_team_size:
-        raise ValidationError('Takım kapasitesi doldu.')
+        raise ValidationError('Ekip kapasitesi doldu.')
     if old_work:
         old_work.project.team.remove(participation.student)
     participation.team = target
@@ -165,7 +168,7 @@ def override_team_member(*, assignment, actor, student_id, team_id, reason):
                   'old_team_id': old_team_id, 'new_team_id': target.pk if target else None,
                   'reason': reason.strip()})
     create_notification(recipient=participation.student, actor=actor, notification_type='project_update',
-        message='Ders Projesi Çalışması takım üyeliğiniz akademisyen tarafından güncellendi.',
+        message='Ders Projesi Çalışması ekip üyeliğiniz akademisyen tarafından güncellendi.',
         target_url=reverse('projects:course_invitation', args=[assignment.invitation_token]),
         dedupe_key=f'course-team-override-{participation.pk}-{timezone.now().timestamp()}')
     return participation
@@ -183,14 +186,14 @@ def create_work(*, assignment, student, title, idea, repository_path=''):
     team = None
     if assignment.mode == assignment.Mode.GROUP:
         if not participation.team_id:
-            raise ValidationError('Önce bir takıma katılın.')
+            raise ValidationError('Önce bir ekibe katılın.')
         team = CourseProjectTeam.objects.select_for_update().get(pk=participation.team_id, assignment=assignment)
         if team.created_by_id != student.pk:
             raise PermissionDenied
         if team.participants.count() < assignment.min_team_size:
-            raise ValidationError('Takım asgari üye sayısına ulaşmadı.')
+            raise ValidationError('Ekip asgari üye sayısına ulaşmadı.')
         if CourseProjectWork.objects.filter(team=team).exists():
-            raise ValidationError('Bu takımın proje bilgileri zaten kaydedildi.')
+            raise ValidationError('Bu ekipın proje bilgileri zaten kaydedildi.')
     elif CourseProjectWork.objects.filter(assignment=assignment, owner=student).exists():
         raise ValidationError('Proje bilgileriniz zaten kaydedildi.')
     project_type = ProjectType.objects.get(code='COURSE')
@@ -442,6 +445,10 @@ def purge_assignment(*, assignment, actor, reason):
     submissions = ProjectMilestoneSubmission.objects.filter(milestone__project_id__in=project_ids)
     files = [(item.file.storage, item.file.name) for item in
              ProjectMilestoneSubmissionFile.objects.filter(submission__in=submissions) if item.file]
+    from .models import ProjectMilestoneSubmissionReference
+    from .course_work_models import CoursePrivateEvaluation
+    CoursePrivateEvaluation.objects.filter(review__submission__in=submissions).delete()
+    ProjectMilestoneSubmissionReference.objects.filter(submission__in=submissions).delete()
     ProjectMilestoneReview.objects.filter(submission__in=submissions).delete()
     ProjectMilestoneSubmissionLink.objects.filter(submission__in=submissions).delete()
     ProjectMilestoneSubmissionFile.objects.filter(submission__in=submissions).delete()

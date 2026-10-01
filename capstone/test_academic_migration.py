@@ -13,6 +13,7 @@ class CapstoneAcademicMigrationTests(TransactionTestCase):
 
     def test_existing_project_and_checkpoint_remain_active(self):
         executor = MigrationExecutor(connection)
+        self.addCleanup(lambda: MigrationExecutor(connection).migrate(executor.loader.graph.leaf_nodes()))
         executor.migrate(self.before)
         apps = executor.loader.project_state(self.before).apps
         Term = apps.get_model('capstone', 'CapstoneTerm')
@@ -25,7 +26,8 @@ class CapstoneAcademicMigrationTests(TransactionTestCase):
         now = timezone.now()
         term = Term.objects.create(academic_year='2026-2027', semester='FALL', starts_at=now,
             midterm_at=now + timedelta(days=60), final_at=now + timedelta(days=120), is_active=True)
-        kind = ProjectType.objects.get(code='CAPSTONE')
+        kind, _ = ProjectType.objects.get_or_create(code='CAPSTONE', defaults={
+            'name': 'Bitirme Projesi', 'slug': 'capstone', 'requires_advisor': True})
         project = Project.objects.create(title='Existing academic project', slug='existing-academic-project',
             created_by_id=student.pk, advisor_id=advisor.pk, project_type_id=kind.pk,
             development_status='in_progress', visibility='private')

@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Prefetch, Q
+import uuid
 from django.db.models.deletion import ProtectedError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,16 +13,15 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from accounts.policies import is_admin, is_teacher, role_of
-from .course_work_forms import CourseAssignmentCheckpointForm, CourseProjectAssignmentForm, CourseProjectWorkForm
+from .course_work_forms import (CourseAssignmentCheckpointForm, CourseProjectAssignmentForm, CourseProjectWorkForm, CourseEvidenceForm, CourseReviewForm, CoursePlanFormSet)
 from .course_work_models import (CourseAssignmentCheckpoint, CourseProjectAssignment,
     CourseProjectParticipation, CourseProjectTeam, CourseProjectWork)
 from .course_work_services import (add_expectation, can_manage_assignment, can_view_work,
-    create_assignment, create_team, create_work, join_assignment, join_team,
+    create_team, create_work, join_assignment, join_team,
     override_team_member, rotate_invitation, save_checkpoint, assignment_has_history)
-from .forms import ProjectMilestoneReviewForm, ProjectMilestoneSubmissionForm
 from .milestone_policies import can_review_project_milestone, can_submit_project_milestone
 from .milestone_services import review_milestone, submit_milestone
-from .models import Course, CourseInstructor, ProjectMilestone, ProjectMilestoneSubmission
+from .models import Course, ProjectMilestone, ProjectMilestoneSubmission
 
 
 def _message(exc):
@@ -48,15 +48,13 @@ def _work(user, work_id):
 def my_assignments(request):
     if role_of(request.user) not in {'student', 'staff_student'}:
         raise Http404
-    participations = list(CourseProjectParticipation.objects.filter(student=request.user)
-                          .select_related('assignment__course', 'team').order_by('-joined_at'))
-    individual = dict(CourseProjectWork.objects.filter(owner=request.user)
-                      .values_list('assignment_id', 'pk'))
-    team_works = dict(CourseProjectWork.objects.filter(team_id__in=[item.team_id for item in participations if item.team_id])
-                      .values_list('team_id', 'pk'))
-    for item in participations:
-        item.work_id = team_works.get(item.team_id) if item.team_id else individual.get(item.assignment_id)
-    return render(request, 'projects/course_my_assignments.html', {'participations': participations})
+    from .course_student_access import student_course_assignments
+    participations = student_course_assignments(request.user)
+    return render(request, 'projects/course_my_assignments.html', {
+        'participations': participations,
+        'active_participations': [p for p in participations if p.assignment.is_active],
+        'past_participations': [p for p in participations if not p.assignment.is_active],
+    })
 
 
 @login_required
@@ -83,16 +81,32 @@ def assignment_list(request):
 def assignment_create(request):
     if not is_teacher(request.user) or not request.user.is_active:
         raise Http404
-    form = CourseProjectAssignmentForm(request.POST or None, instructor=request.user)
-    if request.method == 'POST' and form.is_valid():
-        try:
-            assignment = create_assignment(instructor=request.user, **form.cleaned_data)
-        except (ValidationError, PermissionDenied) as exc:
-            form.add_error(None, exc)
-        else:
-            messages.success(request, 'Ders Projesi Çalışması oluşturuldu.')
-            return redirect('projects:course_assignment_detail', assignment.pk)
-    return render(request, 'projects/course_assignment_form.html', {'form': form})
+    from .course_template_views import owned_template, plan_initial, cleaned_plan
+    from .course_template_services import create_assignment_with_plan, BRIEF_FIELDS
+    from .course_work_models import CourseProjectTemplate
+    selected = request.POST.get('template_id') if request.method == 'POST' else request.GET.get('template')
+    template = owned_template(request.user, selected) if selected else None
+    if template and template.is_archived:
+        raise Http404
+    form = CourseProjectAssignmentForm(request.POST or None, instructor=request.user,
+        initial={key: getattr(template,key) for key in BRIEF_FIELDS} if template else {})
+    plan_formset = CoursePlanFormSet(request.POST or None, prefix='plan',
+        initial=plan_initial(template.plan) if template else [])
+    token = request.POST.get('creation_token', '') if request.method == 'POST' else str(uuid.uuid4())
+    if request.method == 'POST':
+        valid = form.is_valid(); plan_valid = plan_formset.is_valid()
+        if valid and plan_valid:
+            try:
+                assignment = create_assignment_with_plan(instructor=request.user, plan=cleaned_plan(plan_formset),
+                    creation_token=token, template=template, **form.cleaned_data)
+            except (ValidationError, PermissionDenied) as exc:
+                form.add_error(None, exc)
+            else:
+                messages.success(request, 'Ders Projesi Çalışması oluşturuldu.')
+                return redirect('projects:course_assignment_detail', assignment.pk)
+    templates = CourseProjectTemplate.objects.filter(owner=request.user, is_archived=False).order_by('name')
+    return render(request, 'projects/course_assignment_form.html', {'form': form, 'plan_formset': plan_formset,
+        'templates': templates, 'selected_template': template, 'creation_token': token})
 
 
 @login_required
@@ -127,9 +141,12 @@ def assignment_detail(request, assignment_id):
     return render(request, 'projects/course_assignment_detail.html', {
         'assignment': assignment, 'section': section, 'definitions': definitions,
         'active_definitions': active_definitions, 'participants': participants,
-        'teams': assignment.teams.prefetch_related('participants__student'), 'rows': rows,
+        'teams': assignment.teams.select_related('work').prefetch_related('participants__student'), 'rows': rows,
         'pending': pending, 'checkpoint_form': CourseAssignmentCheckpointForm(),
         'joined_count': len(participants),
+        'team_count': assignment.teams.count(),
+        'revision_count': sum(cell['state'] == 'REVISION_REQUIRED' for row in rows for cell in row['cells']),
+        'overdue_count': sum(cell['state'] == 'OVERDUE' or cell['state'] == 'REVISION_REQUIRED' and cell['definition'].due_at < timezone.now() for row in rows for cell in row['cells']),
         'is_admin': is_admin(request.user),
         'can_delete_empty': not assignment_has_history(assignment),
     })
@@ -169,7 +186,7 @@ def invitation(request, token):
             raise Http404
         return redirect('projects:course_invitation', token=token)
     team = participation.team if participation else None
-    work = (CourseProjectWork.objects.filter(team=team).first() if team else
+    work = (CourseProjectWork.objects.filter(assignment=assignment, team=team).first() if team else
             CourseProjectWork.objects.filter(assignment=assignment, owner=request.user).first()) if participation else None
     teams = assignment.teams.prefetch_related('participants') if assignment.mode == assignment.Mode.GROUP else ()
     return render(request, 'projects/course_invitation.html', {
@@ -186,7 +203,7 @@ def team_create(request, assignment_id):
         pk=assignment_id, participants__student=request.user)
     try:
         create_team(assignment=assignment, student=request.user, name=request.POST.get('name', ''))
-        messages.success(request, 'Takım oluşturuldu.')
+        messages.success(request, 'Ekip oluşturuldu.')
     except (ValidationError, PermissionDenied, CourseProjectParticipation.DoesNotExist) as exc:
         messages.error(request, _message(exc))
     return redirect('projects:course_invitation', token=assignment.invitation_token)
@@ -198,8 +215,11 @@ def team_join(request, assignment_id, team_id):
     assignment = get_object_or_404(CourseProjectAssignment,
         pk=assignment_id, participants__student=request.user)
     try:
-        join_team(assignment=assignment, student=request.user, team_id=team_id)
-        messages.success(request, 'Takıma katıldınız.')
+        team = join_team(assignment=assignment, student=request.user, team_id=team_id)
+        messages.success(request, 'Ekibe katıldınız.')
+        work = CourseProjectWork.objects.filter(assignment=assignment, team=team).first()
+        if work:
+            return redirect('projects:course_work_detail', work.pk)
     except (ValidationError, PermissionDenied, CourseProjectTeam.DoesNotExist, CourseProjectParticipation.DoesNotExist) as exc:
         messages.error(request, _message(exc))
     return redirect('projects:course_invitation', token=assignment.invitation_token)
@@ -216,7 +236,7 @@ def team_override(request, assignment_id, student_id):
         override_team_member(assignment=assignment, actor=request.user, student_id=student_id,
             team_id=int(raw_team_id) if raw_team_id else None,
             reason=request.POST.get('reason', ''))
-        messages.success(request, 'Takım üyeliği güncellendi.')
+        messages.success(request, 'Ekip üyeliği güncellendi.')
     except (ValidationError, CourseProjectParticipation.DoesNotExist, CourseProjectTeam.DoesNotExist) as exc:
         messages.error(request, _message(exc))
     return redirect(f'{reverse("projects:course_assignment_detail", args=[assignment.pk])}?section=participants')
@@ -227,6 +247,11 @@ def team_override(request, assignment_id, student_id):
 def work_create(request, assignment_id):
     assignment = get_object_or_404(CourseProjectAssignment,
         pk=assignment_id, participants__student=request.user)
+    participation = get_object_or_404(CourseProjectParticipation, assignment=assignment, student=request.user)
+    existing = CourseProjectWork.objects.filter(assignment=assignment,
+        **({'team_id': participation.team_id} if participation.team_id else {'owner': request.user})).first()
+    if existing and can_view_work(request.user, existing):
+        return redirect('projects:course_work_detail', existing.pk)
     form = CourseProjectWorkForm(request.POST)
     if form.is_valid():
         try:
@@ -251,13 +276,43 @@ def work_detail(request, work_id):
     milestones = list(progress
                       .select_related('assignment_checkpoint').prefetch_related(
                           'assignment_checkpoint__expected_items',
-                          'submissions__review', 'submissions__files', 'submissions__links'))
-    approved = sum(item.state == 'APPROVED' for item in milestones)
+                          'submissions__review', 'submissions__files', 'submissions__links', 'submissions__references'))
+    active_milestones = [item for item in milestones if item.assignment_checkpoint.is_active]
+    approved = sum(item.state == 'APPROVED' for item in active_milestones)
     can_submit = can_submit_project_milestone(request.user, milestones[0]) if milestones else False
     can_review = can_review_project_milestone(request.user, milestones[0]) if milestones else False
+    manager = can_manage_assignment(request.user, work.assignment)
+    private_by_review = {}
+    private_total = {'earned': 0, 'maximum': 0}
+    if manager:
+        from .course_work_models import CoursePrivateEvaluation
+        for evaluation in CoursePrivateEvaluation.objects.filter(review__submission__milestone__project=work.project).select_related('actor').order_by('pk'):
+            private_by_review.setdefault(evaluation.review_id, []).append(evaluation)
     for milestone in milestones:
         milestone.can_submit = can_submit
         milestone.can_review = can_review
+        milestone.submission_form = CourseEvidenceForm(checkpoint=milestone.assignment_checkpoint)
+        file_rule = milestone.assignment_checkpoint.evidence_requirements['FILE']
+        milestone.files_enabled = file_rule['mode'] != 'DISABLED'
+        milestone.files_required = file_rule['mode'] == 'REQUIRED'
+        milestone.file_mode_label = 'Zorunlu' if milestone.files_required else 'Opsiyonel'
+        if manager:
+            milestone.review_form = CourseReviewForm(checkpoint=milestone.assignment_checkpoint)
+            for submission in milestone.submissions.all():
+                if hasattr(submission, 'review'):
+                    submission.private_history = private_by_review.get(submission.review.pk, [])
+                    submission.private_latest = submission.private_history[-1] if submission.private_history else None
+                    submission.private_form = CourseReviewForm(checkpoint=milestone.assignment_checkpoint, private_only=True,
+                        initial={'private_note': submission.private_latest.note if submission.private_latest else '',
+                                 'private_score': submission.private_latest.score if submission.private_latest else None})
+            latest = milestone.latest_submission
+            evaluation = getattr(latest, 'private_latest', None) if latest else None
+            if milestone.assignment_checkpoint.is_active and evaluation and evaluation.score is not None:
+                private_total['earned'] += evaluation.score
+                private_total['maximum'] += evaluation.max_points
+        # Public review projection contains feedback and decision only. Private annotations
+        # never enter student contexts, even through submission.review relations.
+
     template = ('projects/course_work_detail_teacher.html' if can_manage_assignment(request.user, work.assignment)
                 else 'projects/course_work_detail.html')
     from core.models import AuditLog
@@ -286,8 +341,8 @@ def work_detail(request, work_id):
         'history': history,
         'members': work.team.participants.select_related('student') if work.team_id else (),
         'work': work, 'milestones': milestones, 'approved': approved,
-        'total': len(milestones), 'submission_form': ProjectMilestoneSubmissionForm(),
-        'review_form': ProjectMilestoneReviewForm(),
+        'total': len(active_milestones),
+        **({'private_total': private_total, 'manager': True} if manager else {}),
     })
 
 
@@ -330,16 +385,19 @@ def work_submit(request, work_id, milestone_id):
                                   assignment_checkpoint__assignment=work.assignment)
     if not can_submit_project_milestone(request.user, milestone):
         raise Http404
-    form = ProjectMilestoneSubmissionForm(request.POST)
+    form = CourseEvidenceForm(request.POST, checkpoint=milestone.assignment_checkpoint)
     if form.is_valid():
         try:
             submit_milestone(milestone=milestone, actor=request.user,
-                note=form.cleaned_data['completion_note'],
-                links=[line.strip() for line in form.cleaned_data['evidence_links'].splitlines() if line.strip()],
-                files=request.FILES.getlist('files'))
+                note=request.POST.get('completion_note', ''),
+                links=[line.strip() for line in request.POST.get('evidence_links', '').splitlines() if line.strip()],
+                files=request.FILES.getlist('files'),
+                references=CourseEvidenceForm.parse_references(request.POST.get('references', '')))
             messages.success(request, 'Kontrol noktası teslim edildi.')
         except ValidationError as exc:
             messages.error(request, _message(exc))
+    else:
+        messages.error(request, str(form.errors))
     return redirect(f'{reverse("projects:course_work_detail", args=[work.pk])}#checkpoint-{milestone.pk}')
 
 
@@ -352,13 +410,15 @@ def work_review(request, work_id, submission_id):
         milestone__assignment_checkpoint__assignment=work.assignment)
     if not can_review_project_milestone(request.user, submission.milestone):
         raise Http404
-    form = ProjectMilestoneReviewForm(request.POST)
+    form = CourseReviewForm(request.POST, checkpoint=submission.milestone.assignment_checkpoint)
     if form.is_valid():
         try:
-            review_milestone(submission=submission, actor=request.user, **form.cleaned_data)
+            review_milestone(submission=submission, actor=request.user, **{**form.cleaned_data, 'private_score': form.cleaned_data.get('private_score') if 'private_score' in form.fields else _forged_score(request.POST)})
             messages.success(request, 'Değerlendirme kaydedildi.')
         except ValidationError as exc:
             messages.error(request, _message(exc))
+    else:
+        messages.error(request, str(form.errors))
     return redirect(f'{reverse("projects:course_work_detail", args=[work.pk])}#checkpoint-{submission.milestone_id}')
 
 
@@ -426,3 +486,33 @@ def assignment_action(request, assignment_id, action):
             raise Http404
     return render(request, 'projects/course_assignment_action.html',
         {'assignment': assignment, 'action': action, 'action_label': labels[action]})
+
+
+def _forged_score(data):
+    if data.get('private_score'):
+        raise ValidationError('Puanlama bu kontrol noktasında kapalı.')
+    return None
+
+
+@login_required
+@require_POST
+def private_evaluation_update(request, work_id, review_id):
+    from .models import ProjectMilestoneReview
+    from .milestone_services import update_private_evaluation
+    work = _work(request.user, work_id)
+    if not can_manage_assignment(request.user, work.assignment):
+        raise Http404
+    review = get_object_or_404(ProjectMilestoneReview.objects.select_related('submission__milestone__assignment_checkpoint'),
+        pk=review_id, submission__milestone__project=work.project,
+        submission__milestone__assignment_checkpoint__assignment=work.assignment)
+    form = CourseReviewForm(request.POST, checkpoint=review.submission.milestone.assignment_checkpoint, private_only=True)
+    if form.is_valid():
+        try:
+            score = form.cleaned_data.get('private_score') if 'private_score' in form.fields else _forged_score(request.POST)
+            update_private_evaluation(review=review, actor=request.user, note=form.cleaned_data['private_note'], score=score,
+                expected_id=int(request.POST.get('expected_id', '')))
+        except (ValueError, ValidationError) as exc:
+            messages.error(request, _message(exc))
+    else:
+        messages.error(request, str(form.errors))
+    return redirect('projects:course_work_detail', work.pk)

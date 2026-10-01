@@ -566,6 +566,8 @@ class Project(models.Model):
     def milestone_score(self):
         approved = []
         for milestone in self.milestones.all():
+            if milestone.assignment_checkpoint_id:
+                continue
             latest = milestone.latest_submission
             if latest and hasattr(latest, 'review') and latest.review.outcome == 'APPROVED':
                 if latest.review.score is not None:
@@ -659,6 +661,7 @@ class ProjectMilestoneSubmission(models.Model):
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     attempt_number = models.PositiveSmallIntegerField()
     completion_note = models.TextField(blank=True)
+    requirement_snapshot = models.JSONField(default=dict, editable=False)
     submitted_at = models.DateTimeField(default=timezone.now, editable=False)
     is_late = models.BooleanField(default=False, editable=False)
 
@@ -717,6 +720,8 @@ class ProjectMilestoneReview(models.Model):
                 raise ValidationError('Bu aşamayı değerlendirme yetkisi yok.')
             if milestone.latest_submission.pk != self.submission_id:
                 raise ValidationError('Eski teslim değerlendirilemez.')
+            if milestone.assignment_checkpoint_id and self.score is not None:
+                raise ValidationError({'score': 'Ders projesi puanı özel değerlendirmede tutulmalıdır.'})
             if self.score is not None and self.score > milestone.max_score:
                 raise ValidationError({'score': 'Puan üst sınırı aşamaz.'})
         if self.outcome == self.Outcome.REVISION_REQUIRED and not self.feedback.strip():
@@ -751,6 +756,29 @@ class ProjectMilestoneSubmissionLink(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError('Kanıt bağlantısı silinemez.')
+
+
+class ProjectMilestoneSubmissionReference(models.Model):
+    submission = models.ForeignKey(ProjectMilestoneSubmission, on_delete=models.PROTECT, related_name='references')
+    title = models.CharField(max_length=500)
+    url = models.URLField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if not self.title.strip():
+            raise ValidationError('Kaynak başlığı gerekli.')
+        if self.url:
+            from accounts.validators import validate_public_website
+            validate_public_website(self.url)
+
+    def save(self, *args, **kwargs):
+        if self.pk or not getattr(self.submission, '_accepting_evidence', False):
+            raise ValidationError('Mevcut teslimin kaynakçası değiştirilemez.')
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Teslim kaynakçası silinemez.')
 
 
 class ProjectMilestoneSubmissionFile(models.Model):
@@ -1338,3 +1366,5 @@ from .course_work_models import (  # noqa: E402,F401
     CourseProjectAssignment, CourseProjectTeam, CourseProjectParticipation,
     CourseProjectWork, CourseAssignmentCheckpoint, CourseAssignmentExpectation,
 )
+
+from .course_work_models import CourseProjectTemplate, CoursePrivateEvaluation

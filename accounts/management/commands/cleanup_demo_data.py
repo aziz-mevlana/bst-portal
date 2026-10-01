@@ -110,7 +110,7 @@ class Command(BaseCommand):
         try:
             with transaction.atomic():
                 marked_users = list(
-                    User.objects.select_for_update()
+                    User.objects.select_for_update(of=("self",))
                     .select_related('profile')
                     .filter(marker_query)
                     .order_by('pk')

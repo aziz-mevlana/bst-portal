@@ -1,9 +1,15 @@
 from django.urls import path
-from . import views, milestone_views, course_work_views
+from . import views, milestone_views, course_work_views, course_template_views
 
 app_name = 'projects'
 
 urlpatterns = [
+    path('ders-calismalari/sablonlar/', course_template_views.template_list, name='course_template_list'),
+    path('ders-calismalari/sablonlar/yeni/', course_template_views.template_edit, name='course_template_create'),
+    path('ders-calismalari/sablonlar/<int:template_id>/duzenle/', course_template_views.template_edit, name='course_template_edit'),
+    path('ders-calismalari/sablonlar/<int:template_id>/arsivle/', course_template_views.template_archive, name='course_template_archive'),
+    path('ders-calismalari/<int:assignment_id>/sablon/', course_template_views.assignment_to_template, name='course_assignment_to_template'),
+    path('ders-calismalari/proje/<int:work_id>/ozel/<int:review_id>/', course_work_views.private_evaluation_update, name='course_private_evaluation_update'),
     path('course-work/assignments/<int:assignment_id>/edit/', course_work_views.assignment_edit, name='course_assignment_edit'),
     path('course-work/assignments/<int:assignment_id>/<str:action>/confirm/', course_work_views.assignment_action, name='course_assignment_action'),
     path('ders-calismalari/', course_work_views.assignment_list, name='course_assignment_list'),

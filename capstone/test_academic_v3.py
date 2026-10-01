@@ -334,7 +334,7 @@ class AcademicV3Tests(TestCase):
                 self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
                 self.assertIn('private', response['Cache-Control'])
                 self.assertIn('attachment', response['Content-Disposition'])
-                response.close()
+                b"".join(response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
                 self.assertNotContains(self.client.get(reverse('capstone:student_home')), '/media/academic/')
             finally:
                 field.storage = original_storage

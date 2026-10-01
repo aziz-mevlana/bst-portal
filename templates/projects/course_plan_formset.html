@@ -1,0 +1,23 @@
+<section class="space-y-3" data-course-plan>
+  <h2 class="text-xl font-semibold">Kontrol Planı</h2>
+  <p class="text-sm text-slate-300">Kontrol noktalarını ve teslim türlerini düzenleyin.{% if creation_token %} Her kontrol noktası için yeni son tarih seçin.{% endif %}</p>
+  {{ plan_formset.management_form }}{{ plan_formset.non_form_errors }}
+  <div data-plan-forms class="space-y-3">
+    {% for checkpoint_form in plan_formset %}
+    <details class="rounded-xl border border-slate-700 p-4" open><summary class="cursor-pointer font-semibold">Kontrol noktası {{ forloop.counter }}</summary><div class="mt-3 grid gap-3 sm:grid-cols-2">{% for field in checkpoint_form.definition_fields %}<div><label for="{{ field.id_for_label }}" class="block text-sm text-slate-300">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}{{ checkpoint_form.non_field_errors }}</div>{% include 'projects/course_requirements_form.html' with requirement_groups=checkpoint_form.requirement_groups %}</details>
+    {% endfor %}
+  </div>
+  <template data-plan-empty><details class="rounded-xl border border-slate-700 p-4" open><summary class="cursor-pointer font-semibold">Yeni kontrol noktası</summary><div class="mt-3 grid gap-3 sm:grid-cols-2">{% for field in plan_formset.empty_form.definition_fields %}<div><label for="{{ field.id_for_label }}" class="block text-sm text-slate-300">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>{% include 'projects/course_requirements_form.html' with requirement_groups=plan_formset.empty_form.requirement_groups %}</details></template>
+  <button type="button" data-plan-add class="rounded-lg border border-slate-600 px-4 py-2 text-cyan-300">Kontrol Noktası Ekle</button>
+</section>
+<script>
+(function(){
+  const root=document.querySelector('[data-course-plan]'); if(!root)return;
+  root.querySelector('[data-plan-add]').addEventListener('click',function(){
+    const total=root.querySelector('[name="plan-TOTAL_FORMS"]'); const index=Number(total.value); if(index>=100)return;
+    const html=root.querySelector('[data-plan-empty]').innerHTML.replaceAll('__prefix__',String(index));
+    root.querySelector('[data-plan-forms]').insertAdjacentHTML('beforeend',html); total.value=index+1;
+    root.querySelector('[name="plan-'+index+'-order"]').value=index+1;
+  });
+})();
+</script>

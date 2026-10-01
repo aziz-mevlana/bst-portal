@@ -25,7 +25,7 @@ def accept_project_request_application(*, application_id, reviewer, review_note=
         raise ProjectRequestApplication.DoesNotExist
 
     project_request = (
-        ProjectRequest.objects.select_for_update()
+        ProjectRequest.objects.select_for_update(of=("self",))
         .select_related('teacher', 'project_type', 'created_project')
         .get(pk=request_id)
     )

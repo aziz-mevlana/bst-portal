@@ -231,6 +231,8 @@ def student_dashboard_home(request):
         'portfolio_score': portfolio_feedback['score'],
         'portfolio_next_steps': portfolio_feedback['items'][:3],
     }
+    from projects.course_student_access import student_course_assignments
+    context['active_course_assignments'] = [item for item in student_course_assignments(user) if item.assignment.is_active]
     return render(request, 'dashboard/home_student.html', context)
 
 

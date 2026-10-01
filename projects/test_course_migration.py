@@ -10,6 +10,7 @@ class LegacyCourseMigrationTests(TransactionTestCase):
 
     def test_normalizes_legacy_strings_and_backfills_certain_project(self):
         executor = MigrationExecutor(connection)
+        self.addCleanup(lambda: MigrationExecutor(connection).migrate(executor.loader.graph.leaf_nodes()))
         executor.migrate(self.migrate_from)
         apps = executor.loader.project_state(self.migrate_from).apps
         ProjectType = apps.get_model('projects', 'ProjectType')

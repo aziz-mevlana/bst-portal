@@ -1,14 +1,15 @@
+from copy import deepcopy
+
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.urls import reverse
-from django.utils import timezone
 from core.audit import record_audit_event
 from core.notifications import create_notification
 from accounts.validators import validate_public_website
 from .models import (
     CourseInstructor, ProjectMilestone, ProjectMilestoneReview,
     ProjectMilestoneSubmission, ProjectMilestoneSubmissionFile,
-    ProjectMilestoneSubmissionLink, validate_project_upload_content,
+    ProjectMilestoneSubmissionLink, ProjectMilestoneSubmissionReference, validate_project_upload_content,
 )
 from .course_work_services import lock_assignment_for_project
 from .milestone_policies import can_manage_project_milestones, can_submit_project_milestone, can_review_project_milestone
@@ -73,11 +74,11 @@ def delete_milestone(*, milestone, actor):
     milestone.delete()
 
 
-def submit_milestone(*, milestone, actor, note='', links=(), files=()):
+def submit_milestone(*, milestone, actor, note='', links=(), files=(), references=()):
     saved_files = []
     try:
         return _submit_milestone_atomic(milestone=milestone, actor=actor, note=note,
-                                        links=links, files=files, saved_files=saved_files)
+                                        links=links, files=files, references=references, saved_files=saved_files)
     except Exception:
         for storage, name in saved_files:
             try:
@@ -88,7 +89,7 @@ def submit_milestone(*, milestone, actor, note='', links=(), files=()):
 
 
 @transaction.atomic
-def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_files):
+def _submit_milestone_atomic(*, milestone, actor, note, links, files, references, saved_files):
     project_id = ProjectMilestone.objects.filter(pk=milestone.pk).values_list('project_id', flat=True).first()
     if project_id is None:
         raise ValidationError('Kontrol noktası artık mevcut değil.')
@@ -99,6 +100,24 @@ def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_file
     previous = milestone.latest_submission
     if previous and (not hasattr(previous, 'review') or previous.review.outcome != 'REVISION_REQUIRED'):
         raise ValidationError('Bu aşama yeni teslim kabul etmiyor.')
+    requirements = {}
+    if milestone.assignment_checkpoint_id:
+        from .course_requirements import validate_evidence
+        requirements = deepcopy(milestone.assignment_checkpoint.evidence_requirements)
+        validate_evidence(requirements, files=files, links=links, references=references, note=note)
+    elif references:
+        raise ValidationError('Kaynakça bu çalışma türünde kullanılmıyor.')
+    if len(references) > 100:
+        raise ValidationError('En fazla 100 kaynak eklenebilir.')
+    for reference in references:
+        if not isinstance(reference, dict) or set(reference) != {'title', 'url'}:
+            raise ValidationError('Geçersiz kaynak.')
+        item = ProjectMilestoneSubmissionReference(**reference)
+        item.clean()
+        if len(item.title) > 500 or len(item.url) > 500:
+            raise ValidationError('Kaynak başlığı veya URL çok uzun.')
+    if milestone.assignment_checkpoint_id and len(note) > 20000:
+        raise ValidationError('Metin en fazla 20000 karakter olabilir.')
     if len(files) > 10:
         raise ValidationError('En fazla 10 dosya eklenebilir.')
     if len(links) > 20:
@@ -111,10 +130,12 @@ def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_file
         validate_project_upload_content(upload)
     submission = ProjectMilestoneSubmission.objects.create(
         milestone=milestone, submitted_by=actor, attempt_number=(previous.attempt_number + 1 if previous else 1),
-        completion_note=note,
+        completion_note=note, requirement_snapshot=requirements,
     )
     submission._accepting_evidence = True
     try:
+        for reference in references:
+            ProjectMilestoneSubmissionReference.objects.create(submission=submission, **reference)
         for url in links:
             ProjectMilestoneSubmissionLink.objects.create(submission=submission, url=url)
         for upload in files:
@@ -144,7 +165,7 @@ def _submit_milestone_atomic(*, milestone, actor, note, links, files, saved_file
 
 
 @transaction.atomic
-def review_milestone(*, submission, actor, outcome, score=None, feedback=''):
+def review_milestone(*, submission, actor, outcome, score=None, feedback='', private_note='', private_score=None):
     project_id = ProjectMilestone.objects.filter(pk=submission.milestone_id).values_list('project_id', flat=True).first()
     if project_id is None:
         raise ValidationError('Kontrol noktası artık mevcut değil.')
@@ -155,9 +176,16 @@ def review_milestone(*, submission, actor, outcome, score=None, feedback=''):
         raise PermissionDenied
     if milestone.latest_submission.pk != submission.pk or hasattr(submission, 'review'):
         raise ValidationError('Bu teslim artık değerlendirilemez.')
+    if milestone.assignment_checkpoint_id and score is not None:
+        raise ValidationError('Ders projesinde puan yalnız özel değerlendirmede tutulur.')
+    if not milestone.assignment_checkpoint_id and (private_note or private_score is not None):
+        raise ValidationError('Özel değerlendirme yalnız Ders Projesi içindir.')
     review = ProjectMilestoneReview(submission=submission, reviewed_by=actor,
                                     outcome=outcome, score=score, feedback=feedback)
     review.save()
+    if milestone.assignment_checkpoint_id:
+        from .course_work_models import CoursePrivateEvaluation
+        CoursePrivateEvaluation.objects.create(review=review, actor=actor, note=private_note, score=private_score)
     record_audit_event(actor=actor, action='project.milestone.reviewed', target=review,
                        metadata={'milestone_id': milestone.pk, 'outcome': outcome})
     project = milestone.project
@@ -168,3 +196,18 @@ def review_milestone(*, submission, actor, outcome, score=None, feedback=''):
             url=f'{target_url}#checkpoint-{milestone.pk}' if work else f'{target_url}#milestone-{milestone.pk}',
             key=f'milestone-review-{review.pk}')
     return review
+
+
+@transaction.atomic
+def update_private_evaluation(*, review, actor, note, score, expected_id):
+    from .course_work_models import CoursePrivateEvaluation
+    lock_assignment_for_project(review.submission.milestone.project_id)
+    review = ProjectMilestoneReview.objects.select_for_update(of=('self',)).select_related('submission__milestone__assignment_checkpoint').get(pk=review.pk)
+    if not can_review_project_milestone(actor, review.submission.milestone):
+        raise PermissionDenied
+    previous = review.private_evaluations.order_by('-pk').first()
+    if (previous.pk if previous else 0) != expected_id:
+        raise ValidationError('Özel değerlendirme değişti. Sayfayı yenileyin.')
+    result = CoursePrivateEvaluation.objects.create(review=review, actor=actor, note=note, score=score)
+    record_audit_event(actor=actor, action='course.private_evaluation_updated', target=review)
+    return result

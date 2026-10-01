@@ -147,9 +147,18 @@ def student_pool(request):
     if not is_admin(request.user):
         mine = mine.filter(advisor=request.user)
     from django.contrib.auth import get_user_model
-    eligible = get_user_model().objects.filter(is_active=True, profile__user_type__in=['student', 'staff_student'],
-                                               profile__class_level='4').exclude(capstone_enrollments__term=term,
-                                               capstone_enrollments__is_active=True).distinct().order_by('last_name', 'first_name', 'pk') if is_admin(request.user) and term else ()
+    query = request.GET.get('q', '').strip()[:100]
+    eligible = get_user_model().objects.none()
+    if is_admin(request.user) and term:
+        from django.db.models import Exists, OuterRef
+        active_enrollment = CapstoneEnrollment.objects.filter(student_id=OuterRef('pk'), term=term, is_active=True)
+        eligible = get_user_model().objects.filter(is_active=True, is_staff=False, is_superuser=False,
+            profile__user_type__in=['student', 'staff_student']).annotate(enrolled=Exists(active_enrollment)).filter(enrolled=False).select_related('profile')
+        if query:
+            eligible = eligible.filter(Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(email__icontains=query))
+        else:
+            eligible = eligible.filter(profile__class_level='4')
+        eligible = eligible.order_by('last_name','first_name','pk')[:100]
     advisors = get_user_model().objects.filter(is_active=True, is_staff=False, is_superuser=False,
                                                profile__user_type='teacher').order_by('last_name', 'first_name', 'pk') if is_admin(request.user) else ()
     mine = list(mine)
@@ -158,7 +167,7 @@ def student_pool(request):
     for item in mine:
         item.active_project_id = project_ids.get(item.student_id)
     return render(request, 'capstone/student_pool.html', {'term': term, 'pool': pool, 'mine': mine,
-                   'is_admin': is_admin(request.user), 'eligible': eligible, 'advisors': advisors})
+                   'is_admin': is_admin(request.user), 'eligible': eligible, 'advisors': advisors, 'query': query})
 
 
 @login_required
@@ -168,9 +177,14 @@ def student_enroll(request):
         raise Http404
     term = get_object_or_404(CapstoneTerm, is_active=True)
     from django.contrib.auth import get_user_model
-    student = get_object_or_404(get_user_model(), pk=request.POST.get('student_id'))
+    raw_student_id = request.POST.get('student_id', '')
+    if not raw_student_id.isascii() or not raw_student_id.isdigit() or not 0 < int(raw_student_id) < 2**63:
+        raise Http404
+    student = get_object_or_404(get_user_model(), pk=int(raw_student_id))
     try:
-        enroll_student(term=term, student=student, actor=request.user)
+        enroll_student(term=term, student=student, actor=request.user,
+            override=request.POST.get('override') == 'yes', reason=request.POST.get('reason', ''),
+            confirmed=request.POST.get('confirm') == 'yes')
         messages.success(request, 'Öğrenci resmi Bitirme Projesi listesine eklendi.')
     except (ValidationError, PermissionDenied) as exc:
         messages.error(request, _error(exc))

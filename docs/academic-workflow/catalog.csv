@@ -1,0 +1,71 @@
+semester,code,name
+1,BST 103,Algoritma Bilgisayar Programla. Giriş
+1,BST 105,Bilgisayara Giriş
+2,BST 104,Bilgisayar Programlama
+3,BST 201,Veri Yapıları
+3,BST 203,Sayısal Devre Tasarımı
+3,BST 205,İstatistik
+3,BST 207,Python Programlama
+3,BST 209,Nesne Tabanlı Programlama
+3,BST 211,Sanallaştırma Ve Bulut Hesaplama
+4,BST 202,Prog. Dil. Uygulamaları
+4,BST 204,Bilişimde Veri Güvenliği
+4,BST 206,Bilgisayar Mimarisi
+4,BST 208,Linux Sistemleri Yönetimi
+4,BST 210,Kriptografi
+4,BST 212,Proje Yönetimi
+5,BST 301,Görsel Programlama-I
+5,BST 303,Yazılım Mühendisliği
+5,BST 305,İşletim Sistemleri
+5,BST 307,İnternet Programlama
+5,BST 321,İnsan Kaynakları Yönetimi
+5,BST 323,Liderlik
+5,BST 325,Araştırma Yöntemleri
+5,BST 337,Halkla İlişkiler
+5,BST 327,Tüketici ve Üretici Davranışları
+5,BST 329,Yönetim Muhasebesi
+5,BST 399,Kamu Maliyesi ve Devlet Bütçesi
+5,BST 331,İşletme Enformatik Sistemleri
+5,BST 333,İnovasyon
+5,BST 335,Doğal Dil İşleme
+6,BST 302,Görsel Programlama-II
+6,BST 304,Veritabanı Yönetim Sistemleri
+6,BST 306,Bilgisayar Ağlarına Giriş
+6,BST 308,Mikroişlemciler
+6,BST 326,E-Ticaret
+6,BST 328,Girişimcilik ve İş Tasarımı
+6,BST 330,Hizmet Pazarlaması
+6,BST 332,Yönetim Psikolojisi
+6,BST 334,İşletme Finansı
+6,BST 336,Karar Verme Teknikleri
+6,BST 392,Vergi Hukuku
+6,BST 320,Sosyal Ağ ve Büyük Veri Analizleri
+6,BST 322,Yapay Sinir Ağları
+6,BST 324,Automata
+7,BST 401,Bitirme Projesi-I
+7,BST 403,Veritabanı Yönetim Sistemleri
+7,BST 405,Bilgisayar Ağ Yönetimi
+7,BST 407,Mesleki İngilizce I
+7,BST 421,İletişim Teknikleri
+7,BST 499,Türk Vergi Sistemi
+7,BST 425,Kamu Ekonomisi
+7,BST 427,Yerel Yönetimler
+7,BST 421,Yapay Zekâ Programlama
+7,BST 423,Mobil Uygulama Geliştirme-I
+7,BST 425,Gömülü Sistemler
+7,BST 427,Bulanık Mantık
+7,BST 429,Veri Madenciliği
+7,BST 431,Bilgisayar Grafikleri
+8,BST 402,Bitirme Projesi-II
+8,BST 404,Sistem Programlama
+8,BST 406,Mesleki İngilizce II
+8,BST 420,Stratejik Yönetim
+8,BST 422,Uluslararası Maliye
+8,BST 498,Mali Yargı
+8,BST 424,Uluslararası Vergi Rekabeti
+8,BST 426,Mobil Uygulama Geliştirme-II
+8,BST 428,Sızma Testleri Ve Etik Hackleme
+8,BST 430,İş Süreçleri Yönetimi
+8,BST 432,Yönetim ve Organizasyon
+8,BST 434,Robotik Bilim
+8,BST 436,Sistem Analizi

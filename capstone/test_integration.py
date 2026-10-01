@@ -137,7 +137,7 @@ class CapstoneEndToEndIntegrationTests(TestCase):
             b''.join(download_response.streaming_content),
             b'private integration content',
         )
-        download_response.close()
+        b"".join(download_response.streaming_content)  # Let Django\'s client close without dropping the test transaction.
 
         revision_response = self.review_through_advisor(
             first_attempt,

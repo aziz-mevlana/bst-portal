@@ -26,17 +26,14 @@ def is_capstone_eligible_student(user, term=None):
     profile = getattr(user, 'profile', None)
     if profile is None or role_of(user) not in {'student', 'staff_student'}:
         return False
-    if profile.class_level != '4':
-        return False
     if term is None:
         term = CapstoneTerm.objects.filter(is_active=True).first()
     if term is None or term.pk is None:
         return False
-    return CapstoneEnrollment.objects.filter(
-        term=term,
-        student=user,
-        is_active=True,
-    ).exists()
+    enrollments = CapstoneEnrollment.objects.filter(term=term, student=user, is_active=True)
+    if profile.class_level != '4':
+        enrollments = enrollments.filter(eligibility_override=True)
+    return enrollments.exists()
 
 
 def can_view_capstone(user, capstone_project):

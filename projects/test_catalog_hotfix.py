@@ -17,15 +17,15 @@ catalog_migration = import_module('projects.migrations.0027_course_catalog_2026_
 class CourseCatalogHotfixTests(TestCase):
     def test_whitelist_and_semesters(self):
         entries = CourseCatalogEntry.objects.filter(academic_year='2026-2027')
-        self.assertEqual(entries.count(), 27)
-        self.assertEqual(entries.filter(semester='FALL').count(), 14)
-        self.assertEqual(entries.filter(semester='SPRING').count(), 13)
-        self.assertEqual(entries.values('course_id').distinct().count(), 27)
+        self.assertEqual(entries.count(), 67)
+        self.assertEqual(entries.filter(semester='FALL').count(), 33)
+        self.assertEqual(entries.filter(semester='SPRING').count(), 34)
+        self.assertEqual(entries.values('course_id').distinct().count(), 67)
         self.assertEqual(entries.filter(course__code='BST 401').count(), 1)
         self.assertEqual(entries.get(course__code='BST 103').display_name,
-                         'Algoritma Bilgisayar Programlamaya Giriş')
+                         'Algoritma Bilgisayar Programla. Giriş')
         self.assertEqual(set(entries.values_list('course__code', flat=True)),
-                         {row[0] for row in catalog_migration.FALL + catalog_migration.SPRING})
+                         {row[1] for row in import_module('projects.migrations.0031_restore_full_bst_catalog').ROWS})
         self.assertFalse(entries.filter(course__name__icontains='Seçmeli').exists())
 
     def test_repeat_seed_preserves_history_and_does_not_duplicate(self):
@@ -51,7 +51,7 @@ class CourseCatalogHotfixTests(TestCase):
         self.assertEqual(legacy_same_code.name, 'Tarihsel ders adı')
         self.assertEqual(CourseCatalogEntry.objects.get(course=legacy_same_code).display_name,
                          'Algoritma Bilgisayar Programlamaya Giriş')
-        self.assertEqual(CourseCatalogEntry.objects.filter(academic_year='2026-2027').count(), 27)
+        self.assertEqual(CourseCatalogEntry.objects.filter(academic_year='2026-2027').count(), 67)
         self.assertEqual(Course.objects.filter(code='BST 401').count(), 1)
         self.assertEqual(CourseInstructor.objects.filter(
             course__code='BST 103', instructor=teacher, is_active=True).count(), 1)

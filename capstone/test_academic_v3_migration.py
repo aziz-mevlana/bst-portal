@@ -14,6 +14,7 @@ class AcademicV3MigrationTests(TransactionTestCase):
 
     def test_existing_project_and_history_are_preserved_and_advisor_backfilled(self):
         executor = MigrationExecutor(connection)
+        self.addCleanup(lambda: MigrationExecutor(connection).migrate(executor.loader.graph.leaf_nodes()))
         executor.migrate(self.before)
         apps = executor.loader.project_state(self.before).apps
         Term = apps.get_model('capstone', 'CapstoneTerm')

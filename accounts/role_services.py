@@ -22,7 +22,7 @@ def change_student_authority_role(*, actor, target, new_role, description, reque
         raise PermissionDenied('Bu hesabın rolünü değiştirme yetkiniz yok.')
 
     locked_target = (
-        type(target).objects.select_for_update()
+        type(target).objects.select_for_update(of=("self",))
         .select_related('profile')
         .get(pk=target.pk)
     )

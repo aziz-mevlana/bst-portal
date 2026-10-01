@@ -1,0 +1,3 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Şablon Olarak Kaydet | BST Portal{% endblock %}
+{% block dashboard_content %}<div class="max-w-3xl space-y-4"><a class="text-cyan-300" href="{% url 'projects:course_assignment_detail' assignment.pk %}">← Çalışma</a><h1 class="text-3xl font-bold">Şablon Olarak Kaydet</h1><p class="text-slate-300">Çalışma çerçevesi, ekip ayarları ve kontrol planı kopyalanır. Tarihler ve öğrenci verileri şablona alınmaz.</p><form method="post" class="dashboard-card space-y-4 rounded-2xl p-5">{% csrf_token %}{{ form.as_p }}<button class="rounded-lg bg-cyan-700 px-5 py-3" type="submit">Şablonu Kaydet</button></form></div>{% endblock %}

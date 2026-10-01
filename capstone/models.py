@@ -90,6 +90,8 @@ class CapstoneEnrollment(models.Model):
         related_name='capstone_enrollments',
     )
     is_active = models.BooleanField(default=True)
+    eligibility_override = models.BooleanField(default=False)
+    eligibility_override_reason = models.TextField(blank=True)
     advisor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True,
                                 related_name='capstone_advisees')
     advisor_assigned_at = models.DateTimeField(null=True, blank=True, editable=False)
@@ -123,7 +125,11 @@ class CapstoneEnrollment(models.Model):
             profile = getattr(self.student, 'profile', None)
             if profile is None or profile.user_type not in {'student', 'staff_student'}:
                 raise ValidationError({'student': 'Yalnızca öğrenci rolleri bitirme dönemine kaydedilebilir.'})
-            if profile.class_level != '4':
+            if self.eligibility_override:
+                from accounts.policies import is_admin
+                if not self.eligibility_override_reason.strip() or not self.approved_by_id or not is_admin(self.approved_by):
+                    raise ValidationError('Sınıf istisnası yönetici onayı ve gerekçe gerektirir.')
+            if profile.class_level != '4' and not self.eligibility_override:
                 raise ValidationError({'student': 'Bitirme dönemi kaydı yalnızca 4. sınıf öğrencileri içindir.'})
         if self.approved_by_id and not (self.approved_by.is_staff or self.approved_by.is_superuser):
             raise ValidationError({'approved_by': 'Onaylayan kullanıcı Django yöneticisi olmalıdır.'})

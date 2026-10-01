@@ -170,7 +170,7 @@ class CourseAssignmentWorkflowTests(TestCase):
             assignment=assignment, student=self.second_student).team_id, team.pk)
         self.assertEqual(AuditLog.objects.filter(action='course.team_membership_overridden').count(), 1)
         self.assertEqual(Notification.objects.filter(recipient=self.second_student,
-            message__contains='takım üyeliğiniz').count(), 1)
+            message__contains='ekip üyeliğiniz').count(), 1)
         with self.assertRaises(ValidationError):
             override_team_member(assignment=assignment, actor=self.teacher,
                 student_id=self.third_student.pk, team_id=team.pk, reason='Kapasite sınırı')
@@ -202,7 +202,7 @@ class CourseAssignmentWorkflowTests(TestCase):
         work = CourseProjectWork.objects.get(assignment=assignment)
         self.assertContains(self.client.get(reverse('projects:course_work_detail', args=[work.pk])), 'Gerçek proje')
         self.assertContains(self.client.get(reverse('projects:course_my_assignments')),
-                            'Çalışma Alanına Git')
+                            'Projeyi Aç')
         CourseInstructor.objects.create(course=self.course, instructor=self.other_teacher)
         self.client.force_login(self.other_teacher)
         self.assertEqual(self.client.get(reverse('projects:project_detail', args=[work.project_id])).status_code, 404)

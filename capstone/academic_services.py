@@ -64,18 +64,30 @@ def _lock_current_project(project):
 
 
 @transaction.atomic
-def enroll_student(*, term, student, actor):
-    if not is_admin(actor) or not term.is_active or not student.is_active or role_of(student) not in {'student', 'staff_student'} or getattr(student.profile, 'class_level', None) != '4':
+def enroll_student(*, term, student, actor, override=False, reason='', confirmed=False):
+    if not actor.is_active or not is_admin(actor) or not student.is_active or role_of(student) not in {'student', 'staff_student'}:
         raise PermissionDenied
+    term = CapstoneTerm.objects.select_for_update().get(pk=term.pk)
+    if not term.is_active:
+        raise ValidationError('Dönem aktif değil.')
+    mismatch = getattr(student.profile, 'class_level', None) != '4'
+    reason = (reason or '').strip()
+    if mismatch and (not override or not confirmed or not reason or len(reason) > 2000):
+        raise ValidationError('Normal uygunluğun dışında: istisna onayı ve 1–2000 karakter gerekçe gerekli.')
     enrollment, created = CapstoneEnrollment.objects.get_or_create(term=term, student=student,
-        defaults={'approved_by': actor, 'is_active': True})
-    if not created and not enrollment.is_active:
+        defaults={'approved_by': actor, 'is_active': True, 'eligibility_override': mismatch,
+                  'eligibility_override_reason': reason if mismatch else ''})
+    reactivated = not created and not enrollment.is_active
+    if reactivated:
         enrollment.is_active = True
-        enrollment.save(update_fields=['is_active', 'updated_at'])
-    if created:
-        _audit(actor, 'capstone.enrollment_created', enrollment, term_id=term.pk, student_id=student.pk)
+        enrollment.approved_by = actor
+        enrollment.eligibility_override = mismatch
+        enrollment.eligibility_override_reason = reason if mismatch else ''
+        enrollment.save()
+    if created or reactivated:
+        _audit(actor, 'capstone.enrollment_created' if created else 'capstone.enrollment_reactivated', enrollment,
+            term_id=term.pk, student_id=student.pk, eligibility_override=mismatch, reason=reason if mismatch else '')
     return enrollment
-
 
 @transaction.atomic
 def claim_student(*, enrollment, advisor):
@@ -788,6 +800,9 @@ def remove_enrollment(*, enrollment, actor, reason):
     reason = (reason or '').strip()
     if not reason or len(reason) > 2000:
         raise ValidationError('Gerekçe zorunludur ve en fazla 2000 karakter olabilir.')
+    term = CapstoneTerm.objects.select_for_update().get(pk=enrollment.term_id)
+    if not term.is_active:
+        raise ValidationError('Dönem aktif değil.')
     enrollment = CapstoneEnrollment.objects.select_for_update(of=('self',)).select_related('student').get(pk=enrollment.pk)
     if _project_for(enrollment):
         raise ValidationError('Aktif Bitirme Projesi var. Önce Bitirme Projesini Kalıcı Olarak Sil akışını kullanın; ardından resmi listeden çıkarın.')
