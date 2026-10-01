@@ -1,0 +1,19 @@
+{% extends 'projects/base.html' %}
+{% load widget_tweaks %}
+{% block project_content %}
+<main class="mx-auto max-w-3xl px-4 py-10 text-white">
+  <a class="text-blue-300 hover:text-blue-200" href="{{ project.get_absolute_url }}#updates">← {{ project.title }} · Güncellemeler</a>
+  <h1 class="mt-4 text-3xl font-bold">Güncellemeyi düzenle</h1>
+  <p class="mt-2 break-words text-sm text-gray-400">{{ update.title|default:'Proje güncellemesi' }} · {{ update.created_at|date:'d.m.Y H:i' }}</p>
+  <form method="post" class="mt-6 space-y-4 rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+    {% csrf_token %}{{ form.non_field_errors }}
+    {% for field in form %}
+    <div><label class="mb-2 block text-sm font-semibold text-gray-200" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field|add_class:'w-full rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30' }}{{ field.errors }}</div>
+    {% endfor %}
+    <div class="flex flex-wrap items-center gap-3">
+      <button class="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-500">Kaydet</button>
+      <a class="rounded-xl border border-gray-600 px-5 py-2.5 text-gray-300 hover:bg-gray-800" href="{{ project.get_absolute_url }}#updates">Vazgeç</a>
+    </div>
+  </form>
+</main>
+{% endblock %}

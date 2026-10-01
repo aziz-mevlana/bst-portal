@@ -88,10 +88,34 @@
         <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8"><div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-widest text-gray-500">GitHub</p><h2 class="mt-2 text-2xl font-bold text-white">{{ project.repository.repository_path }}</h2><p class="mt-3 max-w-3xl text-gray-400">GitHub API senkronizasyonu kullanılmadan doğrudan depo bağlantısı.</p></div><a href="{{ project.repository.repository_url }}" target="_blank" rel="noopener noreferrer nofollow ugc" class="rounded-xl border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200">Depoyu aç</a></div></section>
       {% endif %}
 
-      <section class="rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
+      <section id="updates" class="scroll-mt-24 rounded-2xl border border-gray-700 bg-[#111827]/90 p-6 sm:p-8">
         <h2 class="text-2xl font-bold text-white">Geliştirme güncellemeleri</h2>
         {% if user.is_authenticated and can_add_project_update %}<form method="post" action="{% url 'projects:add_project_update' project_id=project.pk %}" class="mt-5 grid gap-3">{% csrf_token %}<input name="version" class="rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white" placeholder="Sürüm (isteğe bağlı, örn. v1.2)"><input name="title" class="rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white" placeholder="Güncelleme başlığı"><textarea name="description" rows="3" required class="rounded-xl border border-gray-600 bg-[#181e29] p-3 text-white" placeholder="Neler değişti?"></textarea><button class="justify-self-start rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white">Güncelleme ekle</button></form>{% endif %}
-        <div class="mt-6 space-y-4">{% for update in updates %}<article class="border-l-2 border-blue-500 pl-4">{% if update.version %}<span class="rounded-full bg-blue-950 px-2 py-1 text-xs text-blue-300">{{ update.version }}</span>{% endif %}<h3 class="mt-2 font-semibold text-white">{{ update.title|default:'Proje güncellemesi' }}</h3><p class="mt-1 whitespace-pre-line text-sm leading-6 text-gray-400">{{ update.description }}</p><time class="mt-2 block text-xs text-gray-600">{{ update.created_at|date:'d.m.Y H:i' }}</time></article>{% empty %}<p class="text-sm text-gray-500">Henüz güncelleme paylaşılmadı.</p>{% endfor %}</div>
+        <div class="mt-6 space-y-4">
+          {% for update in updates %}
+          <article class="min-w-0 break-words border-l-2 border-blue-500 pl-4">
+            {% if update.version %}<span class="rounded-full bg-blue-950 px-2 py-1 text-xs text-blue-300">{{ update.version }}</span>{% endif %}
+            <h3 class="mt-2 font-semibold text-white">{{ update.title|default:'Proje güncellemesi' }}</h3>
+            <p class="mt-1 whitespace-pre-line text-sm leading-6 text-gray-400">{{ update.description }}</p>
+            <time class="mt-2 block text-xs text-gray-500">{{ update.created_at|date:'d.m.Y H:i' }}</time>
+            {% if can_manage_project_updates %}
+            <div class="mt-3 flex flex-wrap items-start gap-3 text-sm">
+              <a class="rounded-lg border border-gray-600 px-3 py-1.5 font-semibold text-gray-200 hover:bg-gray-800" href="{% url 'projects:edit_project_update' project.pk update.pk %}">Düzenle</a>
+              <details class="min-w-0 max-w-full">
+                <summary class="cursor-pointer rounded-lg border border-rose-800 px-3 py-1.5 font-semibold text-rose-300 hover:bg-rose-950/30">Sil</summary>
+                <form method="post" action="{% url 'projects:delete_project_update' project.pk update.pk %}" class="mt-3 space-y-3 rounded-xl border border-gray-700 bg-gray-900 p-4">
+                  {% csrf_token %}
+                  <p class="text-gray-300">“{{ update.title|default:'Proje güncellemesi' }}”{% if update.version %} ({{ update.version }}){% endif %} · {{ update.created_at|date:'d.m.Y H:i' }}</p>
+                  <p class="whitespace-pre-line text-gray-400">{{ update.description|truncatechars:160 }}</p>
+                  <label class="flex items-start gap-2 text-gray-300"><input type="checkbox" name="confirm_delete" value="yes" required class="mt-1">Bu güncellemeyi kalıcı olarak silmeyi onaylıyorum.</label>
+                  <button class="rounded-lg bg-rose-700 px-3 py-2 font-semibold text-white hover:bg-rose-600">Güncellemeyi sil</button>
+                </form>
+              </details>
+            </div>
+            {% endif %}
+          </article>
+          {% empty %}<p class="text-sm text-gray-500">Henüz güncelleme paylaşılmadı.</p>{% endfor %}
+        </div>
       </section>
 
       <section id="comments" class="scroll-mt-24 overflow-hidden rounded-3xl border border-gray-700 bg-[#111827]/90" aria-labelledby="comments-title">

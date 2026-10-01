@@ -16,7 +16,7 @@ from django.db.models import Count, Max, Prefetch, Q, prefetch_related_objects
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST, require_safe
+from django.views.decorators.http import require_GET, require_POST, require_safe, require_http_methods
 from .models import (
     Project, ProjectRequest, ProjectCategory, Technology, ProjectUpdate,
     ProjectAchievement, ProjectCaseStudy, ProjectComment, ProjectContribution,
@@ -150,6 +150,24 @@ def _can_add_project_update(user, project):
             user == project.created_by or user == project.advisor or project.team.filter(pk=user.pk).exists()
         )
     )
+
+
+def _can_manage_project_updates(user, project):
+    return bool(
+        not _is_capstone_project(project)
+        and not hasattr(project, 'course_project_work')
+        and _can_add_project_update(user, project)
+    )
+
+
+def _editable_project_update(user, project_id, update_id):
+    update = get_object_or_404(
+        ProjectUpdate.objects.select_related('project__project_type', 'project__course_project_work'),
+        pk=update_id, project_id=project_id,
+    )
+    if not _can_manage_project_updates(user, update.project):
+        raise Http404
+    return update
 
 
 def _record_project_view(request, project):
@@ -959,6 +977,7 @@ def project_detail(request, project_id):
             and (request.user == project.created_by or _is_platform_staff(request.user))
         ),
         'can_add_project_update': _can_add_project_update(request.user, project),
+        'can_manage_project_updates': _can_manage_project_updates(request.user, project),
         'similar_projects': Project.objects.filter(
             project_type=project.project_type,
             visibility='public',
@@ -1827,6 +1846,33 @@ def add_project_update(request, project_id):
         return JsonResponse({'success': False, 'error': 'Form doğrulama hatası', 'errors': errors}, status=400)
     messages.error(request, 'Güncelleme kaydedilemedi. Alanları kontrol edin.')
     return redirect('projects:project_detail', project_id=project.id)
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def edit_project_update(request, project_id, update_id):
+    update = _editable_project_update(request.user, project_id, update_id)
+    form = ProjectUpdateForm(request.POST if request.method == 'POST' else None, instance=update)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Proje güncellemesi düzenlendi.')
+        return redirect(f'{update.project.get_absolute_url()}#updates')
+    return render(request, 'projects/project_update_form.html', {
+        'project': update.project, 'update': update, 'form': form,
+    })
+
+
+@login_required
+@require_POST
+def delete_project_update(request, project_id, update_id):
+    update = _editable_project_update(request.user, project_id, update_id)
+    target_url = f'{update.project.get_absolute_url()}#updates'
+    if request.POST.get('confirm_delete') != 'yes':
+        messages.error(request, 'Güncellemeyi silmek için silme onayını işaretleyin.')
+        return redirect(target_url)
+    update.delete()
+    messages.success(request, 'Proje güncellemesi silindi.')
+    return redirect(target_url)
+
 
 @login_required
 @require_POST
